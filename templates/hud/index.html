@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <style>
+    html, body { margin: 0; height: 100%; background: transparent; touch-action: none; user-select: none; -webkit-user-select: none; }
+    #fire { position: fixed; right: 24px; bottom: 24px; width: 96px; height: 96px; border-radius: 50%; }
+  </style>
+</head>
+<body>
+  <!-- Elements with data-webui-touch receive touches; the rest of the screen reaches the game. -->
+  <button id="fire" data-webui-touch>FIRE</button>
+  <div id="hp">HP --</div>
+  <script>
+    Godot.touchRegions();
+    const fire = document.getElementById('fire');
+    let held = false;
+    const release = () => { if (held) { held = false; Godot.emit('fire_released'); } };
+    fire.addEventListener('pointerdown', e => { fire.setPointerCapture(e.pointerId); held = true; Godot.emit('fire_pressed'); });
+    for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) fire.addEventListener(t, release);
+    Godot.guard(release);
+    Godot.on('state', s => { document.getElementById('hp').textContent = 'HP ' + s.health; });
+  </script>
+</body>
+</html>

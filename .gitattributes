@@ -1,0 +1,11 @@
+# Normalize EOL for all files that Git considers text files.
+* text=auto eol=lf
+
+# Windows batch files need CRLF.
+*.bat text eol=crlf
+
+# Never touch binaries.
+*.aar binary
+*.jar binary
+*.png binary
+*.apk binary

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Godot Android plugin v2 registration: name must match getPluginName(). -->
+        <meta-data
+            android:name="org.godotengine.plugin.v2.WebUI"
+            android:value="com.godotwebui.WebUIPlugin" />
+    </application>
+</manifest>

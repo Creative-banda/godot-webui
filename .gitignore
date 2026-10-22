@@ -1,0 +1,60 @@
+# ---- Godot 4+ ----
+# Editor cache and generated data (also holds export credentials)
+.godot/
+# Godot's Android Gradle build template (created by "Install Android Build Template"; regenerable)
+/android/
+# Godot export credentials / signing secrets
+export_credentials.cfg
+*.keystore
+*.jks
+# Mono / C# (not used here)
+.mono/
+data_*/
+mono_crash.*.json
+
+# ---- Exports and generated binaries (not distribution artifacts) ----
+/build/
+*.apk
+*.aab
+*.idsig
+*.exe
+*.pck
+
+# ---- Native Android plugin (native/android) ----
+# Intermediate outputs. The packaged addons/webui/bin/*.aar files are NOT ignored:
+# the export plugin needs them, so a fresh project can use the addon without building.
+native/android/.gradle/
+native/android/build/
+native/android/*/build/
+native/android/local.properties
+native/android/.idea/
+*.class
+hs_err_pid*
+replay_pid*
+
+# ---- Secrets and local environment ----
+.env
+.env.*
+*.pem
+*.p12
+secrets.*
+local.properties
+
+# ---- IDE / editor / OS ----
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Logs, caches, tooling ----
+*.log
+*.tmp
+__pycache__/
+*.pyc
+node_modules/
+.claude/

@@ -1,0 +1,39 @@
+plugins {
+    id 'com.android.library'
+}
+
+// Keep in sync with the Godot editor version the project targets.
+// The plugin API (org.godotengine:godot) must match the export template version.
+ext.godotVersion = '4.7.1.stable'
+ext.webkitVersion = '1.12.1'
+
+android {
+    namespace 'com.godotwebui'
+    compileSdk 35
+    buildToolsVersion '35.0.1'
+
+    defaultConfig {
+        minSdk 24
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // Provided by the Godot export template at runtime.
+    compileOnly "org.godotengine:godot:$godotVersion"
+    // Supplied at export time through EditorExportPlugin._get_android_dependencies().
+    compileOnly "androidx.webkit:webkit:$webkitVersion"
+}
+
+// Copies the built AARs into the addon, where the export plugin expects them.
+tasks.register('copyToAddon', Copy) {
+    dependsOn 'assembleDebug', 'assembleRelease'
+    from layout.buildDirectory.file('outputs/aar/webui-debug.aar')
+    from layout.buildDirectory.file('outputs/aar/webui-release.aar')
+    into file('../../../addons/webui/bin')
+    rename 'webui-', 'WebUI-'
+}
