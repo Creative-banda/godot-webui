@@ -104,6 +104,30 @@ svg {
   }
 }
 
+.logo {
+  animation: candy-wobble 4.2s ease-in-out infinite;
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+@keyframes candy-wobble {
+  0%, 82%, 100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  85% {
+    transform: translate3d(0, -6px, 0) rotate(-4deg) scale(1.05, 0.95);
+  }
+  88% {
+    transform: translate3d(0, 0, 0) rotate(3deg) scale(0.96, 1.04);
+  }
+  92% {
+    transform: translate3d(0, -2px, 0) rotate(-1deg);
+  }
+  96% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
 .logo svg {
   width: clamp(56px, 6vw, 96px);
   height: clamp(56px, 6vw, 96px);
@@ -217,7 +241,7 @@ h1 span {
 
 .screen.active {
   display: block;
-  animation: fade-glide 0.16s cubic-bezier(0.2, 0.9, 0.3, 1);
+  animation: screen-pop 0.22s cubic-bezier(0.18, 0.9, 0.32, 1.15);
   will-change: opacity, transform;
 }
 
@@ -225,14 +249,14 @@ h1 span {
   display: none;
 }
 
-@keyframes fade-glide {
+@keyframes screen-pop {
   from {
     opacity: 0;
-    transform: translate3d(0, 8px, 0);
+    transform: translate3d(0, 14px, 0) scale(0.97);
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
@@ -253,8 +277,8 @@ h2 {
 }
 
 .back {
-  width: clamp(40px, 3.5vw, 54px);
-  height: clamp(40px, 3.5vw, 54px);
+  width: clamp(44px, 3.8vw, 54px);
+  height: clamp(44px, 3.8vw, 54px);
   border-radius: clamp(14px, 1.2vw, 20px);
   display: grid;
   place-items: center;
@@ -326,6 +350,16 @@ h2 {
   width: clamp(26px, 2.2vw, 36px);
   height: clamp(26px, 2.2vw, 36px);
   margin-left: 3px;
+  animation: play-nudge 1.8s ease-in-out infinite;
+}
+
+@keyframes play-nudge {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(4px, 0, 0);
+  }
 }
 
 .hero-txt b {
@@ -351,6 +385,26 @@ h2 {
   border-radius: 50%;
   background: #1b0e35;
   box-shadow: 0 0 6px rgba(27, 14, 53, 0.6);
+}
+
+.pulse::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid #ffd166;
+  animation: pulse-ring 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
 }
 
 /* ---------- tile grid ---------- */
@@ -490,6 +544,19 @@ h2 {
 .level.sel .check {
   background: var(--candy-yellow) radial-gradient(circle, #1b0e35 0 4px, transparent 4.5px);
   border-color: var(--candy-yellow);
+  animation: check-spring 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes check-spring {
+  0% {
+    transform: scale(0.5);
+  }
+  70% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .cta {
@@ -823,20 +890,40 @@ input[type=range]::-webkit-slider-thumb {
 
 .wire i {
   position: absolute;
-  top: -4px;
-  left: 20%;
-  width: clamp(10px, 1vw, 14px);
-  height: clamp(10px, 1vw, 14px);
+  top: calc(50% - clamp(4px, 0.45vw, 6px));
+  left: 0;
+  width: clamp(8px, 0.9vw, 12px);
+  height: clamp(8px, 0.9vw, 12px);
   border-radius: 50%;
   background: var(--candy-yellow);
+  box-shadow: 0 0 8px var(--candy-yellow);
+  animation: travel 1.6s linear infinite;
+  will-change: transform, opacity;
 }
 
 .wire i:nth-child(2) {
-  left: 50%;
+  animation-delay: 0.53s;
 }
 
 .wire i:nth-child(3) {
-  left: 80%;
+  animation-delay: 1.06s;
+}
+
+@keyframes travel {
+  from {
+    transform: translate3d(-6px, 0, 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  to {
+    transform: translate3d(clamp(44px, 4.5vw, 72px), 0, 0);
+    opacity: 0;
+  }
 }
 
 dl {

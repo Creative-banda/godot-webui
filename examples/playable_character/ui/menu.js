@@ -151,10 +151,10 @@
   sCtx.closePath();
   sCtx.fill();
 
-  // Ultra-sparse particles: only 2-3 slow ambient floating bubbles and 1-2 stars
+  // Balanced, lightweight ambient particles: 4 bubbles & 3 stars on mobile, 6 & 5 on desktop
   const isMobile = window.innerWidth <= 768 || (window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
-  const bubbleCount = isMobile ? 2 : 3;
-  const starCount = isMobile ? 1 : 2;
+  const bubbleCount = isMobile ? 4 : 6;
+  const starCount = isMobile ? 3 : 5;
 
   const bubbles = Array.from({ length: bubbleCount }, () => ({
     x: Math.random(),
