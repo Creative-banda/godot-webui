@@ -78,6 +78,10 @@ Handlers that throw are caught and logged; they do not break other handlers.
 | Overlays at once | 1 |
 | Recovery attempts | 3 per minute, then `recovery_failed` |
 
+## `WebUIScreen` (optional node)
+
+A `Control` that marks a scene as showing an HTML page and draws a preview of it in the 2D editor; it does nothing at runtime. Members `page`, `manual_preview`, `show_preview`, `get_ui_dir()`, `get_page_file()`, `get_status()`, `refresh_preview()`, signal `status_changed`: see `webui-screen.md`. It is not part of `GodotWebUI`'s API and `GodotWebUI` does not depend on it.
+
 ## Editor-only classes (not API: never use in game code)
 
-The addon also contains the visual editor: `WebUIEditorDock`, `WebUIEditorModel`, `WebUIEditLink`, `WebUIEditPreview` (and `webui_edit_preview.tscn`), `WebUICssPatcher`, `WebUIHtmlPatcher`, `WebUICssCatalog`, and `web/edit_mode.js` with its `webui_edit` bridge event. They run only in the Godot editor and its preview window. A game must not call them, depend on them or send `webui_edit` events. Also development-only: `GodotWebUI.desktop_preview_inject_scripts` (an `@export PackedStringArray`, empty by default, ignored on Android). See `visual-editor.md`.
+The addon also contains the visual editor: `WebUIEditorDock`, `WebUIEditorModel`, `WebUIEditLink`, `WebUIEditPreview` (and `webui_edit_preview.tscn`), `WebUIScreenPreview`, `WebUIScreenInspector` (and `webui_preview_capture.tscn`, `web/capture.js`), `WebUICssPatcher`, `WebUIHtmlPatcher`, `WebUICssCatalog`, and `web/edit_mode.js` with its `webui_edit` bridge event. They run only in the Godot editor and its preview window. A game must not call them, depend on them or send `webui_edit` events. Also development-only: `GodotWebUI.desktop_preview_inject_scripts` (an `@export PackedStringArray`, empty by default, ignored on Android). See `visual-editor.md`.

@@ -648,6 +648,37 @@ func _html_files(folder: String, relative: String) -> PackedStringArray:
 	return out
 
 
+## Opens `page_path` (a res:// .html file) in the editor: selects it, brings the dock to the front and starts the
+## preview. Returns "" on success, or why it could not (the page is not in a UI folder, or unsaved changes
+## belong to another page).
+func open_page(page_path: String) -> String:
+	_discover_pages()
+	var index := -1
+	for i in range(_pages.size()):
+		if str(_pages[i].ui_dir).path_join(str(_pages[i].page)) == page_path:
+			index = i
+	if index < 0:
+		return "%s is not in a UI folder the WebUI editor can list: it needs a folder with .html files outside addons/ (or one named in Project Settings > webui/export/ui_folders)." % page_path
+	_page_option.select(index)
+	_show_dock()
+	_on_open_pressed()
+	return model.status if model.status.begins_with("Save or undo") else ""
+
+
+## Brings the dock's tab to the front when it sits in a tab container.
+func _show_dock() -> void:
+	var node: Node = self
+	while node.get_parent() != null:
+		var parent := node.get_parent()
+		if parent is TabContainer:
+			var tabs := parent as TabContainer
+			var tab := tabs.get_tab_idx_from_control(node as Control)
+			if tab >= 0:
+				tabs.current_tab = tab
+			return
+		node = parent
+
+
 func _on_open_pressed() -> void:
 	var index := _page_option.selected
 	if index < 0 or index >= _pages.size():

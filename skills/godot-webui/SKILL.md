@@ -21,7 +21,7 @@ Read this whole file before doing any WebUI work. The rules below are binding. T
 5. **Do not claim anything about a real device** (touch pass-through, multi-touch, pause/resume, orientation, performance) unless it was run on one. Say what you could not verify.
 6. **Keep the existing structure and naming of the project.** Do not rewrite working native UI or whole files for a small change; edit in place.
 7. **Write pages so the visual editor can edit them** (section 4). This is how the user adjusts the design without you.
-8. **Never use editor-only classes in game code**: `WebUIEditPreview`, `WebUIEditLink`, `WebUIEditorDock`, `WebUIEditorModel`, `WebUICssPatcher`, `WebUIHtmlPatcher`, `WebUICssCatalog`, `web/edit_mode.js`, and the `.webui-edit/` folder exist only for the editor.
+8. **Never use editor-only classes in game code**: `WebUIScreenInspector`, `WebUIScreenPreview`, `WebUIEditPreview`, `WebUIEditLink`, `WebUIEditorDock`, `WebUIEditorModel`, `WebUICssPatcher`, `WebUIHtmlPatcher`, `WebUICssCatalog`, `web/edit_mode.js`, and the `.webui-edit/` folder exist only for the editor.
 
 ## 1. Decide whether WebUI fits
 
@@ -84,7 +84,8 @@ The addon ships a visual editor (the **WebUI** dock in the Godot editor): the us
      "events": [ { "name": "toast", "payload": { "text": "Level 1" } } ] }
    ```
    It must match exactly what `ui.set_state(...)` / `ui.emit_event(...)` send. Never read it from page code or ship it; the export plugin skips hidden folders.
-9. **Say so when a page is not editable.** If you had to break a rule above (a generated DOM, inline styles, script-built text), tell the user which parts they cannot tweak in the dock and why.
+9. **Show the screen in the scene editor with a `WebUIScreen` node** (optional, editor-only, see `references/webui-screen.md`): add one to a scene that shows a page and set its `page`, so the scene is not an empty canvas and says which page it uses. It never renders anything at runtime.
+10. **Say so when a page is not editable.** If you had to break a rule above (a generated DOM, inline styles, script-built text), tell the user which parts they cannot tweak in the dock and why.
 
 Details, limits and examples: `references/visual-editor.md`.
 
@@ -110,6 +111,7 @@ Tell the user: which files you created or changed; how to preview (which page in
 - `references/api.md`: GDScript and JavaScript API, limits, signals, error codes.
 - `references/ui-authoring.md`: folder layout, packaging rules, layout, assets, accessibility notes.
 - `references/visual-editor.md`: what the editor can and cannot edit, the authoring rules in detail with good and bad examples, sample state files.
+- `references/webui-screen.md`: the optional `WebUIScreen` node that shows a page in the 2D scene editor: when to add it, its API, limits.
 - `references/new-project.md`: installing in a new project, installing this skill in different AI agents, copy-paste prompts.
 - `references/patterns.md`: tested-shape examples: button to action, state to UI, events, pages and navigation, held input, validation.
 - `references/touch-and-runtime.md`: touch modes, Android vs desktop preview, lifecycle, verified vs unverified.

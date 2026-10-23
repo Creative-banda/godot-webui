@@ -17,6 +17,8 @@ const WEBKIT_DEPENDENCY := "androidx.webkit:webkit:1.12.1"
 const BRIDGE_SCRIPT := "res://addons/webui/web/godot.js"
 ## Development-only content that must never be packaged.
 const PREVIEW_ONLY_PREFIXES := ["res://.webui_preview/"]
+## Scripts injected into the desktop preview by the visual editor and the WebUIScreen capture program.
+const EDITOR_ONLY_FILES := ["res://addons/webui/web/edit_mode.js", "res://addons/webui/web/capture.js"]
 const IGNORED_EXTENSIONS := ["import", "uid"]
 
 var _ui_files := {}  # res:// path -> true, for files this plugin adds itself
@@ -73,6 +75,9 @@ func _export_file(path: String, _type: String, _features: PackedStringArray) -> 
 		if path.begins_with(prefix):
 			skip()
 			return
+	if path in EDITOR_ONLY_FILES:
+		skip()
+		return
 	# Files this plugin adds as raw copies must not also be exported the normal way (duplicates
 	# break APK signing, and imported images/fonts would otherwise be exported only as .ctex etc.).
 	if _ui_files.has(path):

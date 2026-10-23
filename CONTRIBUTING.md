@@ -29,6 +29,8 @@ godot --headless --path . -s res://tests/css_patcher_test.gd
 godot --headless --path . -s res://tests/css_catalog_test.gd
 godot --headless --path . -s res://tests/html_patcher_test.gd
 godot --headless --path . -s res://tests/edit_link_test.gd
+godot --headless --path . -s res://tests/webui_screen_test.gd
+godot --headless --path . -s res://tests/webui_screen_capture_test.gd   # runs the real capture program; skips without godot_wry
 godot --headless --path . -s res://tests/editor_model_test.gd
 godot --headless --path . -s res://tests/editor_dock_test.gd
 godot --path . -s res://tests/edit_preview_test.gd   # needs a window and godot_wry; skips otherwise

@@ -29,6 +29,7 @@ This differs from rendering HTML into a texture: the overlay is a real Android v
 - Starter page in `templates/hud/index.html` and a small end-to-end example in `examples/minimal_hud/`.
 - One-command setup (`python tools/setup.py`) and an AI-agent skill (`skills/godot-webui/`).
 - Optional desktop development preview (editor only): see [docs/desktop-preview.md](docs/desktop-preview.md).
+- Optional `WebUIScreen` node: shows the HTML page of a scene as a picture in the 2D editor, names the page, and opens it in the visual editor with one click: see [docs/webui-screen.md](docs/webui-screen.md).
 
 Not every item has been verified on real devices; see [Limitations](#limitations).
 
@@ -251,6 +252,10 @@ On desktop, `GodotWebUI.start()` shows the UI only if the [desktop development p
 ## Desktop development preview
 
 To iterate on your UI without exporting, run the game from the Godot editor (F5 / F6) on Windows, macOS or Linux and see the HTML UI inside the running game, with reload when the UI files change. It needs the optional third-party [godot_wry](https://github.com/MingHuiLiu/godot_wry) extension, which is **not** included here and is installed **outside your project** (so it can never end up in an export) by `python tools/setup.py wry`. It is a **development aid, not a supported runtime platform**: mouse and keyboard only, no touch pass-through, no lifecycle events, and webview engines that differ from Android's. It has been run on one Windows machine with godot_wry v0.2.0 (UI, transparency, messaging and hot reload worked there); macOS, Linux and keyboard behaviour are unverified. Setup, differences and diagnostics are in [docs/desktop-preview.md](docs/desktop-preview.md).
+
+### `WebUIScreen`: see the page in the scene editor
+
+A scene that shows an HTML page looks empty in the 2D editor. Add a **WebUIScreen** node, set its **Page**, press **Refresh Preview** in the Inspector and the page appears at your project's viewport size; **Edit UI** opens it in the visual editor. It is an editor-only convenience: at runtime the node hides itself and does nothing, and the picture is made by a separate program, not the Android WebView. Usage, limits and verification status: [docs/webui-screen.md](docs/webui-screen.md).
 
 ## Working with AI coding agents
 

@@ -158,11 +158,12 @@ svg { fill: currentColor; }
   width: 76px;
   height: 76px;
   margin: -38px 0 0 -38px;
-  border-radius: 50%;
+  border-radius: 80%;
   background: radial-gradient(circle at 35% 30%, #fff, #b8b0ff 45%, #6c5ce7);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 22px rgba(139, 123, 255, 0.75);
   transition: transform 0.28s cubic-bezier(.34, 1.8, .5, 1); /* springy return */
   will-change: transform;
+  border-color: #ffeef4;
 }
 #stick.drag #knob { transition: none; }
 

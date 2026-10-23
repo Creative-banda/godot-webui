@@ -91,6 +91,8 @@ How it fits together:
 
 Limits: only external `.css` files are edited (rules from `<style>` blocks or `style=""` attributes are listed but read-only); nested CSS, `@container`, and values containing `;` or backslashes (including `url(data:...;base64,...)`) are refused; a rule inside `@media` is only written to when it is what currently sets the value, and then applies only at that size; a variable (`var(--x)`) is replaced by the literal value you type (the variable itself is not edited yet); a property set by JavaScript or an animation is refused or has no effect; text is edited only for plain single-text elements; the preview window is not phone-sized and has no safe-area insets; undo after a save goes back one save only. Tests: `tests/css_catalog_test.gd`, `html_patcher_test.gd`, `editor_model_test.gd`, `editor_dock_test.gd`, `edit_link_test.gd` (headless) and `edit_preview_test.gd` (needs a window).
 
+The **WebUIScreen** node uses the same preview backend to make the picture of a page that it shows in the 2D scene editor: see [webui-screen.md](webui-screen.md).
+
 ## Differences from Android (read before trusting what you see)
 
 | Area | Android | Desktop preview |

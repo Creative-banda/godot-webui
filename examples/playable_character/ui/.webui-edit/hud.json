@@ -1,11 +1,9 @@
 {
+  "events": [],
   "states": {
-    "settings": { "music": 0.7, "sfx": true, "difficulty": "normal", "show_debug": true },
-    "state": {
-      "health": 70, "max_health": 100, "dead": false, "attacking": false, "on_floor": true,
-      "x": 320, "y": 540, "vx": 0, "vy": 0, "paused": false,
-      "level": 1, "level_name": "Training Yard", "difficulty": "normal"
-    }
-  },
-  "events": []
+    "info": {},
+    "settings": {},
+    "state": {},
+    "stats": {}
+  }
 }

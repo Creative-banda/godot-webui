@@ -1,6 +1,20 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://xsetu2bmr5wb"]
 
-[ext_resource type="Script" path="res://examples/playable_character/app.gd" id="1"]
+[ext_resource type="Script" uid="uid://bis1arpedpkv5" path="res://examples/playable_character/app.gd" id="1"]
+[ext_resource type="Script" uid="uid://dy0p2t46use1i" path="res://addons/webui/webui_screen.gd" id="2_0ws5d"]
 
-[node name="Main" type="Node"]
+[node name="Main" type="Node" unique_id=1204772784]
 script = ExtResource("1")
+
+[node name="WebUIScreen" type="Control" parent="." unique_id=1705322185]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_0ws5d")
+page = "res://examples/playable_character/ui/menu.html"
+metadata/_custom_type_script = "uid://dy0p2t46use1i"
+metadata/_edit_lock_ = true
