@@ -78,3 +78,7 @@ First-visit hitch: a `display:none` section has no style, layout or paint until 
 ## Accessibility and localization
 
 Not provided by the addon. Use real `<button>` elements, readable contrast and sizes. For localization, let Godot own the active language and send translated strings or a language code as state; the page should not hardcode strings it cannot change. Screen reader behavior, on-screen keyboard/IME for text inputs and gamepad focus navigation have not been implemented or verified.
+
+## Editor-friendly pages
+
+The user adjusts designs in the WebUI dock of the Godot editor. Write pages so that works: CSS in external `.css` files (no `<style>` blocks, no `style=""`), unique ids on elements the user may tweak, static text in the HTML, plain HTML/CSS/JS with no DOM-generating framework, literal `Godot.onState('name', ...)` names, and a sample-state file `.webui-edit/<page>.json` (plus an empty `.gdignore` in that folder) so the page can be designed with realistic values. The rules, reasons and examples are in `SKILL.md` section 4 and `visual-editor.md`. The `.webui-edit` folder is hidden, never exported, and must not be read by page code.

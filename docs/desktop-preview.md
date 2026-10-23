@@ -53,15 +53,43 @@ The folder `res://.webui_preview/` is generated at run time and contains a `.gdi
 
 ## Visual editor (dock) and edit mode
 
-Enable the plugin and open the **WebUI** dock (right side, upper left slot). Pick a page, press **Open preview** (a separate window that stays on top of the editor, so it remains visible while you work in the dock), and click an element in it: its font, colours, spacing, size, border and flex/grid properties appear in the dock. Changing a value updates the preview at once; **Save** writes the change into the stylesheet it came from, in place: only that value changes (or one declaration is added), comments and formatting stay, and nothing is written if the file changed since the page loaded. **Undo** takes back changes one at a time, and after a save restores the files as they were before it. Turn **Select** off to use the page normally (for example to reach another screen of the menu), then on again. The preview needs godot_wry (see Setup); problems starting it appear in the dock's status line.
+Enable the plugin and open the **WebUI** dock (right side, upper left slot). Pick a page, press **Open preview** (a separate window that stays on top of the editor, so it remains visible while you work in the dock), and click an element in it. The inspector identifies what you selected and shows the sections that suit it:
+
+| Element | Sections (the first ones are open, the rest collapsed) |
+|---|---|
+| Text (`p`, `span`, headings, `label`, text-only `div`...) | Content (text), Typography, Spacing, then Size, Background, Border, Effects, Layout |
+| Container (`div`, `section`, `main`...) | Layout (flex or grid controls only when it is one), Size, Spacing, Background, Border, then Effects, Typography |
+| Button, link, form control | Content (text, title, placeholder, value, href), Colors, Typography, Size, Spacing, Border, Interaction (cursor, pointer events, selection), then Background, Effects, Layout |
+| Image, media | Content (source read-only, alt, title), Size (incl. aspect ratio), Image (object-fit/position), Spacing, Border, Effects |
+| SVG | Appearance (fill, stroke, stroke width, color, opacity), Size, then Spacing, Effects, Layout |
+| Child of a flex or grid container | an extra Flex item / Grid item section (grow, shrink, basis, align-self, order / column, row) |
+
+Positioned elements also show top/right/bottom/left. Margin and padding are one row of four fields (top, right, bottom, left); arrow keys step numbers (Shift x10, Alt x0.1); bare numbers get `px`.
+
+**Where a value comes from.** Each row knows whether its value is set by a rule (and which: selector, file, `@media` condition), set by a shorthand (`padding: 4px 8px` sets `padding-top`; `font: inherit` sets the font size), uses a variable (`var(--mint)` is shown as written and the variable named), inherited from an ancestor, or a browser default. Rows that cannot be edited say why (the style attribute in the HTML, a rule in a `<style>` block).
+
+**Where a change goes.** Automatic mode writes to the narrowest rule that can take it: the rule that sets the value now if it belongs to this element alone; otherwise another rule that matches only this element; otherwise a new `#id` rule at the end of the stylesheet (needs a unique id); only when none of that is possible does it write to a shared rule, and then it says how many elements that affects. **Apply to** lets you choose a rule or "this element only" yourself. If another declaration has higher priority (`!important`, a more specific selector, the style attribute, an animation), the page detects that the change has no effect, undoes it, and the next candidate is tried; if none works, the dock says what overrides it instead of saving something ineffective. A declaration that has to beat an `!important` one is written `!important`.
+
+**Saving.** **Save** edits the files in place: one value changes or one declaration/rule is added, comments and formatting stay, and nothing is written if the file changed since the page loaded. Text and attribute edits (`alt`, `title`, `placeholder`, `value`) patch the page's HTML only when the target is certain: the text must appear exactly once in the file as plain element text, and attributes need a unique `id`. The text of an element inside the selected one (the `<b>Play</b>` of a button) appears as its own "Text in <b>" row; text that JavaScript fills in at run time is refused. **Undo** takes changes back one at a time; after a save it restores the files as they were before it. Turn **Select** off to use the page normally (for example to reach another screen of the menu), then on again. The preview needs godot_wry (see Setup); problems starting it appear in the dock's status line.
+
+**Sample state.** The preview has no game behind it, so a HUD shows its placeholders ("waiting for Godot...", `--`). Open the **Sample state** block in the dock and describe what Godot would send:
+
+```json
+{
+  "states": { "hud": { "coins": 12, "dummy_hp": 60, "dummy_max": 100 } },
+  "events": [ { "name": "toast", "payload": { "text": "Dummy defeated!" } } ]
+}
+```
+
+**Apply** checks the JSON, shows it in the preview (as `set_state` / `emit_event` would, and again whenever the page reloads) and saves it next to the page as `.webui-edit/<page>.json`. **From the page** fills in the state and event names the page's scripts listen for (`Godot.on`, `Godot.onState`, `Godot.onEvent`) with empty values. The hidden `.webui-edit` folder has a `.gdignore` and is skipped by the export plugin, so it is never packaged; commit it if you want the sample to travel with the project. Removing the text and pressing Apply deletes the sample; values already shown stay until the page reloads.
 
 How it fits together:
-- `addons/webui/webui_edit_preview.tscn` runs the page in this preview with `web/edit_mode.js` injected after `godot.js` (`GodotWebUI.desktop_preview_inject_scripts`; empty by default, ignored on Android, never part of an export). The edit script swallows clicks, reports the selected element, its computed style and the style rules that apply (file, rule path, selector), and applies a changed declaration live to the rule it came from.
+- `addons/webui/webui_edit_preview.tscn` runs the page in this preview with `web/edit_mode.js` injected after `godot.js` (`GodotWebUI.desktop_preview_inject_scripts`; empty by default, ignored on Android, never part of an export). The edit script swallows clicks, reports the selected element (kind, attributes, text, computed style, matching rules with their file, path, specificity and how many elements each affects, inherited sources) and applies each change live, verifying that the element's computed value really becomes what the new value gives.
+- `WebUICssCatalog` is the single list of editable properties (how each is edited, which declarations count as setting it, which sections suit which element). `WebUIEditorModel` holds the logic (resolution, choice of rule, unsaved changes, undo, replay after a reload); `WebUICssPatcher` and `WebUIHtmlPatcher` write the files.
 - `WebUIEditLink` (editor) starts the preview as its own program in a normal window (an editor-played game can be embedded in the editor, where it cannot stay on top) and talks to it over a local TCP connection (127.0.0.1 only); the dock tells the preview which page to open through `user://webui_edit_target.json`.
-- `WebUIEditorModel` holds the logic (which rule a change goes to, unsaved changes, undo, replay after a reload) and `WebUICssPatcher` writes the files.
 - Hot reload stays on, so files edited elsewhere (an editor, an AI agent) reload the page and the dock re-applies unsaved changes; the dock pauses it around its own saves so saving does not reload the page.
 
-Limits: only external `.css` files are edited (rules from `<style>` blocks or `style=""` attributes are listed but read-only); nested CSS, `@container` and values containing `;` are refused; the choice of rule is a specificity heuristic (use **Edit rule** to override); pages show their placeholders because no game state is sent; the preview window is not phone-sized and has no safe-area insets; undo after a save goes back one save only. `tests/edit_preview_test.gd`, `tests/edit_link_test.gd`, `tests/editor_model_test.gd` and `tests/editor_dock_test.gd` cover it.
+Limits: only external `.css` files are edited (rules from `<style>` blocks or `style=""` attributes are listed but read-only); nested CSS, `@container`, and values containing `;` or backslashes (including `url(data:...;base64,...)`) are refused; a rule inside `@media` is only written to when it is what currently sets the value, and then applies only at that size; a variable (`var(--x)`) is replaced by the literal value you type (the variable itself is not edited yet); a property set by JavaScript or an animation is refused or has no effect; text is edited only for plain single-text elements; the preview window is not phone-sized and has no safe-area insets; undo after a save goes back one save only. Tests: `tests/css_catalog_test.gd`, `html_patcher_test.gd`, `editor_model_test.gd`, `editor_dock_test.gd`, `edit_link_test.gd` (headless) and `edit_preview_test.gd` (needs a window).
 
 ## Differences from Android (read before trusting what you see)
 

@@ -10,6 +10,7 @@ Godot WebUI shows HTML/CSS/JS as a transparent Android WebView above a Godot gam
 - `window.Godot` is injected before page scripts. Do not add a script tag for it.
 - Transparent background (`html, body { background: transparent }`); disable selection, scrolling and default touch gestures (`touch-action: none; user-select: none; overflow: hidden`). Use `touch-action: manipulation` on pages that are scrollable-free menus.
 - Touch modes: the default `AUTO` is modal until the page calls `Godot.touchRegions()`; then only elements marked `data-webui-touch` take touches and the rest pass to the game. Mark every touchable element on a pass-through page. Forced `REGIONS` with no `touchRegions()` call leaves nothing touchable (the addon reports `touch_regions_missing`). Use `MODAL` for full-screen menus.
+- Write pages the WebUI visual editor can edit: CSS in external `.css` files (no `<style>` blocks or `style=""`), unique ids on elements a user may tweak, static text in the HTML, plain HTML/CSS/JS, literal `Godot.onState('name', ...)` names, and sample state in `.webui-edit/<page>.json`. Rules and reasons: `skills/godot-webui/SKILL.md` section 4.
 - Send intent, not results: `Godot.emit("jump")`, `Godot.emit("move_changed", {x, y})`. Names match `^[A-Za-z][A-Za-z0-9_.:-]{0,63}$`; payloads are plain JSON objects under 64 KB.
 - Render only what Godot sends: persistent values with `Godot.onState(name, fn)` (late subscribers get the latest value), one-shot notifications with `Godot.onEvent(name, fn)` (never replayed). `Godot.on` is an alias of `onState`. Godot should resend state on every `page_ready`.
 - Held inputs (joystick, hold buttons): Pointer Events with `setPointerCapture`; release on `pointerup`, `pointercancel` and `lostpointercapture`; register the release with `Godot.guard(fn)`. Track `pointerId` per control for multi-touch.
@@ -29,7 +30,7 @@ Godot WebUI shows HTML/CSS/JS as a transparent Android WebView above a Godot gam
 
 | Path | Contents |
 |---|---|
-| `addons/webui/` | The addon: `webui.gd` (API), `webui_bridge.gd` (validation), `webui_backend*.gd` (platform seam: interface, factory, Android, desktop preview, null), `export_plugin.gd`, `web/godot.js`, `bin/*.aar`; visual editor (editor-only): `webui_editor_dock.gd`, `webui_editor_model.gd`, `webui_edit_link.gd`, `webui_edit_preview.gd/.tscn`, `webui_css_patcher.gd`, `web/edit_mode.js` |
+| `addons/webui/` | The addon: `webui.gd` (API), `webui_bridge.gd` (validation), `webui_backend*.gd` (platform seam: interface, factory, Android, desktop preview, null), `export_plugin.gd`, `web/godot.js`, `bin/*.aar`; visual editor (editor-only): `webui_editor_dock.gd`, `webui_editor_model.gd`, `webui_css_catalog.gd`, `webui_html_patcher.gd`, `webui_edit_link.gd`, `webui_edit_preview.gd/.tscn`, `webui_css_patcher.gd`, `web/edit_mode.js` |
 | `native/android/` | Gradle project, Java source of the native plugin (`com.godotwebui`) |
 | `examples/playable_character/` | Demo: `main.tscn` + `app.gd` shell swapping `menu.tscn` / `game.tscn`; HTML in `ui/` |
 | `docs/setup.md`, `docs/desktop-preview.md` | Setup script docs; desktop development preview docs |
@@ -37,7 +38,7 @@ Godot WebUI shows HTML/CSS/JS as a transparent Android WebView above a Godot gam
 | `skills/godot-webui/` | AI-agent skill (`SKILL.md` + `references/`) |
 | `examples/minimal_hud/` | Smallest end-to-end example |
 | `templates/hud/` | Starter page |
-| `tests/headless_test.gd`, `tests/api_test.gd`, `tests/css_patcher_test.gd`, `tests/editor_model_test.gd`, `tests/editor_dock_test.gd` | Headless GDScript tests (bridge, demo flow, desktop backend; API semantics, touch modes, guard, recovery, UI folder detection; in-place CSS patching, visual editor model and dock). `tests/edit_preview_test.gd` needs a window and godot_wry (edit mode, end to end) |
+| `tests/headless_test.gd`, `tests/api_test.gd`, `tests/css_patcher_test.gd`, `tests/html_patcher_test.gd`, `tests/css_catalog_test.gd`, `tests/editor_model_test.gd`, `tests/editor_dock_test.gd`, `tests/edit_link_test.gd` | Headless GDScript tests (bridge, demo flow, desktop backend; API semantics, touch modes, guard, recovery, UI folder detection; in-place CSS patching, visual editor model and dock). `tests/edit_preview_test.gd` needs a window and godot_wry (edit mode, end to end) |
 
 ## Conventions and gotchas
 

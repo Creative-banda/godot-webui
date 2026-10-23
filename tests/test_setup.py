@@ -198,6 +198,71 @@ class AddToProjectTests(unittest.TestCase):
         self.assertTrue((skills / setup.SKILL_NAME / "SKILL.md").exists())
 
 
+class AgentFilesTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: __import__("shutil").rmtree(self.tmp, ignore_errors=True))
+        self.project = self.tmp / "game"
+        self.project.mkdir()
+
+    def run_agents(self, agents):
+        with contextlib.redirect_stdout(io.StringIO()):
+            return setup.install_agent_files(self.project, agents)
+
+    def read(self, rel):
+        return (self.project / rel).read_text(encoding="utf-8")
+
+    def test_every_agent_gets_a_pointer_to_a_skill_that_exists(self):
+        self.run_agents(["all"])
+        for entry in setup.AGENT_FILES.values():
+            text = self.read(entry["path"])
+            self.assertIn("SKILL.md", text)
+            self.assertIn("read `", text)
+        self.assertTrue((self.project / "skills" / "godot-webui" / "SKILL.md").exists())
+        self.assertTrue((self.project / ".claude" / "skills" / "godot-webui" / "SKILL.md").exists())
+        self.assertIn(".claude/skills/godot-webui/SKILL.md", self.read("CLAUDE.md"))
+        self.assertIn("skills/godot-webui/SKILL.md", self.read("AGENTS.md"))
+
+    def test_tool_specific_files_have_their_front_matter(self):
+        self.run_agents(["cursor", "kiro", "windsurf"])
+        self.assertTrue(self.read(".cursor/rules/godot-webui.mdc").startswith("---\n"))
+        self.assertIn("alwaysApply: true", self.read(".cursor/rules/godot-webui.mdc"))
+        self.assertIn("inclusion: always", self.read(".kiro/steering/godot-webui.md"))
+        self.assertIn("trigger: always_on", self.read(".windsurf/rules/godot-webui.md"))
+
+    def test_existing_instruction_files_keep_the_users_text_and_are_updated_not_duplicated(self):
+        (self.project / "AGENTS.md").write_text("# My rules\n\nBe nice.\n", encoding="utf-8")
+        self.run_agents(["agents-md"])
+        text = self.read("AGENTS.md")
+        self.assertTrue(text.startswith("# My rules\n\nBe nice.\n"))
+        self.assertEqual(text.count(setup.BLOCK_BEGIN), 1)
+        self.run_agents(["agents-md"])
+        self.assertEqual(self.read("AGENTS.md"), text)  # idempotent
+        (self.project / "AGENTS.md").write_text(text.replace("binding", "OLD").replace("Be nice.", "Be very nice."), encoding="utf-8")
+        self.run_agents(["agents-md"])
+        again = self.read("AGENTS.md")
+        self.assertIn("Be very nice.", again)
+        self.assertEqual(again.count(setup.BLOCK_BEGIN), 1)
+        self.assertNotIn("OLD", again)
+
+    def test_unknown_agent_is_refused_and_defaults_are_sensible(self):
+        with self.assertRaises(setup.SetupError):
+            self.run_agents(["notepad"])
+        self.assertEqual(setup.DEFAULT_AGENTS, ["agents-md", "claude"])
+
+    def test_add_to_project_can_set_up_agents(self):
+        (self.project / "project.godot").write_text('config_version=5\n', encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()):
+            setup.add_to_project(self.project, False, None, ["cursor"])
+        self.assertTrue((self.project / ".cursor" / "rules" / "godot-webui.mdc").exists())
+        self.assertTrue((self.project / "addons" / "webui" / "plugin.cfg").exists())
+
+    def test_the_skill_documents_what_the_script_installs(self):
+        skill = (setup.ROOT / "skills" / "godot-webui" / "references" / "new-project.md").read_text(encoding="utf-8")
+        for name in setup.AGENT_FILES:
+            self.assertIn(name, skill, "new-project.md should explain the %s target" % name)
+
+
 class DoctorTests(unittest.TestCase):
     def test_doctor_runs_on_an_empty_project_and_reports_without_crashing(self):
         tmp = Path(tempfile.mkdtemp())

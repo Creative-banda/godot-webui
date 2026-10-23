@@ -15,6 +15,13 @@ It does two things:
 
 It exits with status 1 if a required prerequisite is missing, 0 otherwise.
 
+## First time
+
+1. `python tools/setup.py` installs godot_wry (about 16 MB download, verified, outside every project) and runs the checks.
+2. Every `[XX]` line is a prerequisite only you can fix (it names the menu or command). Fix, then `python tools/setup.py doctor`. `[!]` lines are advice, `[--]` information. The script exits with status 1 while an `[XX]` remains.
+3. Put the addon in your game: `python tools/setup.py add-to-project PATH_TO_GAME --enable-plugin --with-skill --agents all` (close that project's editor first).
+4. In that project's editor: *Project > Install Android Build Template*, then *Project > Export > Android > Use Gradle Build*. Open the **WebUI** dock to preview and edit pages ([desktop-preview.md](desktop-preview.md)).
+
 ## What is needed for what
 
 | You want to... | You need | Installed by the script? |
@@ -35,6 +42,7 @@ These categories are separate: the Android runtime and export never need godot_w
 | `python tools/setup.py wry` | Install, verify or repair godot_wry. `--force` reinstalls, `--archive PATH` uses a zip you downloaded yourself (still hash-checked), `--target DIR` overrides the folder |
 | `python tools/setup.py add-to-project PATH` | Copy the addon into another Godot 4 project. `--enable-plugin` also enables it in that project's `project.godot` (backed up first; close the editor before running); `--with-skill [DIR]` also installs the AI-agent skill |
 | `python tools/setup.py install-skill DIR` | Copy `skills/godot-webui` into a skills directory (`--claude-user` uses `~/.claude/skills`) |
+| `python tools/setup.py agent-files PATH` | Install the skill into a project and write the instruction file each AI tool reads. `--agents LIST` is comma separated from `agents-md`, `claude`, `cursor`, `kiro`, `windsurf`, `copilot`, `gemini`, or `all` (default `agents-md,claude`). Safe to repeat; only a marked block of shared files like `AGENTS.md` is replaced. `add-to-project` takes the same `--agents` option |
 
 Common options (before or after the command): `--godot PATH` (editor executable for the version check; or set `GODOT`), `--project PATH` (project to check, default this repository), `--cache DIR` (download cache, default `tools/.cache/`, git-ignored).
 
@@ -97,8 +105,14 @@ Then, in that project: *Project > Install Android Build Template*, *Project > Ex
 
 ## Teaching an AI coding agent
 
-The skill lives in `skills/godot-webui/` (`SKILL.md` plus `references/`). Options:
+The skill lives in `skills/godot-webui/` (`SKILL.md` plus `references/`). One command installs it into a game project and writes the instruction file each AI tool reads, so the agent reads the skill before touching UI code:
 
-- **Claude Code:** copy it to `<project>/.claude/skills/godot-webui` (`python tools/setup.py install-skill <project>/.claude/skills`, or `add-to-project ... --with-skill`) or to `~/.claude/skills/godot-webui` (`install-skill --claude-user`). Claude Code discovers skills in those folders.
-- **Other agents:** most read an instruction file (`AGENTS.md`, `CLAUDE.md`, rules files). Point it at the skill: "For UI work with the Godot WebUI addon, read `skills/godot-webui/SKILL.md` first and follow it." This repository's `AGENTS.md` already does. Discovery directories differ between agents; this is not a standard the script can assume.
+```bash
+python tools/setup.py agent-files PATH_TO_GAME --agents agents-md,claude,cursor,kiro,windsurf,copilot,gemini   # or: all
+python tools/setup.py add-to-project PATH_TO_GAME --enable-plugin --with-skill --agents all                  # addon + skill + agent files
+```
+
+- `agents-md` writes a delimited block into `AGENTS.md` (read by many agents) and copies the skill to `<project>/skills/godot-webui`. `claude` installs it at `<project>/.claude/skills/godot-webui` (Claude Code discovers skills there; `python tools/setup.py install-skill --claude-user` installs it for every project) and adds a block to `CLAUDE.md`. `cursor`, `kiro` and `windsurf` write an always-on rule file in their own folder; `copilot` and `gemini` add a block to their instruction file. Re-running updates the block in place and never touches your own text.
+- Other agents (Antigravity, Cline, Continue, Aider, ...): use `agents-md`, then point the tool's rules at `skills/godot-webui/SKILL.md` or paste the starter prompt from the README. Discovery directories differ between tools and are not a standard this script can assume; the per-tool file formats follow each tool's documented convention and were not run against every tool.
+- Prompts for starting a project, building a screen, making a page editable in the WebUI dock and reviewing an agent's work: `skills/godot-webui/references/new-project.md`.
 - The skill folder is self-contained and contains a `.gdignore`, so it is safe to place inside a Godot project.

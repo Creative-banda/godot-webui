@@ -115,10 +115,11 @@ svg { fill: currentColor; }
   padding: 9px;
   border-radius: 10px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 900;
   color: #2b1500;
   background: linear-gradient(180deg, #ffd27a, #ff9f1c);
   box-shadow: 0 4px 14px rgba(255, 159, 28, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  font-style: normal;
 }
 .hurt svg { width: 14px; height: 14px; }
 
@@ -240,4 +241,8 @@ svg { fill: currentColor; }
   .jmp { width: 90px; height: 90px; }
   .atk { width: 74px; height: 74px; right: calc(max(22px, env(safe-area-inset-right)) + 104px); }
   #toast b { font-size: 30px; }
+}
+
+#r-pos {
+  font-size: 11px;
 }

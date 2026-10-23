@@ -75,11 +75,29 @@ Security measures in the native layer: a single `WebMessageListener` limited to 
 
 ## Setup
 
-```bash
-python tools/setup.py
-```
+`tools/setup.py` is the setup helper (Python 3.8+, standard library only, nothing to `pip install`). Run everything from a clone of this repository.
 
-One command (Python 3.8+, standard library only) installs the optional desktop-preview dependency (godot_wry: pinned version, SHA-256 verified, placed outside every Godot project) and then checks the Android toolchain, printing what is missing and how to fix it. Godot's export templates, JDK 17, the Android SDK and the signing keystore are **checked, not installed**. It is safe to run repeatedly. To use the addon in your own game: `python tools/setup.py add-to-project PATH --enable-plugin --with-skill`. Everything about it (what is needed for what, commands, version pins, recovery from failures) is in [docs/setup.md](docs/setup.md).
+**First time here? Follow these steps.**
+
+1. **Check this machine:** `python tools/setup.py`. It installs the optional desktop-preview dependency (godot_wry: pinned version, SHA-256 verified, placed outside every Godot project), then runs `doctor`, which checks Godot, JDK 17, the Android SDK, the export templates, the debug keystore and the export preset.
+2. **Read the result:** `[ok]` is fine, `[!]` is advice, `[--]` is information, `[XX]` is something you must fix. Each `[XX]` line says how (for example "Editor > Manage Export Templates > Download and Install"). The script never installs Godot, the JDK, the Android SDK, the export templates or the keystore: those need your choices. Fix them, run `python tools/setup.py doctor` again, repeat until no `[XX]` is left. It is safe to run as often as you like.
+3. **Use the addon in your own game** (close that project's Godot editor first):
+   ```bash
+   python tools/setup.py add-to-project PATH_TO_YOUR_GAME --enable-plugin --with-skill --agents all
+   ```
+   This copies `addons/webui/` into the game, enables the plugin, and installs the AI-agent skill plus the instruction files for Claude Code, Cursor, Kiro, Windsurf, Copilot and Gemini (drop `--agents all` or name only the tools you use). Then, in that project's editor: *Project > Install Android Build Template* and *Project > Export > Android > Use Gradle Build*.
+4. **Open the WebUI dock** (right side of the editor) to preview and edit pages: see [Desktop development preview](#desktop-development-preview).
+
+| Command | What it does |
+|---|---|
+| `python tools/setup.py` | install/verify godot_wry, then `doctor` |
+| `python tools/setup.py doctor` | checks only, changes nothing |
+| `python tools/setup.py wry` | install, verify or repair godot_wry (`--force`, `--archive ZIP`, `--target DIR`) |
+| `python tools/setup.py add-to-project PATH` | copy the addon into another Godot 4 project (`--enable-plugin`, `--with-skill [DIR]`, `--agents LIST`) |
+| `python tools/setup.py agent-files PATH` | install the skill into a project and point AI tools at it (`--agents agents-md,claude,cursor,kiro,windsurf,copilot,gemini` or `all`) |
+| `python tools/setup.py install-skill DIR` | copy the skill into a skills folder (`--claude-user` for `~/.claude/skills`) |
+
+Every command, option, what is needed for what, where godot_wry goes and why, version pins and recovery from failures: [docs/setup.md](docs/setup.md). `python tools/setup.py --help` lists the commands too.
 
 ## Installation
 
@@ -236,7 +254,24 @@ To iterate on your UI without exporting, run the game from the Godot editor (F5 
 
 ## Working with AI coding agents
 
-`skills/godot-webui/` is an agent skill (`SKILL.md` plus `references/`) that teaches a coding agent when WebUI fits, how to lay out and package a UI, the exact API, the touch and runtime limits, and what is and is not verified. Install it with `python tools/setup.py install-skill <skills dir>` (Claude Code: `<project>/.claude/skills`, or `--claude-user` for `~/.claude/skills`), or point your agent's instruction file at `skills/godot-webui/SKILL.md`; `AGENTS.md` in this repository does. See [docs/setup.md](docs/setup.md#teaching-an-ai-coding-agent).
+`skills/godot-webui/` is an agent skill (`SKILL.md` plus `references/`): the binding rules, the exact API (so an agent does not invent methods), how to lay out and package a UI, how to write pages the visual editor can edit, the touch and runtime limits, and what is and is not verified. The setup script installs it into a project and writes the small instruction files that make different AI tools read it first:
+
+```bash
+python tools/setup.py add-to-project PATH_TO_GAME --enable-plugin --with-skill --agents all
+# only the agent files, for a project that already has the addon:
+python tools/setup.py agent-files PATH_TO_GAME --agents agents-md,claude,cursor,kiro
+```
+
+`--agents` takes `agents-md`, `claude`, `cursor`, `kiro`, `windsurf`, `copilot`, `gemini` or `all` (safe to repeat; your own text in shared files such as `AGENTS.md` is never touched). For any other tool, install with `agents-md` and point the tool at `skills/godot-webui/SKILL.md`, or paste this at the start of the session:
+
+```
+This Godot project builds its UI with the Godot WebUI addon. First read skills/godot-webui/SKILL.md
+completely and follow it: its rules are binding (only the documented API, no gameplay logic in the page,
+Android only, pages the visual editor can edit). Then check whether the addon is installed and report
+before changing anything.
+```
+
+More prompts (build a screen, make a page editor-friendly, review an agent's work) and the per-tool details are in `skills/godot-webui/references/new-project.md`. See also [docs/setup.md](docs/setup.md#teaching-an-ai-coding-agent).
 
 ## Project structure
 

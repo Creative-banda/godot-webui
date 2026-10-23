@@ -1,0 +1,9 @@
+{
+  "states": {
+    "hud": { "coins": 12, "dummy_hp": 60, "dummy_max": 100 }
+  },
+  "events": [
+    { "name": "toast", "payload": { "text": "Dummy defeated! +5 coins" } },
+    { "name": "hit", "payload": { "damage": 10, "crit": false } }
+  ]
+}

@@ -12,8 +12,9 @@ extends Node
 ## editor (the port comes from the command line, see WebUIEditLink):
 ##   page -> editor   the page's edit-mode messages (selected, cleared, apply_result, ready) and
 ##                    {"op": "preview_opened", "ui_dir", "page"} / {"op": "preview_error", ...}
-##   editor -> page   "apply" / "select" / "enable"
-##   editor -> here   "page" {"page"} (show another page of the same folder), "hold" (pause hot reload),
+##   editor -> page   "config", "apply", "add_rule", "remove_rule", "apply_text", "apply_attr", "select", "enable"
+##   editor -> here   "sample" (the sample game state to show the page), "page" {"page"} (show another page
+##                    of the same folder), "hold" (pause hot reload),
 ##                    "synced" (the page already shows the files just written: resume hot reload
 ##                    without reloading), "reload" (re-stage and reload)
 ## The page side uses the normal bridge event "webui_edit", so nothing in the addon's public API
@@ -24,7 +25,7 @@ const TARGET_FILE := "user://webui_edit_target.json"
 const EVENT := "webui_edit"
 const PORT_ARG := "--webui-edit-port"
 ## Commands for the page edit mode; the others are handled here, on the desktop backend.
-const PAGE_OPS := ["apply", "select", "enable"]
+const PAGE_OPS := ["config", "apply", "add_rule", "remove_rule", "apply_text", "apply_attr", "select", "enable"]
 const BACKEND_OPS := ["hold", "synced", "reload"]
 const MAX_OUTBOX := 64
 
@@ -40,6 +41,7 @@ var _client: StreamPeerTCP
 var _was_connected := false
 var _buffer := ""
 var _outbox: Array = []
+var _sample := {}   # {"states": {name: {...}}, "events": [{"name", "payload"}]} shown to the page in place of a game
 
 
 func _ready() -> void:
@@ -68,6 +70,7 @@ func open(ui_dir: String, page: String) -> bool:
 		push_error("WebUI edit preview %s: %s" % [code, text])
 		_to_editor({"op": "preview_error", "code": code, "text": text}))
 	ui.on(EVENT, _on_page_message)
+	ui.page_ready.connect(_push_sample)  # on every load, so a reloaded page gets its sample state again
 	if not ui.start(ui_dir, page):
 		return false
 	_to_editor({"op": "preview_opened", "ui_dir": ui_dir, "page": page})
@@ -78,6 +81,23 @@ func open(ui_dir: String, page: String) -> bool:
 func send_edit(payload: Dictionary) -> void:
 	if ui != null and ui.is_started() and typeof(payload.get("op")) == TYPE_STRING and payload.op in PAGE_OPS:
 		ui.emit_event(EVENT, payload)
+
+
+## Gives the page the sample state in place of the game's: set_state for each state, emit_event for each
+## event, exactly as GDScript would. Names and payloads were checked by the editor; GodotWebUI checks again.
+func _push_sample() -> void:
+	if ui == null or not ui.is_started():
+		return
+	var states: Variant = _sample.get("states", {})
+	if typeof(states) == TYPE_DICTIONARY:
+		for state_name: String in states:
+			if typeof(states[state_name]) == TYPE_DICTIONARY:
+				ui.set_state(state_name, states[state_name])
+	var events: Variant = _sample.get("events", [])
+	if typeof(events) == TYPE_ARRAY:
+		for event: Variant in events:
+			if typeof(event) == TYPE_DICTIONARY and typeof(event.get("name")) == TYPE_STRING:
+				ui.emit_event(event.name, event.get("payload", {}) if typeof(event.get("payload", {})) == TYPE_DICTIONARY else {})
 
 
 ## hold / synced / reload on the desktop backend (see the header).
@@ -180,7 +200,11 @@ func _drain() -> void:
 
 ## A command from the editor.
 func _on_editor_message(op: String, payload: Dictionary) -> void:
-	if op == "page" and typeof(payload.get("page")) == TYPE_STRING and ui != null and ui.is_started():
+	if op == "sample":
+		_sample = payload
+		_push_sample()
+	elif op == "page" and typeof(payload.get("page")) == TYPE_STRING and ui != null and ui.is_started():
+		_sample = {}  # belonged to the previous page; the editor sends the new page's once it is ready
 		ui.load_page(payload.page)
 		_to_editor({"op": "preview_opened", "ui_dir": ui._ui_dir, "page": payload.page})
 	elif op in BACKEND_OPS:

@@ -6,6 +6,7 @@
     python tools/setup.py wry [--force]         install / verify / repair the godot_wry desktop-preview extension
     python tools/setup.py add-to-project PATH   copy the addon into another Godot project (see --help)
     python tools/setup.py install-skill DIR     copy the AI-agent skill into a skills directory
+    python tools/setup.py agent-files PATH      point other AI tools (Cursor, Kiro, Copilot, ...) at the skill in a project
 
 What it installs: only godot_wry (pinned version, SHA-256 verified), into a user-level folder OUTSIDE any Godot
 project, so it can never be packaged into an Android export. What it only checks and explains: JDK, Android SDK,
@@ -33,6 +34,24 @@ ROOT = Path(__file__).resolve().parent.parent
 DEPS = json.loads(Path(__file__).with_name("dependencies.json").read_text(encoding="utf-8"))
 PLUGIN_CFG = "res://addons/webui/plugin.cfg"
 SKILL_NAME = "godot-webui"
+BLOCK_BEGIN = "<!-- godot-webui:begin -->"
+BLOCK_END = "<!-- godot-webui:end -->"
+# AI tools and the file each one reads project instructions from. "append" files are shared with the
+# user's own text, so only a delimited block is added or replaced; "own" files belong to this skill.
+# The conventions are the tools' documented ones as far as known; they were not run against every tool.
+AGENT_FILES = {
+    "agents-md": {"path": "AGENTS.md", "mode": "append", "note": "read by many agents (Codex, Cursor, Copilot, Windsurf, Kiro, ...)"},
+    "claude": {"path": "CLAUDE.md", "mode": "append", "skill": ".claude/skills", "note": "Claude Code (also installs the skill where it discovers skills)"},
+    "gemini": {"path": "GEMINI.md", "mode": "append", "note": "Gemini CLI"},
+    "copilot": {"path": ".github/copilot-instructions.md", "mode": "append", "note": "GitHub Copilot"},
+    "cursor": {"path": ".cursor/rules/godot-webui.mdc", "mode": "own", "note": "Cursor project rule (always applied)",
+               "front": "---\ndescription: Godot WebUI - read the skill before any UI page or GodotWebUI code\nalwaysApply: true\n---\n\n"},
+    "kiro": {"path": ".kiro/steering/godot-webui.md", "mode": "own", "note": "Kiro steering file (always included)",
+             "front": "---\ninclusion: always\n---\n\n"},
+    "windsurf": {"path": ".windsurf/rules/godot-webui.md", "mode": "own", "note": "Windsurf rule (always on)",
+                 "front": "---\ntrigger: always_on\ndescription: Godot WebUI rules\n---\n\n"},
+}
+DEFAULT_AGENTS = ["agents-md", "claude"]
 MARKER = "INSTALL.json"
 
 
@@ -568,7 +587,75 @@ def install_skill(skills_dir: Path) -> Path:
     return dest
 
 
-def add_to_project(target: Path, enable: bool, skill_dir: Path | None) -> None:
+def pointer_text(skill_path: str) -> str:
+    """The short instruction that makes an AI tool read the skill before touching WebUI code."""
+    return (
+        "## Godot WebUI (HTML/CSS/JS game UI)\n\n"
+        "This project builds its game interface with the Godot WebUI addon (`GodotWebUI`, `Godot.emit`, "
+        "`Godot.onState`, the WebUI editor dock).\n\n"
+        "**Before writing, changing or reviewing any UI page, any GDScript that uses `GodotWebUI`, or anything about "
+        "the WebUI editor, read `%s` completely and follow it.** Its rules are binding. In short: use only the API "
+        "listed in its `references/api.md` and in `addons/webui/webui.gd` / `addons/webui/web/godot.js` (never invent "
+        "methods); no gameplay logic in the page; Android is the only runtime; relative URLs only; and write pages "
+        "the visual editor can edit (external CSS files, unique ids, static text in the HTML, sample state in "
+        "`.webui-edit/`). If that file is missing, say so instead of guessing.\n" % skill_path
+    )
+
+
+def write_block(file: Path, body: str) -> str:
+    """Add `body` to `file` between markers, replacing a previous block; text outside the markers is never touched."""
+    block = "%s\n%s%s" % (BLOCK_BEGIN, body, BLOCK_END)
+    file.parent.mkdir(parents=True, exist_ok=True)
+    if not file.exists():
+        file.write_text(block + "\n", encoding="utf-8")
+        return "created"
+    text = file.read_text(encoding="utf-8")
+    begin, end = text.find(BLOCK_BEGIN), text.find(BLOCK_END)
+    if begin != -1 and end > begin:
+        new_text = text[:begin] + block + text[end + len(BLOCK_END):]
+        action = "block updated" if new_text != text else "unchanged"
+    else:
+        new_text = text.rstrip("\n") + ("\n\n" if text.strip() else "") + block + "\n"
+        action = "block added"
+    if new_text != text:
+        file.write_text(new_text, encoding="utf-8")
+    return action
+
+
+def install_agent_files(project: Path, agents: list) -> list:
+    """Install the skill into `project` and write the files that make each named AI tool read it.
+    Returns one description line per action."""
+    wanted = list(AGENT_FILES) if "all" in agents else agents
+    unknown = [name for name in wanted if name not in AGENT_FILES]
+    if unknown:
+        raise SetupError("unknown agent(s): %s (choose from: %s, all)" % (", ".join(unknown), ", ".join(AGENT_FILES)))
+    lines = []
+    shared_skill = None
+    for name in wanted:
+        entry = AGENT_FILES[name]
+        if "skill" in entry:
+            skill_root = project / entry["skill"]
+            skill_path = "%s/%s/SKILL.md" % (entry["skill"], SKILL_NAME)
+            lines.append("skill installed at %s" % install_skill(skill_root))
+        else:
+            if shared_skill is None:
+                shared_skill = install_skill(project / "skills")
+                lines.append("skill installed at %s" % shared_skill)
+            skill_path = "skills/%s/SKILL.md" % SKILL_NAME
+        target = project / entry["path"]
+        if entry["mode"] == "append":
+            action = write_block(target, pointer_text(skill_path))
+        else:
+            content = entry["front"] + pointer_text(skill_path)
+            action = "unchanged" if target.exists() and target.read_text(encoding="utf-8") == content else "written"
+            if action == "written":
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(content, encoding="utf-8")
+        lines.append("%s: %s (%s)" % (entry["path"], action, entry["note"]))
+    return lines
+
+
+def add_to_project(target: Path, enable: bool, skill_dir: Path | None, agents: list | None = None) -> None:
     if target.resolve() == ROOT.resolve():
         raise SetupError("that is this repository; pass your own game's project folder")
     project_file = target / "project.godot"
@@ -597,6 +684,9 @@ def add_to_project(target: Path, enable: bool, skill_dir: Path | None) -> None:
         print("  [--] plugin not enabled: Project > Project Settings > Plugins > godot-webui (or re-run with --enable-plugin)")
     if skill_dir is not None:
         print("  [ok] skill installed at %s" % install_skill(skill_dir))
+    if agents:
+        for line in install_agent_files(target, agents):
+            print("  [ok] %s" % line)
     print("\n  Still manual in that project:")
     print("   - Project > Install Android Build Template; Project > Export > Android > Use Gradle Build")
     print("   - put your UI in a folder with an index.html (outside addons/); add .webui_preview/ to its .gitignore")
@@ -625,9 +715,15 @@ def main(argv: list | None = None) -> int:
     add.add_argument("--enable-plugin", action="store_true", help="also enable the plugin in its project.godot (backs it up first)")
     add.add_argument("--with-skill", nargs="?", const="", metavar="SKILLS_DIR",
                      help="also install the agent skill (default: <project>/.claude/skills)")
+    add.add_argument("--agents", metavar="LIST", help="also set up AI tools to read the skill, comma separated: %s, all" % ", ".join(AGENT_FILES))
     skill = sub.add_parser("install-skill", parents=[common], help="copy the agent skill into a skills directory")
     skill.add_argument("dir", nargs="?", type=Path, help="skills directory, e.g. ~/.claude/skills or <project>/.claude/skills")
     skill.add_argument("--claude-user", action="store_true", help="use ~/.claude/skills")
+    agents_cmd = sub.add_parser("agent-files", parents=[common],
+                                help="install the skill into a project and point AI tools (Cursor, Kiro, Copilot, ...) at it")
+    agents_cmd.add_argument("path", type=Path, help="the Godot project (or any project folder)")
+    agents_cmd.add_argument("--agents", default=",".join(DEFAULT_AGENTS), metavar="LIST",
+                            help="comma separated: %s, all (default: %s)" % (", ".join(AGENT_FILES), ",".join(DEFAULT_AGENTS)))
     args = parser.parse_args(argv)
     godot = getattr(args, "godot", None)
     cache = getattr(args, "cache", ROOT / "tools" / ".cache")
@@ -648,7 +744,15 @@ def main(argv: list | None = None) -> int:
             skill_dir = None
             if args.with_skill is not None:
                 skill_dir = Path(args.with_skill) if args.with_skill else args.path / ".claude" / "skills"
-            add_to_project(args.path, args.enable_plugin, skill_dir)
+            agents = [name.strip() for name in args.agents.split(",") if name.strip()] if args.agents else None
+            add_to_project(args.path, args.enable_plugin, skill_dir, agents)
+        if command == "agent-files":
+            if not args.path.is_dir():
+                raise SetupError("%s is not a folder" % args.path)
+            heading("Pointing AI tools at the Godot WebUI skill in %s" % args.path)
+            for line in install_agent_files(args.path, [name.strip() for name in args.agents.split(",") if name.strip()]):
+                print("  [ok] %s" % line)
+            print("\n  Commit these files so every agent session starts from them.")
         if command == "install-skill":
             if args.claude_user:
                 dest = Path.home() / ".claude" / "skills"

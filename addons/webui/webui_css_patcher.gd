@@ -18,11 +18,12 @@ const CONTAINER_AT_RULES := ["media", "supports", "layer", "container", "scope"]
 const PROPERTY_PATTERN := "^(--[A-Za-z0-9_-]+|-?[a-z][a-z0-9-]*)$"
 
 
-## Sets `prop: value` in the style rule at `path` whose selector is `expected_selector`.
-## Returns {"ok": bool, "text": String, "code": String, "error": String}. On failure `text` is the
-## input unchanged and `code` is one of: bad_property, bad_value, no_rule, not_style_rule,
-## nesting_unsupported, selector_mismatch.
-static func set_declaration(text: String, path: Array, expected_selector: String, prop: String, value: String) -> Dictionary:
+## Sets `prop: value` in the style rule at `path` whose selector is `expected_selector`. With
+## `important`, a declaration that has to be written (or rewritten) gets `!important`: needed when the
+## declaration it overrides is important too. Returns {"ok": bool, "text": String, "code": String,
+## "error": String}. On failure `text` is the input unchanged and `code` is one of: bad_property,
+## bad_value, no_rule, not_style_rule, nesting_unsupported, selector_mismatch.
+static func set_declaration(text: String, path: Array, expected_selector: String, prop: String, value: String, important := false) -> Dictionary:
 	var name := prop.strip_edges()
 	if not name.begins_with("--"):
 		name = name.to_lower()
@@ -47,8 +48,9 @@ static func set_declaration(text: String, path: Array, expected_selector: String
 		if decl.name == name:
 			existing = decl  # the last one wins in CSS, so that is the one to change
 	if not existing.is_empty():
-		return _ok(text.substr(0, existing.value_start) + new_value + text.substr(existing.value_end))
-	return _ok(_append_declaration(text, rule, name, new_value))
+		var rewritten: String = new_value + (" !important" if important and not existing.important else "")
+		return _ok(text.substr(0, existing.value_start) + rewritten + text.substr(existing.value_end))
+	return _ok(_append_declaration(text, rule, name, new_value + (" !important" if important else "")))
 
 
 ## True if `selector` (as the page reports it) is what the rule at `path` has in `text`.
@@ -92,13 +94,21 @@ static func _read_text(file_path: String) -> String:
 ## was loaded: if the file changed since (an editor, an AI agent, git), nothing is written.
 ## Returns the set_declaration() result plus "hash" (of the new contents) and "code" "file_changed"
 ## or "write_failed" when relevant.
-static func patch_file(file_path: String, loaded_hash: String, path: Array, expected_selector: String, prop: String, value: String) -> Dictionary:
+static func patch_file(file_path: String, loaded_hash: String, path: Array, expected_selector: String, prop: String, value: String, important := false) -> Dictionary:
+	return edit_file(file_path, loaded_hash, func(text: String) -> Dictionary:
+		return set_declaration(text, path, expected_selector, prop, value, important))
+
+
+## Edits a file in place through `transform(text) -> {"ok", "text", "code", "error"}` (any of this
+## addon's patchers), with the same safeguards as patch_file: refuses when the file changed since
+## `loaded_hash`, writes through a temporary file, reports the new hash.
+static func edit_file(file_path: String, loaded_hash: String, transform: Callable) -> Dictionary:
 	var current := read_file(file_path)
 	if not current.ok:
 		return {"ok": false, "text": "", "code": "read_failed", "error": current.error, "hash": ""}
 	if current.hash != loaded_hash:
 		return {"ok": false, "text": current.text, "code": "file_changed", "error": "%s changed on disk since it was loaded; reload the preview before editing." % file_path, "hash": current.hash}
-	var result := set_declaration(current.text, path, expected_selector, prop, value)
+	var result: Dictionary = transform.call(current.text)
 	if not result.ok:
 		result["hash"] = current.hash
 		return result
@@ -106,6 +116,40 @@ static func patch_file(file_path: String, loaded_hash: String, path: Array, expe
 	if write != OK:
 		return {"ok": false, "text": current.text, "code": "write_failed", "error": "Could not write %s (error %d); the file was left unchanged." % [file_path, write], "hash": current.hash}
 	result["hash"] = result.text.sha256_text()
+	return result
+
+
+## Adds a new rule `selector { prop: value; ... }` at the end of the stylesheet. `expected_index` is the
+## number of top-level rules the page's copy of the sheet has: when the file has a different number it
+## is not what the page shows and nothing is written. Returns set_declaration()'s shape plus "path"
+## (the new rule's address).
+static func append_rule(text: String, selector: String, decls: Dictionary, expected_index := -1) -> Dictionary:
+	var sel := selector.strip_edges()
+	if sel.is_empty() or _value_is_unsafe(sel) or sel.contains("\n") or sel.contains("\r"):
+		return _fail(text, "bad_selector", "Cannot write the selector '%s'." % selector)
+	if decls.is_empty():
+		return _fail(text, "bad_value", "A rule needs at least one declaration.")
+	var eol := "\r\n" if text.contains("\r\n") else "\n"
+	var unit := _indent_unit(text)
+	var body := ""
+	for prop: String in decls:
+		var name := prop.strip_edges()
+		if not name.begins_with("--"):
+			name = name.to_lower()
+		var value: String = str(decls[prop]).strip_edges()
+		if not RegEx.create_from_string(PROPERTY_PATTERN).search(name):
+			return _fail(text, "bad_property", "Invalid property name '%s'." % prop)
+		if value.is_empty() or _value_is_unsafe(value):
+			return _fail(text, "bad_value", "Value '%s' cannot be written safely." % value)
+		body += "%s%s: %s;%s" % [unit, name, value, eol]
+	var count := parse(text).size()
+	if expected_index >= 0 and count != expected_index:
+		return _fail(text, "file_differs", "The page has %d rules in this stylesheet but the file has %d; reload the preview." % [expected_index, count])
+	var base := text.rstrip(" \t\r\n")
+	var separator := (eol + eol) if not base.is_empty() else ""
+	var out := base + separator + sel + " {" + eol + body + "}" + eol
+	var result := _ok(out)
+	result["path"] = [count]
 	return result
 
 
@@ -463,3 +507,8 @@ static func _ok(text: String) -> Dictionary:
 
 static func _fail(text: String, code: String, message: String) -> Dictionary:
 	return {"ok": false, "text": text, "code": code, "error": message}
+
+
+## True when the parsed `rule` (from parse()) is a plain style rule with this selector (as the page reports it).
+static func selector_matches(rule: Dictionary, expected_selector: String) -> bool:
+	return not rule.is_empty() and rule.kind == "style" and _normalize_selector(rule.prelude) == _normalize_selector(expected_selector)

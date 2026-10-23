@@ -1,0 +1,8 @@
+{
+  "states": {
+    "settings": { "music": 0.7, "sfx": true, "difficulty": "normal", "show_debug": true },
+    "stats": { "plays": 4, "deaths": 2, "jumps": 87 },
+    "info": { "engine": "4.7.1.stable.official", "os": "Android", "renderer": "mobile", "level": 1 }
+  },
+  "events": []
+}
