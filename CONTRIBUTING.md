@@ -25,6 +25,11 @@ Please include: Godot version, Android version and device, the System WebView ve
 godot --headless --path . --import --quit
 godot --headless --path . -s res://tests/headless_test.gd
 godot --headless --path . -s res://tests/api_test.gd
+godot --headless --path . -s res://tests/css_patcher_test.gd
+godot --headless --path . -s res://tests/edit_link_test.gd
+godot --headless --path . -s res://tests/editor_model_test.gd
+godot --headless --path . -s res://tests/editor_dock_test.gd
+godot --path . -s res://tests/edit_preview_test.gd   # needs a window and godot_wry; skips otherwise
 python -m unittest discover -s tests -p "test_setup.py"
 ```
 

@@ -73,6 +73,8 @@ The page may predict cosmetically (a press animation) but must not decide outcom
 
 Either one HTML file with several sections toggled in JavaScript (fast, no reload), or several HTML files reached with `ui.load_page("menu.html")` (each load re-runs the page and fires `page_ready`; the demo does this; the first WebView load took about 0.8 s on the one device measured, later loads were not measured on a device). Navigation between sections inside one page is browser-side; only actions that matter to the game (`menu_play`, `settings_changed`) go through the bridge. If a screen switch also changes Godot scenes, call `clear_handlers()` before registering the next screen's handlers.
 
+First-visit hitch: a `display:none` section has no style, layout or paint until it is shown, and the GPU shaders for its shadows, gradients and filters are compiled the first time it is drawn. If a section with heavy effects hitches on its first visit only, draw it once invisibly while idle (see `warmScreens()` in `examples/playable_character/ui/menu.js`). Only do this for sections that show the symptom: it costs a few frames at idle. Not yet confirmed on a device.
+
 ## Accessibility and localization
 
 Not provided by the addon. Use real `<button>` elements, readable contrast and sizes. For localization, let Godot own the active language and send translated strings or a language code as state; the page should not hardcode strings it cannot change. Screen reader behavior, on-screen keyboard/IME for text inputs and gamepad focus navigation have not been implemented or verified.

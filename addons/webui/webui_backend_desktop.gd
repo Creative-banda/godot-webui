@@ -33,8 +33,10 @@ var _view: Control
 var _timer: Timer
 var _ui_dir := ""
 var _script := ""
+var _extra_scripts: Array[String] = []
 var _page := ""
 var _mtimes := {}
+var _hold_reload := false
 var _modal_note_shown := false
 
 
@@ -109,6 +111,13 @@ func create(ui_dir: String, bridge_script: String, host: Node = null) -> bool:
 	_host = host
 	_ui_dir = ui_dir
 	_script = bridge_script
+	_extra_scripts.clear()
+	for extra_path: String in options.get("inject_scripts", PackedStringArray()):
+		var extra := FileAccess.get_file_as_string(extra_path)
+		if extra.is_empty():
+			error.emit("inject_failed", "Cannot read the injected script %s." % extra_path)
+			return false
+		_extra_scripts.append(extra)
 	if not _stage():
 		return false
 
@@ -241,6 +250,8 @@ func _copy_tree(from: String, to: String) -> bool:
 ## Inlines godot.js right at the start of <head> so window.Godot exists before any page script.
 func _inject_bridge(html: String) -> String:
 	var tag := "<script>" + _script.replace("</script", "<\\/script") + "</script>"
+	for extra: String in _extra_scripts:  # separate tags: a broken extra script cannot break godot.js
+		tag += "<script>" + extra.replace("</script", "<\\/script") + "</script>"
 	var head := RegEx.create_from_string("(?i)<head[^>]*>").search(html)
 	if head:
 		return html.insert(head.get_end(), tag)
@@ -271,7 +282,29 @@ func _scan(dir: String) -> Dictionary:
 	return result
 
 
+## Pauses hot reload (the visual editor does this while it writes a stylesheet that the page already shows).
+func hold_reload(hold: bool) -> void:
+	_hold_reload = hold
+
+
+## Treats the current source files as already shown, so hot reload does not fire for them.
+func sync_baseline() -> void:
+	_mtimes = _scan(_ui_dir)
+
+
+## Re-stages the sources and reloads the current page now.
+func reload_now() -> void:
+	if _view and _stage():
+		_mtimes = _scan(_ui_dir)
+		if _page.is_empty():
+			_view.call("reload")
+		else:
+			_view.call("load_url", STAGE_UI.path_join(_page))
+
+
 func _poll_sources() -> void:
+	if _hold_reload:
+		return
 	var now := _scan(_ui_dir)
 	if now == _mtimes:
 		return

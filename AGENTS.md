@@ -29,7 +29,7 @@ Godot WebUI shows HTML/CSS/JS as a transparent Android WebView above a Godot gam
 
 | Path | Contents |
 |---|---|
-| `addons/webui/` | The addon: `webui.gd` (API), `webui_bridge.gd` (validation), `webui_backend*.gd` (platform seam: interface, factory, Android, desktop preview, null), `export_plugin.gd`, `web/godot.js`, `bin/*.aar` |
+| `addons/webui/` | The addon: `webui.gd` (API), `webui_bridge.gd` (validation), `webui_backend*.gd` (platform seam: interface, factory, Android, desktop preview, null), `export_plugin.gd`, `web/godot.js`, `bin/*.aar`; visual editor (editor-only): `webui_editor_dock.gd`, `webui_editor_model.gd`, `webui_edit_link.gd`, `webui_edit_preview.gd/.tscn`, `webui_css_patcher.gd`, `web/edit_mode.js` |
 | `native/android/` | Gradle project, Java source of the native plugin (`com.godotwebui`) |
 | `examples/playable_character/` | Demo: `main.tscn` + `app.gd` shell swapping `menu.tscn` / `game.tscn`; HTML in `ui/` |
 | `docs/setup.md`, `docs/desktop-preview.md` | Setup script docs; desktop development preview docs |
@@ -37,7 +37,7 @@ Godot WebUI shows HTML/CSS/JS as a transparent Android WebView above a Godot gam
 | `skills/godot-webui/` | AI-agent skill (`SKILL.md` + `references/`) |
 | `examples/minimal_hud/` | Smallest end-to-end example |
 | `templates/hud/` | Starter page |
-| `tests/headless_test.gd`, `tests/api_test.gd` | Headless GDScript tests (bridge, demo flow, desktop backend; API semantics, touch modes, guard, recovery, UI folder detection) |
+| `tests/headless_test.gd`, `tests/api_test.gd`, `tests/css_patcher_test.gd`, `tests/editor_model_test.gd`, `tests/editor_dock_test.gd` | Headless GDScript tests (bridge, demo flow, desktop backend; API semantics, touch modes, guard, recovery, UI folder detection; in-place CSS patching, visual editor model and dock). `tests/edit_preview_test.gd` needs a window and godot_wry (edit mode, end to end) |
 
 ## Conventions and gotchas
 

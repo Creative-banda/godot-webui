@@ -51,6 +51,18 @@ The folder `res://.webui_preview/` is generated at run time and contains a `.gdi
 - Keyboard: the demo reads key *events* (`_input`), not `Input.is_action_pressed()` polling. When the preview overlay has keyboard focus its key presses reach Godot as injected events, which polling does not see. If your game uses polling for keyboard input, it will not react while the overlay has focus in the preview; use `_input`/`_unhandled_input` (or `Input.parse_input_event`-aware code) for keys you want to work there. This does not apply on Android.
 - Use the project's window size (for example 1280×720 landscape) to approximate a phone screen.
 
+## Visual editor (dock) and edit mode
+
+Enable the plugin and open the **WebUI** dock (right side, upper left slot). Pick a page, press **Open preview** (a separate window that stays on top of the editor, so it remains visible while you work in the dock), and click an element in it: its font, colours, spacing, size, border and flex/grid properties appear in the dock. Changing a value updates the preview at once; **Save** writes the change into the stylesheet it came from, in place: only that value changes (or one declaration is added), comments and formatting stay, and nothing is written if the file changed since the page loaded. **Undo** takes back changes one at a time, and after a save restores the files as they were before it. Turn **Select** off to use the page normally (for example to reach another screen of the menu), then on again. The preview needs godot_wry (see Setup); problems starting it appear in the dock's status line.
+
+How it fits together:
+- `addons/webui/webui_edit_preview.tscn` runs the page in this preview with `web/edit_mode.js` injected after `godot.js` (`GodotWebUI.desktop_preview_inject_scripts`; empty by default, ignored on Android, never part of an export). The edit script swallows clicks, reports the selected element, its computed style and the style rules that apply (file, rule path, selector), and applies a changed declaration live to the rule it came from.
+- `WebUIEditLink` (editor) starts the preview as its own program in a normal window (an editor-played game can be embedded in the editor, where it cannot stay on top) and talks to it over a local TCP connection (127.0.0.1 only); the dock tells the preview which page to open through `user://webui_edit_target.json`.
+- `WebUIEditorModel` holds the logic (which rule a change goes to, unsaved changes, undo, replay after a reload) and `WebUICssPatcher` writes the files.
+- Hot reload stays on, so files edited elsewhere (an editor, an AI agent) reload the page and the dock re-applies unsaved changes; the dock pauses it around its own saves so saving does not reload the page.
+
+Limits: only external `.css` files are edited (rules from `<style>` blocks or `style=""` attributes are listed but read-only); nested CSS, `@container` and values containing `;` are refused; the choice of rule is a specificity heuristic (use **Edit rule** to override); pages show their placeholders because no game state is sent; the preview window is not phone-sized and has no safe-area insets; undo after a save goes back one save only. `tests/edit_preview_test.gd`, `tests/edit_link_test.gd`, `tests/editor_model_test.gd` and `tests/editor_dock_test.gd` cover it.
+
 ## Differences from Android (read before trusting what you see)
 
 | Area | Android | Desktop preview |

@@ -9,7 +9,7 @@
     const forward = name !== 'main';
     screens.forEach((s) => {
       const on = s.id === 'screen-' + name;
-      s.classList.remove('fwd', 'bwd');
+      s.classList.remove('fwd', 'bwd', 'warm');
       s.classList.toggle('active', on);
       if (on) {
         [...s.children].forEach((c, i) => c.style.setProperty('--i', i));
@@ -23,6 +23,28 @@
   }
   document.querySelectorAll('[data-goto]').forEach((b) => b.addEventListener('click', () => show(b.dataset.goto)));
   show('main');
+
+  // ---------- warm-up
+  // A display:none screen has no style, layout or paint, and the GPU shaders for its shadows,
+  // gradients and filters are compiled the first time it is drawn: that lands on the frame of the
+  // first visit. Draw each other screen once, invisibly, one per idle slot after the entrance
+  // animation, so that cost is paid while the user is still looking at the main screen.
+  function warmScreens() {
+    const idle = window.requestIdleCallback ? (f) => requestIdleCallback(f, { timeout: 1500 }) : (f) => setTimeout(f, 300);
+    const queue = screens.filter((s) => !s.classList.contains('active'));
+    const next = () => {
+      const s = queue.shift();
+      if (!s) return;
+      if (s.classList.contains('active')) return next();
+      s.classList.add('warm');
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        s.classList.remove('warm');
+        idle(next);
+      }));
+    };
+    setTimeout(() => idle(next), 1200);
+  }
+  warmScreens();
 
   // ---------- press ripple (purely visual)
   document.querySelectorAll('.press').forEach((el) => {

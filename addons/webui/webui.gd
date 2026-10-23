@@ -46,6 +46,9 @@ const RECOVERY_WINDOW_MSEC := 60000
 @export var desktop_preview_hot_reload := true
 ## Desktop preview only: allow opening the browser inspector (F12 / right click).
 @export var desktop_preview_devtools := true
+## Desktop preview only (ignored on Android): extra scripts (res:// paths) inlined after godot.js into
+## the preview copy of every page. Used by the visual editor's edit mode; leave empty otherwise.
+@export var desktop_preview_inject_scripts := PackedStringArray()
 
 var is_ready := false  ## true once the page's handshake arrived; stays true across reloads (each reload sends a new handshake and page_ready)
 
@@ -86,6 +89,7 @@ func start(ui_dir: String, page: String = "index.html") -> bool:
 	_backend.options = {
 		"hot_reload": desktop_preview_hot_reload,
 		"devtools": desktop_preview_devtools,
+		"inject_scripts": desktop_preview_inject_scripts,
 	}
 	_backend.message.connect(_on_raw_message)
 	_backend.error.connect(_on_backend_error)
