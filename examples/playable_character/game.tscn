@@ -98,6 +98,11 @@ script = ExtResource("2")
 [node name="Shape" type="CollisionShape2D" parent="Player" unique_id=722780389]
 shape = SubResource("body")
 
+[node name="Camera2D" type="Camera2D" parent="Player" unique_id=151033293]
+position = Vector2(-1, -153)
+position_smoothing_enabled = true
+position_smoothing_speed = 3.0
+
 [node name="WebUIScreen" type="Control" parent="." unique_id=1808499422]
 layout_mode = 3
 anchors_preset = 0
@@ -108,6 +113,5 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("3_b8goc")
 page = "res://examples/playable_character/ui/hud.html"
-show_backdrop = true
 metadata/_custom_type_script = "uid://dy0p2t46use1i"
 metadata/_edit_lock_ = true

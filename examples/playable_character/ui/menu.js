@@ -4,62 +4,28 @@
   const app = $('app');
   const screens = [...document.querySelectorAll('.screen')];
 
-  // ---------- browser-side navigation with directional transitions
+  // ---------- browser-side navigation with fast, hardware-accelerated transitions
   let current = 'main';
+  let isNavigating = false;
+  let navTimer = 0;
+
   function show(name) {
     if (app) app.dataset.screen = name;
-    const forward = name !== 'main';
     screens.forEach((s) => {
       const on = s.id === 'screen-' + name;
-      s.classList.remove('fwd', 'bwd', 'warm');
       s.classList.toggle('active', on);
-      if (on) {
-        [...s.children].forEach((c, i) => c.style.setProperty('--i', i));
-        void s.offsetWidth; // restart animations
-        s.classList.add(forward ? 'fwd' : 'bwd');
-      }
     });
     current = name;
     if (name === 'stats') animateStats();
     $('panel').scrollTop = 0;
+
+    // Pause canvas particle rendering briefly during screen transition for buttery smooth 60 FPS
+    isNavigating = true;
+    clearTimeout(navTimer);
+    navTimer = setTimeout(() => { isNavigating = false; }, 200);
   }
   document.querySelectorAll('[data-goto]').forEach((b) => b.addEventListener('click', () => show(b.dataset.goto)));
   show('main');
-
-  // ---------- warm-up
-  // A display:none screen has no style, layout or paint, and the GPU shaders for its shadows,
-  // gradients and filters are compiled the first time it is drawn: that lands on the frame of the
-  // first visit. Draw each other screen once, invisibly, one per idle slot after the entrance
-  // animation, so that cost is paid while the user is still looking at the main screen.
-  function warmScreens() {
-    const idle = window.requestIdleCallback ? (f) => requestIdleCallback(f, { timeout: 1500 }) : (f) => setTimeout(f, 300);
-    const queue = screens.filter((s) => !s.classList.contains('active'));
-    const next = () => {
-      const s = queue.shift();
-      if (!s) return;
-      if (s.classList.contains('active')) return next();
-      s.classList.add('warm');
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        s.classList.remove('warm');
-        idle(next);
-      }));
-    };
-    setTimeout(() => idle(next), 1200);
-  }
-  warmScreens();
-
-  // ---------- tactile candy ripple (purely visual)
-  document.querySelectorAll('.press').forEach((el) => {
-    el.addEventListener('pointerdown', (e) => {
-      const r = el.getBoundingClientRect();
-      const size = Math.max(r.width, r.height) * 2;
-      const dot = document.createElement('span');
-      dot.className = 'ripple';
-      dot.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - r.left - size / 2}px;top:${e.clientY - r.top - size / 2}px`;
-      el.appendChild(dot);
-      dot.addEventListener('animationend', () => dot.remove());
-    });
-  });
 
   // ---------- HTML -> Godot (intent only)
   let level = 1;
@@ -119,7 +85,7 @@
   function countUp(el, to) {
     const t0 = performance.now();
     const step = (t) => {
-      const k = Math.min(1, (t - t0) / 800);
+      const k = Math.min(1, (t - t0) / 600);
       el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3)));
       if (k < 1) requestAnimationFrame(step);
     };
@@ -142,131 +108,143 @@
     if (i.level) selectLevel(i.level);
   });
 
-  // ---------- ambient bubbles, sparkles & confetti FX (canvas)
+  // ---------- ambient bubbles & sparkles FX (ultra-optimized for mobile) ----------
   const canvas = $('fx');
   const ctx = canvas.getContext('2d');
-  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-  let W = 0, H = 0;
+  const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Soap bubbles
-  const bubbleCount = 20;
+  // Pre-render bubble stamp onto an offscreen canvas ONCE (avoids 1,200 dynamic gradient allocations/sec)
+  const bubbleSprite = document.createElement('canvas');
+  const B_RES = 64;
+  bubbleSprite.width = B_RES;
+  bubbleSprite.height = B_RES;
+  const bCtx = bubbleSprite.getContext('2d');
+  const bGrad = bCtx.createRadialGradient(22, 20, 4, 32, 32, 28);
+  bGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+  bGrad.addColorStop(0.55, 'rgba(255, 209, 102, 0.2)');
+  bGrad.addColorStop(0.85, 'rgba(255, 71, 133, 0.25)');
+  bGrad.addColorStop(1, 'rgba(56, 182, 255, 0.45)');
+  bCtx.fillStyle = bGrad;
+  bCtx.beginPath();
+  bCtx.arc(32, 32, 28, 0, Math.PI * 2);
+  bCtx.fill();
+  bCtx.lineWidth = 1.5;
+  bCtx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+  bCtx.stroke();
+  bCtx.beginPath();
+  bCtx.ellipse(22, 20, 8, 4, -Math.PI / 4, 0, Math.PI * 2);
+  bCtx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+  bCtx.fill();
+
+  // Pre-render star sparkle onto an offscreen canvas ONCE
+  const starSprite = document.createElement('canvas');
+  const S_RES = 24;
+  starSprite.width = S_RES;
+  starSprite.height = S_RES;
+  const sCtx = starSprite.getContext('2d');
+  sCtx.fillStyle = 'rgba(255, 230, 100, 0.85)';
+  sCtx.beginPath();
+  for (let i = 0; i < 4; i++) {
+    sCtx.lineTo(12 + Math.cos((i * Math.PI) / 2) * 10, 12 + Math.sin((i * Math.PI) / 2) * 10);
+    sCtx.lineTo(12 + Math.cos((i * Math.PI) / 2 + Math.PI / 4) * 3, 12 + Math.sin((i * Math.PI) / 2 + Math.PI / 4) * 3);
+  }
+  sCtx.closePath();
+  sCtx.fill();
+
+  // Ultra-sparse particles: only 2-3 slow ambient floating bubbles and 1-2 stars
+  const isMobile = window.innerWidth <= 768 || (window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+  const bubbleCount = isMobile ? 2 : 3;
+  const starCount = isMobile ? 1 : 2;
+
   const bubbles = Array.from({ length: bubbleCount }, () => ({
     x: Math.random(),
     y: Math.random() * 1.2,
-    r: 10 + Math.random() * 22,
-    speed: 0.03 + Math.random() * 0.05,
-    wobbleSpeed: 1 + Math.random() * 2,
-    wobbleAmp: 0.015 + Math.random() * 0.02,
-    phase: Math.random() * Math.PI * 2,
-    hue: Math.floor(Math.random() * 360)
+    size: 22 + Math.random() * 20,
+    speed: 0.015 + Math.random() * 0.02,
+    wobbleSpeed: 0.8 + Math.random() * 1.0,
+    wobbleAmp: 0.006 + Math.random() * 0.01,
+    phase: Math.random() * Math.PI * 2
   }));
 
-  // Sparkles & confetti
-  const sparkleCount = 28;
-  const sparkles = Array.from({ length: sparkleCount }, () => ({
+  const stars = Array.from({ length: starCount }, () => ({
     x: Math.random(),
     y: Math.random(),
-    size: 2.5 + Math.random() * 4,
-    speed: 0.02 + Math.random() * 0.06,
-    rot: Math.random() * Math.PI * 2,
-    rotSpeed: (Math.random() - 0.5) * 3,
-    hue: [45, 160, 210, 290, 340][Math.floor(Math.random() * 5)],
-    isStar: Math.random() < 0.4
+    size: 8 + Math.random() * 10,
+    speed: 0.01 + Math.random() * 0.015,
+    alpha: 0.35 + Math.random() * 0.35
   }));
 
+  let W = 0, H = 0;
   function resize() {
     W = canvas.clientWidth;
     H = canvas.clientHeight;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Keep canvas 1x to avoid fill-rate tax on high-density phone displays
+    canvas.width = W;
+    canvas.height = H;
   }
   window.addEventListener('resize', resize);
   resize();
 
+  // Pause canvas rendering while user is tapping or interacting to ensure 100% responsiveness
+  window.addEventListener('pointerdown', () => {
+    isNavigating = true;
+    clearTimeout(navTimer);
+    navTimer = setTimeout(() => { isNavigating = false; }, 260);
+  }, { passive: true });
+
   let last = performance.now();
+  let lastDraw = 0;
   function frame(t) {
+    if (document.hidden || prefersReduced) {
+      requestAnimationFrame(frame);
+      return;
+    }
+
+    // Skip canvas update during active screen transitions to give 100% GPU to navigation
+    if (isNavigating) {
+      last = t;
+      requestAnimationFrame(frame);
+      return;
+    }
+
+    // Cap ambient particle rendering to 30 FPS (~33ms) to halve mobile GPU load
+    if (t - lastDraw < 33) {
+      requestAnimationFrame(frame);
+      return;
+    }
+    lastDraw = t;
+
     const dt = Math.min(0.05, (t - last) / 1000);
     last = t;
     ctx.clearRect(0, 0, W, H);
 
-    // 1. Draw iridescent soap bubbles
+    // 1. Draw bubbles using cached offscreen sprite
     for (const b of bubbles) {
       b.y -= b.speed * dt;
       if (b.y < -0.1) {
         b.y = 1.1;
         b.x = Math.random();
-        b.hue = Math.floor(Math.random() * 360);
       }
       const bx = (b.x + Math.sin(t * 0.001 * b.wobbleSpeed + b.phase) * b.wobbleAmp) * W;
       const by = b.y * H;
-
-      // Outer rainbow rim
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(bx, by, b.r, 0, Math.PI * 2);
-
-      // Translucent bubble body gradient
-      const bodyGrad = ctx.createRadialGradient(bx - b.r * 0.3, by - b.r * 0.3, b.r * 0.1, bx, by, b.r);
-      bodyGrad.addColorStop(0, `hsla(${b.hue}, 95%, 85%, 0.15)`);
-      bodyGrad.addColorStop(0.7, `hsla(${(b.hue + 60) % 360}, 90%, 75%, 0.25)`);
-      bodyGrad.addColorStop(1, `hsla(${(b.hue + 140) % 360}, 95%, 70%, 0.55)`);
-      ctx.fillStyle = bodyGrad;
-      ctx.fill();
-
-      // Iridescent outline
-      ctx.lineWidth = 1.8;
-      ctx.strokeStyle = `hsla(${b.hue}, 90%, 80%, 0.6)`;
-      ctx.stroke();
-
-      // Curved specular gloss highlight (top-left)
-      ctx.beginPath();
-      ctx.ellipse(bx - b.r * 0.35, by - b.r * 0.35, b.r * 0.32, b.r * 0.16, -Math.PI / 4, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-      ctx.fill();
-
-      // Small secondary glint (bottom-right)
-      ctx.beginPath();
-      ctx.arc(bx + b.r * 0.4, by + b.r * 0.4, b.r * 0.1, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-      ctx.fill();
-      ctx.restore();
+      ctx.drawImage(bubbleSprite, bx - b.size / 2, by - b.size / 2, b.size, b.size);
     }
 
-    // 2. Draw confetti & sparkles
-    for (const s of sparkles) {
+    // 2. Draw stars using cached offscreen sprite
+    for (const s of stars) {
       s.y -= s.speed * dt;
-      s.rot += s.rotSpeed * dt;
       if (s.y < -0.05) {
         s.y = 1.05;
         s.x = Math.random();
       }
       const sx = s.x * W;
       const sy = s.y * H;
-
-      ctx.save();
-      ctx.translate(sx, sy);
-      ctx.rotate(s.rot);
-
-      if (s.isStar) {
-        // 4-pointed sparkle
-        ctx.fillStyle = `hsla(${s.hue}, 95%, 80%, 0.7)`;
-        ctx.beginPath();
-        for (let i = 0; i < 4; i++) {
-          ctx.lineTo(Math.cos((i * Math.PI) / 2) * s.size * 2, Math.sin((i * Math.PI) / 2) * s.size * 2);
-          ctx.lineTo(Math.cos((i * Math.PI) / 2 + Math.PI / 4) * s.size * 0.5, Math.sin((i * Math.PI) / 2 + Math.PI / 4) * s.size * 0.5);
-        }
-        ctx.closePath();
-        ctx.fill();
-      } else {
-        // Confetti flake
-        ctx.fillStyle = `hsla(${s.hue}, 90%, 70%, 0.65)`;
-        ctx.fillRect(-s.size, -s.size, s.size * 2, s.size * 1.5);
-      }
-      ctx.restore();
+      ctx.globalAlpha = s.alpha;
+      ctx.drawImage(starSprite, sx - s.size / 2, sy - s.size / 2, s.size, s.size);
     }
+    ctx.globalAlpha = 1.0;
 
-    if (!document.hidden) requestAnimationFrame(frame);
+    requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
 

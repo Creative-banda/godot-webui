@@ -23,6 +23,7 @@ Read this whole file before doing any WebUI work. The rules below are binding. T
 7. **Write pages so the visual editor can edit them** (section 4). This is how the user adjusts the design without you.
 8. **Make every page responsive; never design for one screen.** A page must hold up on small and large phones (notches, cutouts, portrait and landscape where the game allows both), tablets, foldables and split-screen windows, and at any window size in the desktop preview while developing (desktop is a development aid, not a supported runtime). Fluid sizes first (`clamp()`, `min()`/`max()`, `vmin`, flex/grid, `aspect-ratio`), then `@media` breakpoints for width, height, orientation and aspect ratio; no fixed pixel layouts, no heights that assume one device, touch targets never below 44 CSS px, safe-area insets on every edge-anchored element. Check the page at several sizes (list in `references/responsive.md`) and report which you checked and that none was a real device. Details and patterns: `references/responsive.md`.
 9. **Never use editor-only classes in game code**: `WebUIScreenInspector`, `WebUIScreenPreview`, `WebUIEditPreview`, `WebUIEditLink`, `WebUIEditorDock`, `WebUIEditorModel`, `WebUICssPatcher`, `WebUIHtmlPatcher`, `WebUICssCatalog`, `web/edit_mode.js`, and the `.webui-edit/` folder exist only for the editor.
+10. **Animate `transform` and `opacity` only; never animate `box-shadow`, `filter: blur/drop-shadow`, layout properties or big gradients.** On a mid-range phone those repaint every frame and drop the page to 10-40 FPS while it is smooth on a PC (measured, no addon setting fixes it). Keep canvas effects small, pause hidden animations, and measure on a device before calling a page smooth. Details and numbers: `references/animation-performance.md`.
 
 ## 1. Decide whether WebUI fits
 
@@ -110,6 +111,7 @@ Tell the user: which files you created or changed; how to preview (which page in
 ## Reference files
 
 - `references/api.md`: GDScript and JavaScript API, limits, signals, error codes.
+- `references/animation-performance.md`: which CSS animations are cheap or costly on a phone (measured), rules, how to measure.
 - `references/responsive.md`: making pages work on phones, tablets and any window size: fluid units, breakpoints, safe areas, sizes to check, how it interacts with the visual editor.
 - `references/ui-authoring.md`: folder layout, packaging rules, layout, assets, accessibility notes.
 - `references/visual-editor.md`: what the editor can and cannot edit, the authoring rules in detail with good and bad examples, sample state files.

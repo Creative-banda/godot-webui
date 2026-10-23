@@ -5,16 +5,6 @@
   // Only the elements marked data-webui-touch receive touches; everything else reaches the game.
   Godot.touchRegions();
 
-  // ---------- press ripple (purely visual)
-  function ripple(el, e) {
-    const r = el.getBoundingClientRect();
-    const size = Math.max(r.width, r.height) * 2;
-    const dot = document.createElement('span');
-    dot.className = 'ripple';
-    dot.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - r.left - size / 2}px;top:${e.clientY - r.top - size / 2}px`;
-    el.appendChild(dot);
-    dot.addEventListener('animationend', () => dot.remove());
-  }
 
   // ---------- virtual joystick (one pointer, pointer capture, always releases)
   const zone = $('stick-zone');
@@ -88,7 +78,6 @@
       pointer = e.pointerId;
       el.setPointerCapture(e.pointerId);
       el.classList.add('down');
-      if (el.classList.contains('fx')) ripple(el, e);
       onDown();
     });
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
