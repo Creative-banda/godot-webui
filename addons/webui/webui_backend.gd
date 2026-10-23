@@ -8,13 +8,22 @@ signal error(code: String, text: String)
 signal page_loaded(url: String)
 signal console(level: String, text: String)
 
+## Backend-specific settings, filled by GodotWebUI before create().
+var options := {}
+
 
 func is_available() -> bool:
 	return false
 
 
-## ui_dir is a res:// directory; script is the bridge client JavaScript.
-func create(_ui_dir: String, _bridge_script: String) -> bool:
+## "android", "desktop_preview" or "none".
+func get_backend_name() -> String:
+	return "none"
+
+
+## ui_dir is a res:// directory; script is the bridge client JavaScript; host is the node that owns
+## the backend (must be in the scene tree) for backends that need to add nodes.
+func create(_ui_dir: String, _bridge_script: String, _host: Node = null) -> bool:
 	return false
 
 

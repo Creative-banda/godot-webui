@@ -7,11 +7,15 @@ const STAGE_DIR := "user://webui_ui"
 var _plugin: Object = null
 
 
+func get_backend_name() -> String:
+	return "android"
+
+
 func is_available() -> bool:
 	return OS.get_name() == "Android" and Engine.has_singleton("WebUI")
 
 
-func create(ui_dir: String, bridge_script: String) -> bool:
+func create(ui_dir: String, bridge_script: String, _host: Node = null) -> bool:
 	if not is_available():
 		error.emit("plugin_missing", "Android plugin 'WebUI' not found. Enable Gradle build and the WebUI export plugin (see README).")
 		return false
@@ -59,7 +63,7 @@ func destroy() -> void:
 ## Android's WebView cannot read Godot's packed res:// files, so the UI folder is copied to user://.
 func _stage(ui_dir: String) -> bool:
 	if not DirAccess.dir_exists_absolute(ui_dir):
-		error.emit("bad_ui_dir", "UI directory not found: %s" % ui_dir)
+		error.emit("bad_ui_dir", "UI directory not found: %s. In an exported game this means it was not packaged: the godot-webui export plugin packages every folder (outside addons/) that contains an .html file, or the folders listed in Project Settings > webui/export/ui_folders. Check that the plugin is enabled and read the export log." % ui_dir)
 		return false
 	if DirAccess.dir_exists_absolute(STAGE_DIR):
 		_remove_tree(STAGE_DIR)
@@ -73,7 +77,7 @@ func _copy_tree(from: String, to: String) -> bool:
 			continue
 		var bytes := FileAccess.get_file_as_bytes(from.path_join(file_name))
 		if bytes.is_empty() and FileAccess.get_open_error() != OK:
-			error.emit("stage_failed", "Cannot read %s (is its extension in the export include filter?)" % from.path_join(file_name))
+			error.emit("stage_failed", "Cannot read %s: it was not packaged. Keep it inside the UI folder (see Project Settings > webui/export/ui_folders) and export again." % from.path_join(file_name))
 			return false
 		var out := FileAccess.open(to.path_join(file_name), FileAccess.WRITE)
 		if out == null:

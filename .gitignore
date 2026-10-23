@@ -20,6 +20,12 @@ mono_crash.*.json
 *.exe
 *.pck
 
+# ---- Desktop development preview ----
+# Generated copy of the UI folder (created when running from the editor)
+.webui_preview/
+# Optional third-party extension; install it per docs/desktop-preview.md, do not commit it
+/addons/godot_wry/
+
 # ---- Native Android plugin (native/android) ----
 # Intermediate outputs. The packaged addons/webui/bin/*.aar files are NOT ignored:
 # the export plugin needs them, so a fresh project can use the addon without building.

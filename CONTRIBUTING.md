@@ -24,9 +24,10 @@ Please include: Godot version, Android version and device, the System WebView ve
 ```bash
 godot --headless --path . --import --quit
 godot --headless --path . -s res://tests/headless_test.gd
+godot --headless --path . -s res://tests/api_test.gd
 ```
 
-The exit code is the number of failed checks. This test runs on desktop with the null backend; it does not cover the Android code. For native changes, test on a device and say in your pull request what you tested and on which device.
+The exit code is the number of failed checks. These tests run on desktop with fake backends; they do not cover the Android code or a real WebView. For native changes, test on a device and say in your pull request what you tested and on which device.
 
 ## Pull requests
 

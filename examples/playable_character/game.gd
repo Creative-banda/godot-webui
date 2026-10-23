@@ -81,4 +81,4 @@ func _push_state() -> void:
 	}
 	if state != _last_state:
 		_last_state = state
-		app.ui.send("state", state)
+		app.ui.set_state("state", state)

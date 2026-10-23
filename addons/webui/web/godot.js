@@ -5,12 +5,16 @@
  * inside the overlay. Do not <script src> this file.
  *
  *   Godot.emit(name, payload?)        page -> Godot. name: /^[A-Za-z][A-Za-z0-9_.:-]{0,63}$/, payload: plain object.
- *   Godot.on(name, fn)                Godot -> page. fn(payload). Replays the last value if one already arrived.
- *   Godot.off(name, fn)
+ *   Godot.onState(name, fn)           Godot -> page, persistent state (GodotWebUI.set_state). fn(payload) is also
+ *                                     called at once with the latest value if one already arrived.
+ *   Godot.onEvent(name, fn)           Godot -> page, one-shot notification (GodotWebUI.emit_event). Never replayed.
+ *   Godot.on(name, fn)                Same as onState (kept for compatibility).
+ *   Godot.off(name, fn)               Removes a handler registered with on/onState/onEvent.
  *   Godot.guard(releaseFn)            releaseFn runs on blur / page hidden / app pause. Returns an unregister fn.
  *   Godot.touchRegions(selector?)     elements matching selector (default '[data-webui-touch]') receive touches;
  *                                     the rest of the screen passes through to the game (touch mode "regions").
  *   Godot.available                   true when the native bridge is present.
+ *   Godot.preview                     true in the desktop development preview (not Android).
  */
 (function () {
   'use strict';
@@ -21,12 +25,23 @@
   var NAME_RE = /^[A-Za-z][A-Za-z0-9_.:-]{0,63}$/;
 
   var queue = [];
-  var listeners = Object.create(null);
+  var EVENT_PREFIX = '@e:';             // marks one-shot events sent by GodotWebUI.emit_event
+  var listeners = Object.create(null);  // state listeners
+  var eventListeners = Object.create(null);
   var last = Object.create(null);
   var guards = [];
   var warnedMissing = false;
 
-  function native() { return window.GodotNative; }
+  // Android exposes window.GodotNative. The desktop development preview (WRY/WebView2) only has
+  // window.ipc, so adapt it to the same one-string postMessage shape.
+  var ipcAdapter = null;
+  function native() {
+    if (window.GodotNative) return window.GodotNative;
+    if (window.ipc && typeof window.ipc.postMessage === 'function') {
+      return ipcAdapter || (ipcAdapter = { postMessage: function (s) { window.ipc.postMessage(s); } });
+    }
+    return undefined;
+  }
 
   function send(obj) {
     var text;
@@ -64,6 +79,8 @@
 
   var Godot = {
     get available() { return !!native(); },
+    /** true when running in the desktop development preview instead of Android */
+    get preview() { return !window.GodotNative && !!native(); },
 
     emit: function (name, payload) {
       if (typeof name !== 'string' || !NAME_RE.test(name)) {
@@ -79,19 +96,26 @@
       return send({ t: 'event', name: name, payload: payload });
     },
 
-    on: function (name, fn) {
-      if (typeof fn !== 'function') { console.error('[Godot] on() needs a function.'); return; }
+    onState: function (name, fn) {
+      if (typeof fn !== 'function') { console.error('[Godot] onState() needs a function.'); return; }
       (listeners[name] = listeners[name] || []).push(fn);
       if (name in last) {
         try { fn(last[name]); } catch (e) { console.error('[Godot] handler for "' + name + '" threw:', e); }
       }
     },
 
+    onEvent: function (name, fn) {
+      if (typeof fn !== 'function') { console.error('[Godot] onEvent() needs a function.'); return; }
+      (eventListeners[name] = eventListeners[name] || []).push(fn);
+    },
+
+    on: function (name, fn) { Godot.onState(name, fn); },
+
     off: function (name, fn) {
-      var l = listeners[name];
-      if (!l) return;
-      var i = l.indexOf(fn);
-      if (i >= 0) l.splice(i, 1);
+      [listeners[name], eventListeners[name]].forEach(function (l) {
+        var i = l ? l.indexOf(fn) : -1;
+        if (i >= 0) l.splice(i, 1);
+      });
     },
 
     guard: function (releaseFn) {
@@ -104,6 +128,8 @@
 
     touchRegions: function (selector) {
       regionSelector = selector || '[data-webui-touch]';
+      // Tells GodotWebUI (touch mode AUTO) that this page wants pass-through for everything else.
+      Godot.emit('webui.touch_regions', { selector: regionSelector });
       scheduleRegions(true);
     },
 
@@ -114,8 +140,10 @@
         console.error('[Godot] bad payload from Godot for "' + name + '":', e.message);
         return;
       }
-      last[name] = value;
-      (listeners[name] || []).slice().forEach(function (fn) {
+      var isEvent = name.indexOf(EVENT_PREFIX) === 0;
+      if (isEvent) name = name.slice(EVENT_PREFIX.length);
+      else last[name] = value;  // only state is remembered for late subscribers
+      ((isEvent ? eventListeners : listeners)[name] || []).slice().forEach(function (fn) {
         try { fn(value); } catch (e) { console.error('[Godot] handler for "' + name + '" threw:', e); }
       });
     },

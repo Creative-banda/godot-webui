@@ -58,7 +58,7 @@ func show_page(page: String, touch_mode: GodotWebUI.TouchMode, on_ready: Callabl
 	ui.on("settings_changed", change_settings)
 	_on_page_ready = on_ready
 	ui.set_touch_mode(touch_mode)
-	if not ui._started and not _ui_failed:
+	if not ui.is_started() and not _ui_failed:
 		_ui_failed = not ui.start(UI_DIR, page)
 		_page = page
 	elif page != _page:
@@ -79,7 +79,7 @@ func change_settings(p: Dictionary) -> void:
 		settings.show_debug = p.show_debug
 	_apply_settings()
 	_save()
-	ui.send("settings", settings)
+	ui.set_state("settings", settings)
 
 
 func damage_scale() -> float:
@@ -92,9 +92,9 @@ func record(stat: String) -> void:
 
 
 func _page_ready() -> void:
-	ui.send("settings", settings)
-	ui.send("stats", stats)
-	ui.send("info", {
+	ui.set_state("settings", settings)
+	ui.set_state("stats", stats)
+	ui.set_state("info", {
 		"engine": Engine.get_version_info().string,
 		"os": OS.get_name(),
 		"renderer": str(ProjectSettings.get_setting("rendering/renderer/rendering_method")),

@@ -28,6 +28,8 @@ var _jump_buffer := 0.0
 var _invulnerable := 0.0
 var _facing := 1.0
 var _spawn: Vector2
+var _key_left := false
+var _key_right := false
 
 
 func _ready() -> void:
@@ -52,6 +54,8 @@ func damage(amount: int) -> void:
 func clear_input() -> void:
 	move_input = Vector2.ZERO
 	attacking = false
+	_key_left = false
+	_key_right = false
 
 
 func _die() -> void:
@@ -67,6 +71,40 @@ func _die() -> void:
 	queue_redraw()
 
 
+## Desktop keyboard controls: arrows or A/D move, Space / Up / W jump, X or J attack (hold).
+## Keys are tracked from input *events* instead of polling Input, because when the desktop preview
+## overlay has keyboard focus its key presses reach Godot as injected events, which Input.is_action_*
+## polling does not see.
+func _input(event: InputEvent) -> void:
+	if OS.get_name() == "Android" or not event is InputEventKey or event.echo:
+		return
+	var pressed: bool = event.pressed
+	if _key_is(event, [KEY_LEFT, KEY_A]):
+		_key_left = pressed
+	elif _key_is(event, [KEY_RIGHT, KEY_D]):
+		_key_right = pressed
+	elif _key_is(event, [KEY_SPACE, KEY_UP, KEY_W]):
+		if pressed and not dead:
+			request_jump()
+	elif _key_is(event, [KEY_X, KEY_J]):
+		attacking = pressed and not dead
+
+
+func _notification(what: int) -> void:
+	# Never leave a key "held" when focus moves between the game window and the overlay.
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_key_left = false
+		_key_right = false
+
+
+func _key_is(event: InputEventKey, keys: Array) -> bool:
+	return event.keycode in keys or event.physical_keycode in keys
+
+
+func _key_axis() -> float:
+	return float(int(_key_right) - int(_key_left))
+
+
 func _physics_process(delta: float) -> void:
 	_invulnerable = maxf(_invulnerable - delta, 0.0)
 	_jump_buffer = maxf(_jump_buffer - delta, 0.0)
@@ -79,11 +117,9 @@ func _physics_process(delta: float) -> void:
 		jumped.emit()
 
 	var axis := 0.0 if dead else move_input.x
-	# Desktop fallback so the physics can be tried without the WebView.
-	if OS.get_name() != "Android" and axis == 0.0 and not dead:
-		axis = Input.get_axis("ui_left", "ui_right")
-		if Input.is_action_just_pressed("ui_accept"):
-			request_jump()
+	# Desktop keyboard fallback (see _input) so the physics can be tried without touch.
+	if axis == 0.0 and not dead:
+		axis = _key_axis()
 	if absf(axis) > 0.01:
 		_facing = signf(axis)
 	velocity.x = move_toward(velocity.x, axis * SPEED, ACCELERATION * delta)
