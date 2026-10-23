@@ -1,11 +1,13 @@
 // Menu logic: navigation, animation and presentation. Godot owns settings, stats and the game.
 (() => {
   const $ = (id) => document.getElementById(id);
+  const app = $('app');
   const screens = [...document.querySelectorAll('.screen')];
 
   // ---------- browser-side navigation with directional transitions
   let current = 'main';
   function show(name) {
+    if (app) app.dataset.screen = name;
     const forward = name !== 'main';
     screens.forEach((s) => {
       const on = s.id === 'screen-' + name;
@@ -46,7 +48,7 @@
   }
   warmScreens();
 
-  // ---------- press ripple (purely visual)
+  // ---------- tactile candy ripple (purely visual)
   document.querySelectorAll('.press').forEach((el) => {
     el.addEventListener('pointerdown', (e) => {
       const r = el.getBoundingClientRect();
@@ -127,40 +129,138 @@
     if (i.level) selectLevel(i.level);
   });
 
-  // ---------- ambient glow particles (canvas, additive blending)
+  // ---------- ambient bubbles, sparkles & confetti FX (canvas)
   const canvas = $('fx');
   const ctx = canvas.getContext('2d');
   const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
   let W = 0, H = 0;
-  const dots = Array.from({ length: 36 }, () => ({
-    x: Math.random(), y: Math.random(), r: 1 + Math.random() * 2.6,
-    v: 0.02 + Math.random() * 0.05, hue: Math.random() < 0.5 ? 156 : 252, ph: Math.random() * 6.28,
+
+  // Soap bubbles
+  const bubbleCount = 20;
+  const bubbles = Array.from({ length: bubbleCount }, () => ({
+    x: Math.random(),
+    y: Math.random() * 1.2,
+    r: 10 + Math.random() * 22,
+    speed: 0.03 + Math.random() * 0.05,
+    wobbleSpeed: 1 + Math.random() * 2,
+    wobbleAmp: 0.015 + Math.random() * 0.02,
+    phase: Math.random() * Math.PI * 2,
+    hue: Math.floor(Math.random() * 360)
   }));
+
+  // Sparkles & confetti
+  const sparkleCount = 28;
+  const sparkles = Array.from({ length: sparkleCount }, () => ({
+    x: Math.random(),
+    y: Math.random(),
+    size: 2.5 + Math.random() * 4,
+    speed: 0.02 + Math.random() * 0.06,
+    rot: Math.random() * Math.PI * 2,
+    rotSpeed: (Math.random() - 0.5) * 3,
+    hue: [45, 160, 210, 290, 340][Math.floor(Math.random() * 5)],
+    isStar: Math.random() < 0.4
+  }));
+
   function resize() {
-    W = canvas.clientWidth; H = canvas.clientHeight;
-    canvas.width = W * dpr; canvas.height = H * dpr;
+    W = canvas.clientWidth;
+    H = canvas.clientHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   window.addEventListener('resize', resize);
   resize();
+
   let last = performance.now();
   function frame(t) {
     const dt = Math.min(0.05, (t - last) / 1000);
     last = t;
     ctx.clearRect(0, 0, W, H);
-    ctx.globalCompositeOperation = 'lighter';
-    for (const d of dots) {
-      d.y -= d.v * dt;
-      if (d.y < -0.05) { d.y = 1.05; d.x = Math.random(); }
-      const x = (d.x + Math.sin(t / 2000 + d.ph) * 0.015) * W, y = d.y * H;
-      const g = ctx.createRadialGradient(x, y, 0, x, y, d.r * 6);
-      g.addColorStop(0, `hsla(${d.hue}, 90%, 70%, 0.55)`);
-      g.addColorStop(1, `hsla(${d.hue}, 90%, 70%, 0)`);
-      ctx.fillStyle = g;
-      ctx.fillRect(x - d.r * 6, y - d.r * 6, d.r * 12, d.r * 12);
+
+    // 1. Draw iridescent soap bubbles
+    for (const b of bubbles) {
+      b.y -= b.speed * dt;
+      if (b.y < -0.1) {
+        b.y = 1.1;
+        b.x = Math.random();
+        b.hue = Math.floor(Math.random() * 360);
+      }
+      const bx = (b.x + Math.sin(t * 0.001 * b.wobbleSpeed + b.phase) * b.wobbleAmp) * W;
+      const by = b.y * H;
+
+      // Outer rainbow rim
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(bx, by, b.r, 0, Math.PI * 2);
+
+      // Translucent bubble body gradient
+      const bodyGrad = ctx.createRadialGradient(bx - b.r * 0.3, by - b.r * 0.3, b.r * 0.1, bx, by, b.r);
+      bodyGrad.addColorStop(0, `hsla(${b.hue}, 95%, 85%, 0.15)`);
+      bodyGrad.addColorStop(0.7, `hsla(${(b.hue + 60) % 360}, 90%, 75%, 0.25)`);
+      bodyGrad.addColorStop(1, `hsla(${(b.hue + 140) % 360}, 95%, 70%, 0.55)`);
+      ctx.fillStyle = bodyGrad;
+      ctx.fill();
+
+      // Iridescent outline
+      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = `hsla(${b.hue}, 90%, 80%, 0.6)`;
+      ctx.stroke();
+
+      // Curved specular gloss highlight (top-left)
+      ctx.beginPath();
+      ctx.ellipse(bx - b.r * 0.35, by - b.r * 0.35, b.r * 0.32, b.r * 0.16, -Math.PI / 4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.fill();
+
+      // Small secondary glint (bottom-right)
+      ctx.beginPath();
+      ctx.arc(bx + b.r * 0.4, by + b.r * 0.4, b.r * 0.1, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.fill();
+      ctx.restore();
     }
+
+    // 2. Draw confetti & sparkles
+    for (const s of sparkles) {
+      s.y -= s.speed * dt;
+      s.rot += s.rotSpeed * dt;
+      if (s.y < -0.05) {
+        s.y = 1.05;
+        s.x = Math.random();
+      }
+      const sx = s.x * W;
+      const sy = s.y * H;
+
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.rotate(s.rot);
+
+      if (s.isStar) {
+        // 4-pointed sparkle
+        ctx.fillStyle = `hsla(${s.hue}, 95%, 80%, 0.7)`;
+        ctx.beginPath();
+        for (let i = 0; i < 4; i++) {
+          ctx.lineTo(Math.cos((i * Math.PI) / 2) * s.size * 2, Math.sin((i * Math.PI) / 2) * s.size * 2);
+          ctx.lineTo(Math.cos((i * Math.PI) / 2 + Math.PI / 4) * s.size * 0.5, Math.sin((i * Math.PI) / 2 + Math.PI / 4) * s.size * 0.5);
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // Confetti flake
+        ctx.fillStyle = `hsla(${s.hue}, 90%, 70%, 0.65)`;
+        ctx.fillRect(-s.size, -s.size, s.size * 2, s.size * 1.5);
+      }
+      ctx.restore();
+    }
+
     if (!document.hidden) requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { last = performance.now(); requestAnimationFrame(frame); } });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      last = performance.now();
+      requestAnimationFrame(frame);
+    }
+  });
 })();
