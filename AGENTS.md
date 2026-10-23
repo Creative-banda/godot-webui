@@ -14,7 +14,7 @@ Godot WebUI shows HTML/CSS/JS as a transparent Android WebView above a Godot gam
 - Send intent, not results: `Godot.emit("jump")`, `Godot.emit("move_changed", {x, y})`. Names match `^[A-Za-z][A-Za-z0-9_.:-]{0,63}$`; payloads are plain JSON objects under 64 KB.
 - Render only what Godot sends: persistent values with `Godot.onState(name, fn)` (late subscribers get the latest value), one-shot notifications with `Godot.onEvent(name, fn)` (never replayed). `Godot.on` is an alias of `onState`. Godot should resend state on every `page_ready`.
 - Held inputs (joystick, hold buttons): Pointer Events with `setPointerCapture`; release on `pointerup`, `pointercancel` and `lostpointercapture`; register the release with `Godot.guard(fn)`. Track `pointerId` per control for multi-touch.
-- Use `env(safe-area-inset-*)`, `%`, `vw`/`vh` and `clamp()`; do not hardcode coordinates.
+- Make pages responsive, not tuned to one device: small and large phones, tablets, foldables, split-screen, portrait and landscape where the game allows both, and any window size in the preview. Use `env(safe-area-inset-*)`, `%`, `vw`/`vh`/`vmin`, `clamp()`, flex/grid and `@media` breakpoints (height and orientation, not only width); touch targets at least 44 CSS px; do not hardcode coordinates. Details and the sizes to check: `skills/godot-webui/references/responsive.md`.
 - `backdrop-filter` cannot blur the game behind the overlay (separate Android surface); use gradients instead.
 - Keep UI files in one folder (containing an `.html` file, outside `addons/`): the export plugin packages that folder's whole subtree as raw files, so images, fonts and JSON need no export filter. Reference them with relative URLs; never remote ones.
 

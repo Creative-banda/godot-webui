@@ -598,7 +598,8 @@ def pointer_text(skill_path: str) -> str:
         "listed in its `references/api.md` and in `addons/webui/webui.gd` / `addons/webui/web/godot.js` (never invent "
         "methods); no gameplay logic in the page; Android is the only runtime; relative URLs only; and write pages "
         "the visual editor can edit (external CSS files, unique ids, static text in the HTML, sample state in "
-        "`.webui-edit/`). If that file is missing, say so instead of guessing.\n" % skill_path
+        "`.webui-edit/`) and responsive on phones, tablets and any window size. If that file is missing, say so instead "
+        "of guessing.\n" % skill_path
     )
 
 

@@ -51,7 +51,7 @@ Transparent `html`/`body` is what lets the game show through. A full-screen opaq
 
 ## Layout for games
 
-- Anchor to edges with `position: fixed` plus `max(16px, env(safe-area-inset-left))`-style offsets; use `clamp()` for sizes; use `%`/`vw`/`vh`/flex/grid for containers. Phones are usually landscape for games; do not assume one resolution.
+- Be responsive (SKILL.md rule 8, details and patterns in `responsive.md`): anchor to edges with `position: fixed` plus `max(16px, env(safe-area-inset-left))`-style offsets; use `clamp()` for sizes; use `%`/`vw`/`vh`/`vmin`/flex/grid for containers; add `@media` breakpoints for height, orientation and wider screens. The page runs on small and large phones, tablets, foldables and split-screen windows, in portrait or landscape: do not design for one device.
 - Touch targets at least about 44 CSS px; leave room for thumbs at the bottom corners.
 - Use CSS transitions/animations freely, but keep them cheap on low-end phones (transform and opacity over layout properties, no huge blurs). Performance on low-end devices has not been measured.
 - `backdrop-filter` cannot blur the game behind the overlay: the WebView is a separate Android surface. Fake glass with gradients and borders.

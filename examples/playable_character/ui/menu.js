@@ -87,6 +87,19 @@
   document.querySelectorAll('#set-difficulty button').forEach((b) =>
     b.addEventListener('click', () => Godot.emit('settings_changed', { difficulty: b.dataset.value })));
 
+  const nameInput = $('input-player-name');
+  if (nameInput) {
+    nameInput.addEventListener('input', (e) => {
+      console.log('Player name:', e.target.value);
+    });
+  }
+  const scoreInput = $('input-target-score');
+  if (scoreInput) {
+    scoreInput.addEventListener('input', (e) => {
+      console.log('Target score:', e.target.value);
+    });
+  }
+
   // ---------- Godot -> HTML
   Godot.on('settings', (s) => {
     music.value = s.music;

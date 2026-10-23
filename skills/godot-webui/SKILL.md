@@ -21,7 +21,8 @@ Read this whole file before doing any WebUI work. The rules below are binding. T
 5. **Do not claim anything about a real device** (touch pass-through, multi-touch, pause/resume, orientation, performance) unless it was run on one. Say what you could not verify.
 6. **Keep the existing structure and naming of the project.** Do not rewrite working native UI or whole files for a small change; edit in place.
 7. **Write pages so the visual editor can edit them** (section 4). This is how the user adjusts the design without you.
-8. **Never use editor-only classes in game code**: `WebUIScreenInspector`, `WebUIScreenPreview`, `WebUIEditPreview`, `WebUIEditLink`, `WebUIEditorDock`, `WebUIEditorModel`, `WebUICssPatcher`, `WebUIHtmlPatcher`, `WebUICssCatalog`, `web/edit_mode.js`, and the `.webui-edit/` folder exist only for the editor.
+8. **Make every page responsive; never design for one screen.** A page must hold up on small and large phones (notches, cutouts, portrait and landscape where the game allows both), tablets, foldables and split-screen windows, and at any window size in the desktop preview while developing (desktop is a development aid, not a supported runtime). Fluid sizes first (`clamp()`, `min()`/`max()`, `vmin`, flex/grid, `aspect-ratio`), then `@media` breakpoints for width, height, orientation and aspect ratio; no fixed pixel layouts, no heights that assume one device, touch targets never below 44 CSS px, safe-area insets on every edge-anchored element. Check the page at several sizes (list in `references/responsive.md`) and report which you checked and that none was a real device. Details and patterns: `references/responsive.md`.
+9. **Never use editor-only classes in game code**: `WebUIScreenInspector`, `WebUIScreenPreview`, `WebUIEditPreview`, `WebUIEditLink`, `WebUIEditorDock`, `WebUIEditorModel`, `WebUICssPatcher`, `WebUIHtmlPatcher`, `WebUICssCatalog`, `web/edit_mode.js`, and the `.webui-edit/` folder exist only for the editor.
 
 ## 1. Decide whether WebUI fits
 
@@ -41,7 +42,7 @@ Files and packaging (details: `references/ui-authoring.md`):
 
 - Put pages in one folder (for example `res://ui/`) containing an `index.html` (or the page name you pass to `start`). The export plugin packages every folder outside `addons/` that contains an `.html` file, with its whole subtree, as raw files, and always packages `godot.js`. Override with the project setting `webui/export/ui_folders`. A folder containing a `.gdignore`, and any folder whose name starts with `.`, is never packaged. Do not add an export filter for these files.
 - Page basics: `<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">`, `html, body { background: transparent; margin: 0; overflow: hidden; touch-action: none; user-select: none; }`.
-- Lay out with `%`, `vw`/`vh`, `clamp()`, flex/grid and `env(safe-area-inset-*)`. Do not hardcode pixel coordinates for a single phone. Test landscape and portrait if the game supports both.
+- Lay out responsively (rule 8): `%`, `vw`/`vh`/`vmin`, `clamp()`, flex/grid and `env(safe-area-inset-*)`, plus `@media` breakpoints. Do not hardcode pixel coordinates for a single phone or assume one resolution. Test landscape and portrait if the game supports both, and a tablet size.
 
 ### Connect it to Godot
 
@@ -104,11 +105,12 @@ Details, limits and examples: `references/visual-editor.md`.
 
 ## 7. Finish by reporting
 
-Tell the user: which files you created or changed; how to preview (which page in the dock, the setup step if missing); which events and states the bridge now carries (names and payload shapes) and where the sample state is; which parts of the page the visual editor cannot edit and why; any behavior you could not verify (anything touching a real device); and relevant limitations from section 5. Do not claim a device behavior works unless it was run on a device.
+Tell the user: which files you created or changed; how to preview (which page in the dock, the setup step if missing); which events and states the bridge now carries (names and payload shapes) and where the sample state is; which screen sizes you checked (phone portrait/landscape, tablet, wide window) and that none was a real device; which parts of the page the visual editor cannot edit and why; any behavior you could not verify (anything touching a real device); and relevant limitations from section 5. Do not claim a device behavior works unless it was run on a device.
 
 ## Reference files
 
 - `references/api.md`: GDScript and JavaScript API, limits, signals, error codes.
+- `references/responsive.md`: making pages work on phones, tablets and any window size: fluid units, breakpoints, safe areas, sizes to check, how it interacts with the visual editor.
 - `references/ui-authoring.md`: folder layout, packaging rules, layout, assets, accessibility notes.
 - `references/visual-editor.md`: what the editor can and cannot edit, the authoring rules in detail with good and bad examples, sample state files.
 - `references/webui-screen.md`: the optional `WebUIScreen` node that shows a page in the 2D scene editor: when to add it, its API, limits.

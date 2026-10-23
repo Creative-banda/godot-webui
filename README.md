@@ -272,8 +272,8 @@ python tools/setup.py agent-files PATH_TO_GAME --agents agents-md,claude,cursor,
 ```
 This Godot project builds its UI with the Godot WebUI addon. First read skills/godot-webui/SKILL.md
 completely and follow it: its rules are binding (only the documented API, no gameplay logic in the page,
-Android only, pages the visual editor can edit). Then check whether the addon is installed and report
-before changing anything.
+Android only, pages the visual editor can edit, responsive on phones, tablets and any window size). Then
+check whether the addon is installed and report before changing anything.
 ```
 
 More prompts (build a screen, make a page editor-friendly, review an agent's work) and the per-tool details are in `skills/godot-webui/references/new-project.md`. See also [docs/setup.md](docs/setup.md#teaching-an-ai-coding-agent).

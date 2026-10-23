@@ -743,6 +743,37 @@ input[type=range]::-webkit-slider-thumb {
   transition: transform 0.35s var(--spring);
 }
 
+.candy-input {
+  width: 44%;
+  min-width: 150px;
+  max-width: 320px;
+  padding: clamp(8px, 1.2vh, 12px) clamp(12px, 1.2vw, 16px);
+  border-radius: clamp(10px, 1vw, 16px);
+  background: rgba(0, 0, 0, 0.45);
+  border: 2px solid var(--edge);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: clamp(13px, 1.1vw, 16.5px);
+  font-weight: 700;
+  outline: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.candy-input:focus {
+  border-color: var(--candy-yellow);
+  box-shadow: 0 0 14px rgba(255, 209, 102, 0.5), inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.candy-input::placeholder {
+  color: var(--dim);
+  font-weight: 600;
+}
+
+.num-input {
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---------- stats screen ---------- */
 .stat-grid {
   display: grid;

@@ -54,7 +54,8 @@ First read skills/godot-webui/SKILL.md completely (in Claude Code the skill is n
 the references it points to for the task. Its rules are binding: use only the API listed in
 references/api.md and addons/webui/webui.gd / web/godot.js, never invent methods or events; no gameplay
 logic in the page; Android is the only runtime; relative URLs only; write pages the visual editor can
-edit (external CSS files, unique ids, static text in the HTML, sample state in .webui-edit/).
+edit (external CSS files, unique ids, static text in the HTML, sample state in .webui-edit/) and make them
+responsive on phones, tablets and any window size.
 
 Then check whether the addon is installed and enabled (addons/webui and the plugin entry in
 project.godot). If not, tell me and follow references/new-project.md. Report what you found before
@@ -73,6 +74,7 @@ Settings and Quit> in <ui folder, e.g. res://ui>.
 - Follow section 4 of the skill so I can adjust the design in the WebUI dock myself: CSS in a separate
   .css file, no <style> blocks or inline styles, unique ids on buttons/labels/panels, static text in the
   HTML, tokens in :root, plain HTML/CSS/JS.
+- Make it responsive (skill rule 8, references/responsive.md): fluid units and clamp(), breakpoints for height/orientation/wider screens, safe areas, touch targets of at least 44 CSS px; check it at phone portrait and landscape, tablet and a wide window, and report the sizes checked.
 - Create the sample state file (.webui-edit/<page>.json plus an empty .gdignore) matching what Godot sends.
 - Finish with the report described in section 7 of the skill, including what you could not verify on a
   device.

@@ -41,7 +41,7 @@ Values that genuinely depend on Godot state (a bar's width as a percentage) may 
 
 ### 2. Plain, flat CSS
 
-Supported: ordinary rules with any selector, shorthands, `var(--x)`, `!important`, `@media`, `@supports`, `@layer`, `@keyframes` (not edited). Not supported (refused, never guessed): CSS nesting (`.a { &:hover {} }`), `@container`, and any value containing `;`, `{`, `}`, `/* */` or a backslash (this includes `data:` URLs: reference image and font files instead). A rule inside `@media` is edited only when it is what currently sets the value.
+Supported: ordinary rules with any selector, shorthands, `var(--x)`, `!important`, `@media`, `@supports`, `@layer`, `@keyframes` (not edited). Not supported (refused, never guessed): CSS nesting (`.a { &:hover {} }`), `@container`, and any value containing `;`, `{`, `}`, `/* */` or a backslash (this includes `data:` URLs: reference image and font files instead). A rule inside `@media` is edited only when it is what currently sets the value, so the preview must be showing the size that query applies to (see `responsive.md`).
 
 ### 3. Classes for shared looks, a unique `id` for anything the user may tweak alone
 
