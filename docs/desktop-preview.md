@@ -20,6 +20,8 @@ The preview uses the optional [godot_wry](https://github.com/MingHuiLiu/godot_wr
 
 ## Setup
 
+**Automatic:** `python tools/setup.py wry` downloads the pinned archive, verifies its SHA-256, installs the files for your OS into the folder below and records them (see [setup.md](setup.md)). Run it again any time to verify or repair. The manual steps that follow are the fallback and show exactly what it does.
+
 Requirements: Godot **4.7+** (the extension declares `compatibility_minimum = 4.7`; 4.7.1 is the version this repository targets).
 
 1. Download `godot_wry.zip` from the [godot_wry releases](https://github.com/MingHuiLiu/godot_wry/releases) (desktop, Android and iOS builds in one archive; each package is rooted at `addons/godot_wry`). It is third-party native code that runs inside the editor and your game process: review the source and pin the release you tested. The v0.2.0 archive tested here was 16,390,777 bytes with SHA-256 `3df4a42f79539caf8b4b9620675cf556cd3f9f42962c696a73559f4a23344c6d`.

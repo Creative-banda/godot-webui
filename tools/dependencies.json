@@ -1,0 +1,29 @@
+{
+  "_comment": "Pinned versions used by tools/setup.py. Update version, url, sha256 and size together after inspecting a new release.",
+  "godot": {
+    "supported_minor": "4.7",
+    "tested": "4.7.1.stable"
+  },
+  "java": {
+    "major": 17
+  },
+  "native_plugin_build": {
+    "_comment": "Only needed to rebuild addons/webui/bin/*.aar from native/android (read from native/android/webui/build.gradle at run time; kept here for documentation).",
+    "compileSdk": 35,
+    "buildTools": "35.0.1"
+  },
+  "godot_wry": {
+    "purpose": "Desktop development preview only. Never installed into the project and never part of an Android export.",
+    "version": "v0.2.0",
+    "url": "https://github.com/MingHuiLiu/godot_wry/releases/download/v0.2.0/godot_wry.zip",
+    "sha256": "3df4a42f79539caf8b4b9620675cf556cd3f9f42962c696a73559f4a23344c6d",
+    "size": 16390777,
+    "license": "MIT",
+    "archive_root": "addons/godot_wry/",
+    "platforms": {
+      "windows": {"machines": ["amd64", "x86_64"], "lib_dir": "bin/x86_64-pc-windows-msvc", "tested": true},
+      "linux": {"machines": ["x86_64", "amd64"], "lib_dir": "bin/x86_64-unknown-linux-gnu", "tested": false},
+      "macos": {"machines": ["arm64", "x86_64"], "lib_dir": "bin/universal-apple-darwin", "tested": false}
+    }
+  }
+}

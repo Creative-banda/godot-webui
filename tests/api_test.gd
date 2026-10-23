@@ -43,6 +43,7 @@ func _initialize() -> void:
 	await _test_touch_modes()
 	await _test_guard_and_recovery()
 	_test_export_plugin()
+	await _test_minimal_example()
 	quit(failures)
 
 
@@ -187,4 +188,54 @@ func _test_export_plugin() -> void:
 	ProjectSettings.set_setting(setting, PackedStringArray(["res://templates/hud/", "res://nope", "res://", "elsewhere"]))
 	var configured := WebUIExportScan.resolve()
 	check(configured.folders == ["res://templates/hud"] and configured.errors.size() == 3, "configured folders are validated (3 invalid entries reported)")
+	# folders with a .gdignore are not UI folders (docs, samples, the skill's example pages)
+	var base := "res://zz_scan_test"
+	DirAccess.make_dir_recursive_absolute(base + "/ui")
+	DirAccess.make_dir_recursive_absolute(base + "/hidden")
+	for path in [base + "/ui/index.html", base + "/hidden/index.html", base + "/hidden/.gdignore"]:
+		var file := FileAccess.open(path, FileAccess.WRITE)
+		file.store_string("x")
+		file.close()
+	ProjectSettings.set_setting(setting, PackedStringArray())
+	var detected: Array = WebUIExportScan.resolve().folders
+	check(base + "/ui" in detected and not (base + "/hidden") in detected, "auto-detect skips folders containing .gdignore")
+	check(not detected.any(func(f: String) -> bool: return f.begins_with("res://templates") or f.begins_with("res://skills")), "templates/ and skills/ samples are not packaged")
+	for path in [base + "/ui/index.html", base + "/hidden/index.html", base + "/hidden/.gdignore"]:
+		DirAccess.remove_absolute(path)
+	for path in [base + "/ui", base + "/hidden", base]:
+		DirAccess.remove_absolute(path)
 	ProjectSettings.set_setting(setting, saved)
+
+
+func _test_minimal_example() -> void:
+	var scene: Node = load("res://examples/minimal_hud/minimal.tscn").instantiate()
+	root.add_child(scene)
+	var ui: GodotWebUI = scene.ui
+	var errors: Array = []
+	ui.error.connect(func(code: String, _t: String) -> void: errors.append(code))
+	var events: Array = []
+	var fake := FakeBackend.new()
+	ui._backend = fake
+	ui._started = true
+	fake.message.connect(ui._on_raw_message)
+	fake.message.emit('{"t":"ready"}')
+	check(fake.sent.any(func(m: Array) -> bool: return m[0] == "hud"), "example pushes its state on page_ready")
+
+	fake.sent.clear()
+	ui._on_raw_message('{"t":"event","name":"attack","payload":{"heavy":false}}')
+	check(scene.dummy_hp in [95, 90], "example: attack is decided in Godot (5, or 10 on a crit)")
+	check(fake.sent.any(func(m: Array) -> bool: return m[0] == "@e:hit") and fake.sent.any(func(m: Array) -> bool: return m[0] == "hud"), "example: an attack sends a one-shot hit event and the new state")
+
+	var hp: int = scene.dummy_hp
+	ui._on_raw_message('{"t":"event","name":"attack","payload":{"heavy":"yes"}}')
+	check(scene.dummy_hp == hp, "example: a payload of the wrong type is ignored")
+
+	scene.coins = 3
+	fake.sent.clear()
+	ui._on_raw_message('{"t":"event","name":"repair","payload":{}}')
+	check(scene.coins == 3 and scene.dummy_hp == hp and fake.sent.any(func(m: Array) -> bool: return m[0] == "@e:toast"), "example: repair without enough coins only shows a toast")
+	scene.coins = 10
+	ui._on_raw_message('{"t":"event","name":"repair","payload":{}}')
+	check(scene.coins == 5 and scene.dummy_hp == scene.DUMMY_MAX_HP, "example: repair costs coins and restores health")
+	ui.shutdown()
+	scene.queue_free()

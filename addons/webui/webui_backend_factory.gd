@@ -9,6 +9,7 @@ static func create_backend() -> WebUIBackend:
 		"Android":
 			return WebUIBackendAndroid.new()
 		"Windows", "macOS", "Linux":
-			if OS.has_feature("editor"):
+			# No window (headless tests, servers): a native webview cannot be created.
+			if OS.has_feature("editor") and DisplayServer.get_name() != "headless":
 				return WebUIBackendDesktop.new()
 	return WebUIBackendNull.new()

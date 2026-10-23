@@ -37,6 +37,8 @@ static func _detect(dir: String, out: Array) -> void:
 		if dir == "res://" and sub in AUTO_DETECT_SKIP:
 			continue
 		var path := dir.path_join(sub)
+		if FileAccess.file_exists(path.path_join(".gdignore")):
+			continue  # folders hidden from Godot (docs, samples, tools) are never UI folders
 		if has_html(path):
 			out.append(path)
 		else:

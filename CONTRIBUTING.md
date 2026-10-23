@@ -25,6 +25,7 @@ Please include: Godot version, Android version and device, the System WebView ve
 godot --headless --path . --import --quit
 godot --headless --path . -s res://tests/headless_test.gd
 godot --headless --path . -s res://tests/api_test.gd
+python -m unittest discover -s tests -p "test_setup.py"
 ```
 
 The exit code is the number of failed checks. These tests run on desktop with fake backends; they do not cover the Android code or a real WebView. For native changes, test on a device and say in your pull request what you tested and on which device.
@@ -36,6 +37,10 @@ The exit code is the number of failed checks. These tests run on desktop with fa
 - Do not claim support for platforms or behaviours that you have not verified.
 - iOS and desktop backends are out of scope for this release; open an issue to discuss before starting one.
 - Keep the README, `AGENTS.md` and `CHANGELOG.md` accurate when you change behaviour or the API.
+
+## License
+
+By contributing you agree that your contribution is licensed under the project's [MIT license](LICENSE).
 
 ## Security
 

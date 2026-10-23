@@ -26,7 +26,8 @@ This differs from rendering HTML into a texture: the overlay is a real Android v
 - Touch modes `AUTO` (default), `MODAL` and `REGIONS`; only elements marked `data-webui-touch` receive touches when pass-through is on.
 - Page navigation within one UI folder (`load_page`), show/hide, shutdown, a `suspended` signal for app pause, a guard against a second overlay, and best-effort re-creation after the WebView renderer dies.
 - Example: a physics character with an HTML menu (levels, settings, stats, about) and an HTML HUD (joystick, jump, attack, health, pause).
-- Starter page in `templates/hud/index.html`.
+- Starter page in `templates/hud/index.html` and a small end-to-end example in `examples/minimal_hud/`.
+- One-command setup (`python tools/setup.py`) and an AI-agent skill (`skills/godot-webui/`).
 - Optional desktop development preview (editor only): see [docs/desktop-preview.md](docs/desktop-preview.md).
 
 Not every item has been verified on real devices; see [Limitations](#limitations).
@@ -72,6 +73,14 @@ Security measures in the native layer: a single `WebMessageListener` limited to 
 | Building the native plugin (optional) | JDK 17, Android SDK (platform 35, build-tools 35.0.1), internet access for Gradle. Uses Gradle 8.11.1 (wrapper) and Android Gradle Plugin 8.6.1; `androidx.webkit` 1.12.1 is added to exports automatically. |
 | Toolchain confirmation | The versions above were used for the existing build. Whether other JDK/AGP/Gradle combinations work is unconfirmed. |
 
+## Setup
+
+```bash
+python tools/setup.py
+```
+
+One command (Python 3.8+, standard library only) installs the optional desktop-preview dependency (godot_wry: pinned version, SHA-256 verified, placed outside every Godot project) and then checks the Android toolchain, printing what is missing and how to fix it. Godot's export templates, JDK 17, the Android SDK and the signing keystore are **checked, not installed**. It is safe to run repeatedly. To use the addon in your own game: `python tools/setup.py add-to-project PATH --enable-plugin --with-skill`. Everything about it (what is needed for what, commands, version pins, recovery from failures) is in [docs/setup.md](docs/setup.md).
+
 ## Installation
 
 The packaged plugin libraries are already in the repository, so you do **not** need to build the native plugin to use the addon.
@@ -91,7 +100,7 @@ You do **not** need to set the "non-resource files" export filter.
 
 Godot does not export `.html`, `.css`, `.js` and similar files by default. The WebUI export plugin does it for you:
 
-- **Which folders:** every folder (outside `addons/`, `android/` and `native/`, and not hidden) that directly contains an `.html` file, together with everything beneath it. To choose explicitly, set the project setting `webui/export/ui_folders` (an array of `res://` folders, shown in *Project Settings* with Advanced Settings on); when it is non-empty, auto-detection is skipped. HTML files directly in `res://` are never packaged automatically (that would package the whole project); the export log warns about them.
+- **Which folders:** every folder (outside `addons/`, `android/` and `native/`, not hidden, and without a `.gdignore` file) that directly contains an `.html` file, together with everything beneath it. To choose explicitly, set the project setting `webui/export/ui_folders` (an array of `res://` folders, shown in *Project Settings* with Advanced Settings on); when it is non-empty, auto-detection is skipped. HTML files directly in `res://` are never packaged automatically (that would package the whole project); the export log warns about them.
 - **Which files:** all files in those folders are packaged as **raw files**, so HTML, CSS, JS, JSON, images (PNG, JPG, SVG, WebP…), fonts (TTF, OTF, WOFF2…) and media work. They are packaged unchanged and are not re-imported: Godot's `.ctex`/font conversions are not used for them. Godot's own `.import` and `.uid` files are skipped.
 - **The bridge script** `addons/webui/web/godot.js` is always packaged.
 - **At runtime** the UI folder is copied to `user://` once per `start()` (Android's WebView cannot read Godot's packed files), so very large UI folders add startup time.
@@ -217,11 +226,17 @@ What the demo shows:
 - An HTML main menu (Play, Levels, Settings, Stats, About) over a Godot-drawn background. Settings and stats are owned by Godot and displayed by the page.
 - An HTML HUD with a joystick, jump, attack (press and release), a Godot-driven health bar, and a "Hurt me" button that asks Godot to apply damage. A hazard in the level damages the player from the game side, and a pause card pauses the game in Godot.
 
+A smaller example, `examples/minimal_hud/` (scene `minimal.tscn`, UI in `ui/`), shows the recommended workflow in about 100 lines: an HTML button sends `attack`, Godot validates it and decides the damage, `set_state("hud", ...)` updates the page, and `emit_event("hit", ...)` plays a one-shot animation. Open the scene and press F6.
+
 On desktop, `GodotWebUI.start()` shows the UI only if the [desktop development preview](#desktop-development-preview) is set up; otherwise it reports `desktop_preview_missing_dependency` (or `unsupported_platform` outside the editor) and the demo character can still be driven from the keyboard: arrows or A/D to move, Space/Up/W to jump, X or J to attack (hold).
 
 ## Desktop development preview
 
-To iterate on your UI without exporting, run the game from the Godot editor (F5 / F6) on Windows, macOS or Linux and see the HTML UI inside the running game, with reload when the UI files change. It needs the optional third-party [godot_wry](https://github.com/MingHuiLiu/godot_wry) extension, which is **not** included here and is installed **outside your project** (so it can never end up in an export). It is a **development aid, not a supported runtime platform**: mouse and keyboard only, no touch pass-through, no lifecycle events, and webview engines that differ from Android's. It has been run on one Windows machine with godot_wry v0.2.0 (UI, transparency, messaging and hot reload worked there); macOS, Linux and keyboard behaviour are unverified. Setup, differences and diagnostics are in [docs/desktop-preview.md](docs/desktop-preview.md).
+To iterate on your UI without exporting, run the game from the Godot editor (F5 / F6) on Windows, macOS or Linux and see the HTML UI inside the running game, with reload when the UI files change. It needs the optional third-party [godot_wry](https://github.com/MingHuiLiu/godot_wry) extension, which is **not** included here and is installed **outside your project** (so it can never end up in an export) by `python tools/setup.py wry`. It is a **development aid, not a supported runtime platform**: mouse and keyboard only, no touch pass-through, no lifecycle events, and webview engines that differ from Android's. It has been run on one Windows machine with godot_wry v0.2.0 (UI, transparency, messaging and hot reload worked there); macOS, Linux and keyboard behaviour are unverified. Setup, differences and diagnostics are in [docs/desktop-preview.md](docs/desktop-preview.md).
+
+## Working with AI coding agents
+
+`skills/godot-webui/` is an agent skill (`SKILL.md` plus `references/`) that teaches a coding agent when WebUI fits, how to lay out and package a UI, the exact API, the touch and runtime limits, and what is and is not verified. Install it with `python tools/setup.py install-skill <skills dir>` (Claude Code: `<project>/.claude/skills`, or `--claude-user` for `~/.claude/skills`), or point your agent's instruction file at `skills/godot-webui/SKILL.md`; `AGENTS.md` in this repository does. See [docs/setup.md](docs/setup.md#teaching-an-ai-coding-agent).
 
 ## Project structure
 
@@ -234,12 +249,17 @@ addons/webui/                  Godot addon
   webui_export_scan.gd         Finds the UI folders to package
   web/godot.js                 Browser-side API, injected into the page
   bin/*.aar                    Packaged native plugin (debug and release)
+docs/setup.md                  Setup script: what is needed for what, commands, recovery
 docs/desktop-preview.md        Desktop development preview: setup, differences, diagnostics
+tools/setup.py                 Setup script (+ dependencies.json: pinned versions and checksums)
+skills/godot-webui/            AI-agent skill
 native/android/                Gradle project: Java source of the native plugin
 examples/playable_character/   Demo scenes, scripts and HTML UI (ui/)
+examples/minimal_hud/          Smallest realistic example: button to action, state to UI, events
 templates/hud/                 Starter HTML page
 tests/headless_test.gd         Headless test: bridge, demo flow, desktop preview backend
-tests/api_test.gd              Headless test: state/events, touch modes, guard, recovery, UI folder detection
+tests/api_test.gd              Headless test: state/events, touch modes, guard, recovery, UI folder detection, minimal example
+tests/test_setup.py            Python tests for tools/setup.py
 AGENTS.md                      Guidance for AI coding agents working in this repo
 ```
 
@@ -264,6 +284,7 @@ AGENTS.md                      Guidance for AI coding agents working in this rep
 | `bad_ui_dir` / `stage_failed` (UI folder or file missing at runtime) | The UI folder was not packaged. Check the export log line `WebUI export: packaged N UI file(s) from …`; the folder must contain an `.html` file and live outside `addons/`, or be listed in `webui/export/ui_folders`. |
 | Export log: "no UI folder found to package" | No folder with an `.html` file was found. Move your pages into a folder, or set `webui/export/ui_folders`. |
 | Export log: "Use Gradle Build off" | Turn on *Project → Export → Android → Options → Gradle Build → Use Gradle Build* and install the Android build template. |
+| Setup problems (download, checksum, SDK, templates) | `python tools/setup.py doctor` names each missing prerequisite and the fix; recovery steps are in [docs/setup.md](docs/setup.md#when-something-fails). |
 | Export fails with `Can't open file ... libgodot_wry.so` or the log says `res://addons/godot_wry is inside the project` | godot_wry was installed into the project. Move it out (see [docs/desktop-preview.md](docs/desktop-preview.md)); an export plugin cannot stop Godot from packaging an extension that is inside the project. |
 | `plugin_missing` ("Android plugin 'WebUI' not found") | Use Gradle Build, install the Android build template, make sure the *godot-webui* plugin is enabled and `addons/webui/bin/*.aar` exist, and run through *Run on device* or an export. |
 | `Nonexistent function 'new' in base 'JNISingleton'` | The native plugin registers a singleton named `WebUI`. Use the class `GodotWebUI`, not `WebUI`. |
@@ -280,4 +301,4 @@ AGENTS.md                      Guidance for AI coding agents working in this rep
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, tests and how to rebuild the native plugin, [SECURITY.md](SECURITY.md) for reporting vulnerabilities, and [CHANGELOG.md](CHANGELOG.md) for changes.
 
-**License:** not yet chosen. No license file is present in this repository.
+**License:** [MIT](LICENSE). The optional desktop-preview dependency godot_wry (not included in this repository) is a separate project with its own MIT license.

@@ -94,7 +94,7 @@ func _add_folder(folder: String) -> int:
 		if _add_raw(folder.path_join(file_name)):
 			count += 1
 	for sub in DirAccess.get_directories_at(folder):
-		if not sub.begins_with("."):
+		if not sub.begins_with(".") and not FileAccess.file_exists(folder.path_join(sub).path_join(".gdignore")):
 			count += _add_folder(folder.path_join(sub))
 	return count
 

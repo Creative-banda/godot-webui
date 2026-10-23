@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Guidance for AI coding agents working in this repository or writing UI for Godot WebUI. See `README.md` for the full API.
+Guidance for AI coding agents working in this repository or writing UI for Godot WebUI. See `README.md` for the full API. **For UI work, first read `skills/godot-webui/SKILL.md`** (the agent skill: when to use WebUI, packaging, API, touch/runtime limits); the addon source remains authoritative.
 
 Godot WebUI shows HTML/CSS/JS as a transparent Android WebView above a Godot game. **Gameplay logic belongs in GDScript, never in the page.** Android is the only supported platform; do not add or imply iOS/desktop support.
 
@@ -32,7 +32,10 @@ Godot WebUI shows HTML/CSS/JS as a transparent Android WebView above a Godot gam
 | `addons/webui/` | The addon: `webui.gd` (API), `webui_bridge.gd` (validation), `webui_backend*.gd` (platform seam: interface, factory, Android, desktop preview, null), `export_plugin.gd`, `web/godot.js`, `bin/*.aar` |
 | `native/android/` | Gradle project, Java source of the native plugin (`com.godotwebui`) |
 | `examples/playable_character/` | Demo: `main.tscn` + `app.gd` shell swapping `menu.tscn` / `game.tscn`; HTML in `ui/` |
-| `docs/desktop-preview.md` | Desktop development preview docs |
+| `docs/setup.md`, `docs/desktop-preview.md` | Setup script docs; desktop development preview docs |
+| `tools/setup.py`, `tools/dependencies.json` | Setup script and pinned dependency versions/checksums |
+| `skills/godot-webui/` | AI-agent skill (`SKILL.md` + `references/`) |
+| `examples/minimal_hud/` | Smallest end-to-end example |
 | `templates/hud/` | Starter page |
 | `tests/headless_test.gd`, `tests/api_test.gd` | Headless GDScript tests (bridge, demo flow, desktop backend; API semantics, touch modes, guard, recovery, UI folder detection) |
 
@@ -42,6 +45,8 @@ Godot WebUI shows HTML/CSS/JS as a transparent Android WebView above a Godot gam
 - `native/` has a `.gdignore`; Godot does not scan it. `/android/` at the repo root is Godot's generated build template and is git-ignored.
 - `godotVersion` in `native/android/webui/build.gradle` must match the Godot export template; `WEBKIT_DEPENDENCY` in `export_plugin.gd` must match `webkitVersion` there.
 - The editor rewrites `export_presets.cfg` while the project is open; don't hand-edit it with the editor running. Required setting: Gradle build on. No export filter is needed: `export_plugin.gd` packages the UI folders (auto-detected, or listed in project setting `webui/export/ui_folders`) and `godot.js` itself.
+- `python tools/setup.py` installs/verifies the desktop-preview dependency (outside the project) and checks the Android toolchain; run `python -m unittest discover -s tests -p "test_setup.py"` after changing it. Update `tools/dependencies.json` (version, url, sha256, size together) only after inspecting a new release.
+- Folders with a `.gdignore` (`docs/`, `skills/`, `templates/`, `tools/`) are not auto-packaged by the export plugin; keep sample HTML inside such folders.
 - Run both headless tests after GDScript changes: `godot --headless --path . -s res://tests/headless_test.gd` and `... -s res://tests/api_test.gd` (exit code is the number of failures). Run `godot --headless --path . --import --quit` first if class names changed.
 - Nothing about touch pass-through, multi-touch, pause/resume, or orientation is verified on a device; do not state that it is.
 - The desktop backend is a **development preview** that drives the optional third-party godot_wry `WebView` node; it is editor-only and must not be presented as a supported platform. Its dependency is never committed and never lives inside the project: it is loaded at run time from a user-level folder (`GDExtensionManager.load_extension`), because an extension inside `res://` gets packaged into Android exports by Godot's built-in GDExtension handling and a user export plugin cannot prevent that. `/addons/godot_wry/` and `.webui_preview/` are git-ignored. Page code can detect it with `Godot.preview`; code must not depend on preview-only behaviour.

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Minimal HUD</title>
+  <link rel="stylesheet" href="hud.css">
+</head>
+<body>
+  <!-- window.Godot is injected by the addon: no <script src> for it. -->
+  <div id="stats" class="panel">
+    <div>Coins <b id="coins">--</b></div>
+    <div class="bar"><i id="hp-fill"></i></div>
+    <small id="hp-text">waiting for Godot...</small>
+  </div>
+
+  <div id="controls">
+    <!-- data-webui-touch: only these elements receive touches; the rest of the screen reaches the game -->
+    <button id="attack" data-webui-touch>Attack</button>
+    <button id="heavy" data-webui-touch>Heavy attack</button>
+    <button id="repair" data-webui-touch>Repair (5 coins)</button>
+  </div>
+
+  <div id="floaters"></div>
+  <div id="toast" hidden></div>
+  <script src="hud.js"></script>
+</body>
+</html>

@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format follows [Kee
 ## [Unreleased]
 
 ### Added
+- MIT `LICENSE`.
+- **Setup:** `tools/setup.py` (Python 3.8+, standard library) installs the pinned, SHA-256-verified godot_wry desktop-preview dependency into a user-level folder outside the project (idempotent, with repair, rollback and clear errors), checks the Android toolchain (JDK, SDK, export templates, build template, keystore, preset) and explains what is missing, copies the addon into another project (`add-to-project`, optional plugin enabling and skill install). Pins live in `tools/dependencies.json`; documented in `docs/setup.md`; tested by `tests/test_setup.py`. Verified end to end on one Windows machine; macOS and Linux paths are untested.
+- **AI-agent skill:** `skills/godot-webui/` (`SKILL.md` plus `references/`) covering when to use WebUI, project inspection, UI layout and packaging, the exact API, touch and runtime limits, patterns, troubleshooting and verification status.
+- `examples/minimal_hud/`: a small end-to-end example (button to action, state to UI, one-shot events) with tests in `tests/api_test.gd`.
+- The export scan skips folders containing a `.gdignore` (the repository's `docs/`, `skills/`, `templates/` and `tools/` now have one so their sample files are never packaged).
+- The factory uses the null backend when the display server is headless, so running the headless tests with godot_wry installed does not try to create a webview.
 - **Export packaging:** the export plugin packages the UI folders (auto-detected: any folder outside `addons/` containing an `.html` file, or the project setting `webui/export/ui_folders`) and `godot.js` as raw files, so the manual "non-resource files" export filter is no longer needed. It skips the normal export of those files to avoid duplicates, and reports misconfiguration in the export log (no UI folder found, invalid folder setting, *Use Gradle Build* off, godot_wry inside the project).
 - **API:** `GodotWebUI.set_state()` (persistent, replayed) and `emit_event()` (one-shot, ordered, never replayed, up to 64 held until ready); JS `Godot.onState()` and `Godot.onEvent()`. `send()` and `Godot.on()` remain as compatible aliases of the state variants.
 - **Touch modes:** `TouchMode.AUTO` (new default): modal until the page calls `Godot.touchRegions()`, which now also tells Godot. Forced `REGIONS` reports `touch_regions_missing` if the page never opts in.

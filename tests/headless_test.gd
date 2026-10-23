@@ -30,7 +30,9 @@ func _initialize() -> void:
 	root.add_child(app)
 	await physics_frames(3)
 	check(app._scene != null and app._scene.name == "Menu", "app starts on the menu")
-	if OS.get_name() in ["Windows", "macOS", "Linux"] and OS.has_feature("editor"):
+	if DisplayServer.get_name() == "headless":
+		check(app.ui.get_backend_name() == "none", "GodotWebUI.start() uses the factory (null backend without a window)")
+	elif OS.get_name() in ["Windows", "macOS", "Linux"] and OS.has_feature("editor"):
 		check(app.ui.get_backend_name() == "desktop_preview", "GodotWebUI.start() uses the factory (desktop preview in the editor)")
 	app.ui._on_raw_message('{"t":"event","name":"settings_changed","payload":{"difficulty":"hard","music":2,"sfx":"x"}}')
 	check(app.settings.difficulty == "hard" and app.settings.music == 1.0 and app.settings.sfx == true, "settings validated (clamp, bad type ignored)")

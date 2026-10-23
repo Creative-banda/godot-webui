@@ -20,6 +20,9 @@ mono_crash.*.json
 *.exe
 *.pck
 
+# ---- Setup script ----
+tools/.cache/
+
 # ---- Desktop development preview ----
 # Generated copy of the UI folder (created when running from the editor)
 .webui_preview/
