@@ -62,4 +62,5 @@ func _physics_process(delta: float) -> void:
 		rotation.y = lerp_angle(rotation.y, atan2(-direction.x, -direction.z), minf(TURN_SPEED * delta, 1.0))
 	if global_position.y < FALL_LIMIT:
 		global_position = _spawn
+		reset_physics_interpolation()  # a teleport must not be smoothed into a slide
 		velocity = Vector3.ZERO

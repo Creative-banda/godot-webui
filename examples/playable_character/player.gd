@@ -66,6 +66,7 @@ func _die() -> void:
 	health = MAX_HEALTH
 	dead = false
 	position = _spawn
+	reset_physics_interpolation()  # a teleport must not be smoothed into a slide
 	velocity = Vector2.ZERO
 	health_changed.emit()
 	queue_redraw()

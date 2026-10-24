@@ -19,8 +19,11 @@ var pitch := deg_to_rad(-18.0)
 
 func _ready() -> void:
 	top_level = true
+	# This node is moved in _process, so physics interpolation must not touch it: it follows the target's
+	# *interpolated* transform instead (see _process), which is what keeps the view smooth.
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	if target:
-		global_position = target.global_position + Vector3.UP * height
+		global_position = target.get_global_transform_interpolated().origin + Vector3.UP * height
 		if target is CollisionObject3D:
 			_arm.add_excluded_object(target.get_rid())
 	_apply()
@@ -35,7 +38,7 @@ func look(angles: Vector2) -> void:
 
 func _process(delta: float) -> void:
 	if target:
-		var goal := target.global_position + Vector3.UP * height
+		var goal := target.get_global_transform_interpolated().origin + Vector3.UP * height
 		global_position = global_position.lerp(goal, 1.0 - exp(-follow_speed * delta))
 
 
