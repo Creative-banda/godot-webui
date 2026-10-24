@@ -51,6 +51,20 @@ button {
   color: var(--dim);
 }
 
+/* ---------- look zone: the whole screen, below every control ---------- */
+#look-zone {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+#topbar,
+#camera-panel,
+#stick-zone,
+.round {
+  z-index: 1;
+}
+
 /* ---------- top-left telemetry ---------- */
 #telemetry {
   position: fixed;

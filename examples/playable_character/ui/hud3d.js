@@ -2,7 +2,7 @@
 (() => {
   const $ = (id) => document.getElementById(id);
 
-  // Only elements marked data-webui-touch take touches; everything else reaches Godot (camera swipe).
+  // Only elements marked data-webui-touch take touches. The look zone covers the whole screen.
   Godot.touchRegions();
 
   // ---------- virtual joystick: one pointer, pointer capture, always released
@@ -77,23 +77,56 @@
   }
   Godot.guard(releaseJump);
 
-  // ---------- tell Godot while a control of this page owns a pointer (desktop preview does not emulate
-  // pass-through, so without this a click on the stick would also turn the camera)
-  const owned = new Set();
-  let busySent = false;
-  function syncBusy() {
-    const busy = owned.size > 0;
-    if (busy === busySent) return;
-    busySent = busy;
-    Godot.emit('ui_busy', { busy });
+  // ---------- camera look: a swipe anywhere on the look zone (under the controls), one finger at a time.
+  // It lives in the page so it keeps working while another finger holds the stick: on Android a second
+  // finger is handed to the WebView, not to Godot, once the first one is on a page control.
+  const lookZone = $('look-zone');
+  let lookPointer = null;
+  let lastX = 0;
+  let lastY = 0;
+  let pendingX = 0;
+  let pendingY = 0;
+  let flushQueued = false;
+
+  function flushLook() {
+    flushQueued = false;
+    if (pendingX === 0 && pendingY === 0) return;
+    const h = window.innerHeight;  // fractions of the screen height: independent of the screen size
+    Godot.emit('look_drag', { dx: pendingX / h, dy: pendingY / h });
+    pendingX = 0;
+    pendingY = 0;
   }
-  document.addEventListener('pointerdown', (e) => {
-    if (e.target.closest && e.target.closest('[data-webui-touch]')) { owned.add(e.pointerId); syncBusy(); }
-  }, true);
+
+  function releaseLook() {
+    if (lookPointer === null) return;
+    flushLook();
+    lookPointer = null;
+    Godot.emit('look_active', { active: false });
+  }
+
+  lookZone.addEventListener('pointerdown', (e) => {
+    if (lookPointer !== null) return;
+    lookPointer = e.pointerId;
+    lookZone.setPointerCapture(e.pointerId);
+    lastX = e.clientX;
+    lastY = e.clientY;
+    Godot.emit('look_active', { active: true });
+  });
+  lookZone.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== lookPointer) return;
+    pendingX += e.clientX - lastX;
+    pendingY += e.clientY - lastY;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    if (!flushQueued) {
+      flushQueued = true;
+      requestAnimationFrame(flushLook);
+    }
+  });
   for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-    window.addEventListener(type, (e) => { if (owned.delete(e.pointerId)) syncBusy(); }, true);
+    lookZone.addEventListener(type, (e) => { if (e.pointerId === lookPointer) releaseLook(); });
   }
-  Godot.guard(() => { owned.clear(); syncBusy(); });
+  Godot.guard(releaseLook);
 
   // ---------- keyboard (desktop preview): the WebView can hold the keyboard focus, so forward the keys
   const KEYS = { KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right' };

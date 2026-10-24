@@ -12,7 +12,7 @@
 
 1. The page calls `Godot.touchRegions()` (default selector `[data-webui-touch]`). It reports the bounding boxes of matching elements (CSS pixels, viewport coordinates), again on `resize` and about every 200 ms when they change. Zero-size or hidden elements are skipped.
 2. When a gesture starts, the native view checks the first pointer against those boxes (scaled by the display density). Inside a box: the WebView handles the gesture. Outside: the touch is not consumed and Android offers it to Godot's view underneath.
-3. Android splits multi-touch per pointer, so a second finger can land on the HUD while the first is on the game, and the reverse.
+3. Multi-touch is **one-directional**. A second finger can land on the HUD while the first is on the game. The reverse does not work: once a finger is on a page control, Android gives every further finger to the WebView as well (a view that already receives touches is handed new pointers inside its bounds, whatever it returns), so a finger on open screen never reaches Godot while another finger holds a control. Reported on a device with a stick plus camera swipe. If a gesture must work while a control is held (camera look next to a joystick), handle it **in the page**: put a full-screen `data-webui-touch` element under the controls, track one pointer on it, and send the deltas to Godot (`examples/playable_character/ui/hud3d.js`, `look_drag`). Send fractions of the screen height so the feel does not depend on the resolution.
 
 Rules for pages:
 

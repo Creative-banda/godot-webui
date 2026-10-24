@@ -79,23 +79,22 @@ func _initialize() -> void:
 	await _wait_physics(60)
 	check(player.is_on_floor(), "player lands again")
 
-	# Swipe: a full-height drag at 1x turns 180 degrees, and pitch is clamped.
+	# Swipe maths: a full-height swipe at 1x turns 180 degrees (fractions of the screen height), pitch is clamped.
 	rig.yaw = 0.0
 	rig.pitch = 0.0
 	scene.sensitivity = 1.0
 	scene._look(Vector2(0.0, 0.0))
-	var height := scene.get_viewport().get_visible_rect().size.y
-	scene._look(Vector2(height / 2.0, 0.0))
+	scene._look(Vector2(0.5, 0.0))
 	check(is_equal_approx(rig.yaw, -PI / 2.0), "half-height swipe right turns 90 degrees at 1x")
 	rig.yaw = 0.0
 	scene.invert_x = true
-	scene._look(Vector2(height / 2.0, 0.0))
+	scene._look(Vector2(0.5, 0.0))
 	check(is_equal_approx(rig.yaw, PI / 2.0), "invert X flips the swipe direction")
 	scene.invert_x = false
 	rig.pitch = 0.0
-	scene._look(Vector2(0.0, -height * 10.0))
+	scene._look(Vector2(0.0, -10.0))
 	check(is_equal_approx(rig.pitch, Demo3DCameraRig.PITCH_MAX), "pitch clamps looking up")
-	scene._look(Vector2(0.0, height * 10.0))
+	scene._look(Vector2(0.0, 10.0))
 	check(is_equal_approx(rig.pitch, Demo3DCameraRig.PITCH_MIN), "pitch clamps looking down")
 
 	# Settings and payload validation.
@@ -106,33 +105,22 @@ func _initialize() -> void:
 	scene._on_move_changed({"x": "a", "y": 1})
 	check(scene._stick == Vector2.ZERO, "non-numeric stick payload is rejected")
 
-	# A click that starts on a page control must not turn the camera (desktop preview).
+	# Swipe messages from the page look zone.
+	scene.sensitivity = 1.0
 	rig.yaw = 0.0
-	var press := InputEventMouseButton.new()
-	press.button_index = MOUSE_BUTTON_LEFT
-	press.pressed = true
-	scene._input(press)
-	scene._on_ui_busy({"busy": true})  # the page reports the same click a moment later
-	var motion := InputEventMouseMotion.new()
-	motion.relative = Vector2(200, 0)
-	motion.button_mask = MOUSE_BUTTON_MASK_LEFT
-	scene._input(motion)
-	check(is_equal_approx(rig.yaw, 0.0), "a click on a page control does not rotate the camera")
-	scene._on_ui_busy({"busy": false})
-	scene._input(motion)
-	check(is_equal_approx(rig.yaw, 0.0), "the same press stays ignored after the control is released")
-	press.pressed = false
-	scene._input(press)
-	press.pressed = true
-	scene._input(press)
-	scene._input(motion)
-	check(not is_equal_approx(rig.yaw, 0.0), "a new press on open screen turns the camera")
-	motion.button_mask = 0
-	var yaw_before := rig.yaw
-	scene._input(motion)
-	check(is_equal_approx(rig.yaw, yaw_before), "moving without a button held does not rotate the camera")
-	press.pressed = false
-	scene._input(press)
+	scene.invert_x = false
+	scene._on_look_drag({"dx": 0.5, "dy": 0.0})
+	check(is_equal_approx(rig.yaw, -PI / 2.0), "look_drag from the page turns the camera")
+	scene._on_look_drag({"dx": "a", "dy": 0.0})
+	check(is_equal_approx(rig.yaw, -PI / 2.0), "a non-numeric look_drag is ignored")
+	scene._on_look_drag({"dx": 1000.0, "dy": 0.0})
+	check(is_equal_approx(rig.yaw, PI / 2.0), "one look_drag turns at most a full-height swipe")
+	scene._on_look_active({"active": true})
+	check(scene._look_active, "look_active is tracked")
+	scene._on_look_active({"active": "yes"})
+	check(scene._look_active, "an invalid look_active is ignored")
+	scene._on_look_active({"active": false})
+	check(not scene._look_active, "look_active can be cleared")
 
 	# Falling off the world respawns.
 	player.global_position = Vector3(0, -30, 0)
@@ -148,12 +136,12 @@ func _initialize() -> void:
 	await process_frame
 	await process_frame
 	var from_menu: Node = shell._scene
-	check(from_menu.has_method("_on_ui_busy"), "start_3d() opens the 3D scene")
+	check(from_menu.has_method("_on_look_drag"), "start_3d() opens the 3D scene")
 	check(from_menu.app == shell and from_menu.ui == shell.ui, "the 3D scene uses the shell overlay")
 	shell.show_menu()
 	await process_frame
 	await process_frame
-	check(not shell._scene.has_method("_on_ui_busy"), "show_menu() leaves the 3D scene")
+	check(not shell._scene.has_method("_on_look_drag"), "show_menu() leaves the 3D scene")
 	shell.queue_free()
 
 	print("\n%d failure(s)" % failures)
