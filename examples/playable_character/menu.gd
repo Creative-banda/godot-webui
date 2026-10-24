@@ -8,6 +8,7 @@ var _t := 0.0
 func _ready() -> void:
 	app.show_page("menu.html", GodotWebUI.TouchMode.MODAL, Callable())
 	app.ui.on("menu_play", _on_play)
+	app.ui.on("menu_play_3d", func(_p: Dictionary) -> void: app.start_3d())
 	app.ui.on("menu_quit", func(_p: Dictionary) -> void: get_tree().quit())
 
 

@@ -38,6 +38,7 @@ Godot WebUI shows HTML/CSS/JS as a transparent Android WebView above a Godot gam
 | `tools/setup.py`, `tools/dependencies.json` | Setup script and pinned dependency versions/checksums |
 | `skills/godot-webui/` | AI-agent skill (`SKILL.md` + `references/`) |
 | `examples/minimal_hud/` | Smallest end-to-end example |
+| `examples/third_person_3d/` | 3D demo: `main3d.tscn` (arena, generated layout), `player3d.gd`, `camera_rig.gd`, `main3d.gd` (swipe look, settings), HTML is `hud3d.*` in `examples/playable_character/ui/` (opened from the demo menu via `DemoApp.start_3d()`); tested by `tests/demo3d_test.gd` |
 | `templates/hud/` | Starter page |
 | `tests/headless_test.gd`, `tests/api_test.gd`, `tests/css_patcher_test.gd`, `tests/html_patcher_test.gd`, `tests/css_catalog_test.gd`, `tests/editor_model_test.gd`, `tests/editor_dock_test.gd`, `tests/edit_link_test.gd`, `tests/webui_screen_test.gd` | Headless GDScript tests (bridge, demo flow, desktop backend; API semantics, touch modes, guard, recovery, UI folder detection; in-place CSS patching, visual editor model and dock). `tests/edit_preview_test.gd` needs a window and godot_wry (edit mode, end to end); `tests/webui_screen_capture_test.gd` runs the real capture process and needs godot_wry |
 

@@ -1,0 +1,7 @@
+{
+  "states": {
+    "camera": { "sensitivity": 1.0, "invert_x": false, "invert_y": false, "can_exit": true },
+    "telemetry": { "yaw": 135, "pitch": -18, "swiping": false, "on_floor": true, "speed": 0.0, "fps": 60 }
+  },
+  "events": []
+}

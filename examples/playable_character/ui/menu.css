@@ -1177,3 +1177,38 @@ dd {
     padding: 8px 0;
   }
 }
+
+/* ---------- 3D demo entry ---------- */
+.hero3d {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: clamp(10px, 1.4vh, 16px);
+  padding: clamp(8px, 1.2vh, 14px) clamp(16px, 2vw, 28px);
+  border-radius: clamp(16px, 1.6vw, 24px);
+  text-align: left;
+  color: #06121f;
+  background: linear-gradient(115deg, #7be0ff 0%, #38b6ff 55%, #9d4edd 100%);
+  box-shadow: 0 5px 0 #1d6fa8, inset 0 2px 0 rgba(255, 255, 255, 0.6);
+}
+
+.hero3d:active {
+  transform: translateY(3px) scale(0.98);
+}
+
+.hero3d svg {
+  width: clamp(28px, 3vw, 40px);
+  height: clamp(28px, 3vw, 40px);
+  flex: none;
+}
+
+.hero3d b {
+  display: block;
+  font-size: clamp(16px, 1.6vw, 22px);
+}
+
+.hero3d small {
+  font-size: clamp(11px, 1vw, 14px);
+  opacity: 0.8;
+}

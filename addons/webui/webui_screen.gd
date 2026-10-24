@@ -201,6 +201,10 @@ func _stop_capture() -> void:
 
 
 func _check_stale() -> void:
+	if _state in ["no_page", "invalid"] and page != "" and WebUIScreenPreview.page_problem(page) == "":
+		_reload_preview()  # the file appeared after the scene was loaded (created by a tool, or a rescan)
+		update_configuration_warnings()
+		return
 	if _state not in ["fresh", "stale"] or page == "":
 		return
 	var current := WebUIScreenPreview.signature(page, WebUIScreenPreview.viewport_size())

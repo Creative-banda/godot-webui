@@ -30,6 +30,7 @@
   // ---------- HTML -> Godot (intent only)
   let level = 1;
   $('btn-play').addEventListener('click', () => Godot.emit('menu_play', { level }));
+  $('btn-play-3d').addEventListener('click', () => Godot.emit('menu_play_3d'));
   $('btn-quit').addEventListener('click', () => Godot.emit('menu_quit'));
   $('btn-start-level').addEventListener('click', () => Godot.emit('menu_play', { level }));
   const levelButtons = [...document.querySelectorAll('[data-level]')];

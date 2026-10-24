@@ -247,6 +247,8 @@ What the demo shows:
 
 A smaller example, `examples/minimal_hud/` (scene `minimal.tscn`, UI in `ui/`), shows the recommended workflow in about 100 lines: an HTML button sends `attack`, Godot validates it and decides the damage, `set_state("hud", ...)` updates the page, and `emit_event("hit", ...)` plays a one-shot animation. Open the scene and press F6.
 
+A 3D example, `examples/third_person_3d/` (scene `main3d.tscn`), has a third-person character, a joystick and jump button drawn by the page, and camera look by swiping on the screen outside those controls (the page runs in `REGIONS` touch mode, so those touches reach Godot as `InputEventScreenDrag`). The page shows a swipe/FPS telemetry panel and camera settings (sensitivity, invert) that Godot validates. It is the **3D Arena** button on the demo main menu (its page `hud3d.html` lives in the demo `ui/` folder because one overlay serves one folder); you can also open `main3d.tscn` and press F6 (WASD, Space and mouse drag work in the preview). Touch pass-through and two-finger use (stick plus swipe) are not verified on a device.
+
 On desktop, `GodotWebUI.start()` shows the UI only if the [desktop development preview](#desktop-development-preview) is set up; otherwise it reports `desktop_preview_missing_dependency` (or `unsupported_platform` outside the editor) and the demo character can still be driven from the keyboard: arrows or A/D to move, Space/Up/W to jump, X or J to attack (hold).
 
 ## Desktop development preview
@@ -296,6 +298,7 @@ skills/godot-webui/            AI-agent skill
 native/android/                Gradle project: Java source of the native plugin
 examples/playable_character/   Demo scenes, scripts and HTML UI (ui/)
 examples/minimal_hud/          Smallest realistic example: button to action, state to UI, events
+examples/third_person_3d/      3D character, HTML joystick/jump, camera swipe look
 templates/hud/                 Starter HTML page
 tests/headless_test.gd         Headless test: bridge, demo flow, desktop preview backend
 tests/api_test.gd              Headless test: state/events, touch modes, guard, recovery, UI folder detection, minimal example

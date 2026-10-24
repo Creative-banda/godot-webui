@@ -7,6 +7,7 @@ extends Node
 const UI_DIR := "res://examples/playable_character/ui"
 const MENU_SCENE := "res://examples/playable_character/menu.tscn"
 const GAME_SCENE := "res://examples/playable_character/game.tscn"
+const SCENE_3D := "res://examples/third_person_3d/main3d.tscn"
 const SAVE_PATH := "user://demo_save.cfg"
 const DIFFICULTIES := ["easy", "normal", "hard"]
 const LEVELS := {
@@ -49,6 +50,11 @@ func start_game(new_level: int) -> void:
 	_save()
 	get_tree().paused = false
 	_swap_scene(GAME_SCENE)
+
+
+func start_3d() -> void:
+	get_tree().paused = false
+	_swap_scene(SCENE_3D)
 
 
 ## Called by scenes: points the overlay at `page`, resets page handlers to the common ones and
