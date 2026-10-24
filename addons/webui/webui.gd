@@ -33,10 +33,15 @@ signal console_message(level: String, text: String)
 signal suspended
 ## The overlay was re-created after the WebView renderer died. Best effort, see the README.
 signal recovered
+## The Android Back button was pressed and the page did not use it (no Godot.onBack handler returned true,
+## or the page did not answer in time). Only emitted when handle_back_button is on. Decide what Back does here:
+## pause, go to the previous scene, ask to quit, or get_tree().quit().
+signal back_requested
 
 const MAX_PENDING_EVENTS := 64
 const EVENT_PREFIX := "@e:"           # internal marker the page-side bridge uses for events
 const INTERNAL_PREFIX := "webui."     # page -> Godot events reserved for the addon itself
+const BACK_TIMEOUT_SEC := 0.3       # how long the page has to answer a Back request
 const MAX_RECOVERIES := 3
 const RECOVERY_WINDOW_MSEC := 60000
 
@@ -49,6 +54,14 @@ const RECOVERY_WINDOW_MSEC := 60000
 ## Desktop preview only (ignored on Android): extra scripts (res:// paths) inlined after godot.js into
 ## the preview copy of every page. Used by the visual editor's edit mode; leave empty otherwise.
 @export var desktop_preview_inject_scripts := PackedStringArray()
+
+## Take over the Android Back button instead of letting Godot quit the game. While true (and started), Back is
+## offered to the page first (Godot.onBack) and then reported through back_requested. Turning it off, or
+## shutdown(), restores SceneTree.quit_on_go_back. Default false: Back quits the app as before.
+@export var handle_back_button := false:
+	set(value):
+		handle_back_button = value
+		_apply_back_setting()
 
 var is_ready := false  ## true once the page's handshake arrived; stays true across reloads (each reload sends a new handshake and page_ready)
 
@@ -71,6 +84,10 @@ var _regions_opted_in := false
 var _page_serial := 0
 var _recovering := false
 var _recovery_times: Array = []
+var _back_overridden := false
+var _back_previous_quit := true
+var _back_pending := false
+var _back_serial := 0
 
 
 ## Loads `page` from `ui_dir` (a res:// folder). Returns false if the overlay could not be created
@@ -104,6 +121,7 @@ func start(ui_dir: String, page: String = "index.html") -> bool:
 		return false
 	_started = true
 	_active = self
+	_apply_back_setting()
 	_regions_opted_in = false
 	_backend.set_touch_mode(_native_touch_mode())
 	_backend.set_visible(_visible)
@@ -219,6 +237,8 @@ func shutdown() -> void:
 	if _active == self:
 		_active = null
 	_started = false
+	_apply_back_setting()
+	_back_pending = false
 	is_ready = false
 	_regions_opted_in = false
 	_pending_state.clear()
@@ -232,6 +252,37 @@ func _exit_tree() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED:
 		suspended.emit()
+	elif what == NOTIFICATION_WM_GO_BACK_REQUEST and handle_back_button and _started:
+		_ask_page_back()
+
+
+## Offers the Back press to the page; back_requested follows if the page does not use it.
+func _ask_page_back() -> void:
+	if not is_ready or not _visible:
+		back_requested.emit()
+		return
+	_back_serial += 1
+	var serial := _back_serial
+	_back_pending = true
+	emit_event("webui.back")
+	await get_tree().create_timer(BACK_TIMEOUT_SEC, true, false, true).timeout
+	if is_instance_valid(self) and _back_pending and serial == _back_serial:
+		_back_pending = false  # the page did not answer: do not leave the player stuck
+		back_requested.emit()
+
+
+func _apply_back_setting() -> void:
+	if not is_inside_tree():
+		return
+	var tree := get_tree()
+	var want := handle_back_button and _started
+	if want and not _back_overridden:
+		_back_previous_quit = tree.quit_on_go_back
+		tree.quit_on_go_back = false
+		_back_overridden = true
+	elif not want and _back_overridden:
+		tree.quit_on_go_back = _back_previous_quit
+		_back_overridden = false
 
 
 # ---------------------------------------------------------------- internals
@@ -294,6 +345,14 @@ func _on_page_ready() -> void:
 ## Internal page -> addon events (names start with "webui."). Unknown ones are ignored so newer
 ## pages keep working with an older addon.
 func _on_internal_event(internal_name: String) -> void:
+	if internal_name == "webui.back_handled":
+		_back_pending = false
+		return
+	if internal_name == "webui.back_unhandled":
+		if _back_pending:
+			_back_pending = false
+			back_requested.emit()
+		return
 	if internal_name == "webui.touch_regions":
 		_regions_opted_in = true
 		if _started and touch_mode == TouchMode.AUTO:

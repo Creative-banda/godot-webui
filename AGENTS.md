@@ -22,7 +22,7 @@ Godot WebUI shows HTML/CSS/JS as a transparent Android WebView above a Godot gam
 ## Writing GDScript for it
 
 - The public class is `GodotWebUI` (not `WebUI`: the native plugin registers an engine singleton called `WebUI`, which shadows a class of that name on Android).
-- API: `start(ui_dir, page)`, `load_page(page)`, `on(name, callable)`, `off`, `clear_handlers()`, `set_state(name, dict)`, `emit_event(name, dict)`, `show_ui()`, `hide_ui()`, `set_touch_mode()`, `is_started()`, `get_backend_name()`, `shutdown()`; signals `page_ready`, `event_received`, `error`, `console_message`, `suspended`, `recovered`.
+- API: `start(ui_dir, page)`, `load_page(page)`, `on(name, callable)`, `off`, `clear_handlers()`, `set_state(name, dict)`, `emit_event(name, dict)`, `show_ui()`, `hide_ui()`, `set_touch_mode()`, `is_started()`, `get_backend_name()`, `shutdown()`, property `handle_back_button`; signals `page_ready`, `event_received`, `error`, `console_message`, `suspended`, `back_requested`, `recovered`. Page: `Godot.onBack(fn)`.
 - Register handlers with `on()` and validate payload types yourself. Never expose a generic "call method X" event.
 - `set_state()` is persistent (latest value per name wins, replayed to late subscribers); `emit_event()` is one-shot and ordered (held up to 64 until the page is ready). `send()` is the deprecated alias of `set_state()`; do not use it in new code. Push full state from `page_ready`.
 - Event names starting with `webui.` are reserved for the addon (e.g. `webui.touch_regions`). Only one `GodotWebUI` overlay can run at a time.

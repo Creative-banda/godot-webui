@@ -136,12 +136,13 @@ func _initialize() -> void:
 	await process_frame
 	await process_frame
 	var from_menu: Node = shell._scene
+	check(shell.ui.handle_back_button, "the demo shell takes over the Android Back button")
 	check(from_menu.has_method("_on_look_drag"), "start_3d() opens the 3D scene")
 	check(from_menu.app == shell and from_menu.ui == shell.ui, "the 3D scene uses the shell overlay")
-	shell.show_menu()
+	shell._on_back()  # Android Back from the 3D scene
 	await process_frame
 	await process_frame
-	check(not shell._scene.has_method("_on_look_drag"), "show_menu() leaves the 3D scene")
+	check(not shell._scene.has_method("_on_look_drag"), "Back in the 3D scene returns to the menu")
 	shell.queue_free()
 
 	print("\n%d failure(s)" % failures)

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="36" height="46" viewBox="0 0 36 46">
+  <!-- Lumen seed: a glowing leaf-tear that fell from the grove's old trees. -->
+  <defs>
+    <radialGradient id="seed-halo" cx="50%" cy="46%" r="50%">
+      <stop offset="0%" stop-color="#ffdf9e" stop-opacity="0.5"/>
+      <stop offset="55%" stop-color="#ffdf9e" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#ffdf9e" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="seed-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff6d8"/>
+      <stop offset="55%" stop-color="#ffdf9e"/>
+      <stop offset="100%" stop-color="#f4b95c"/>
+    </linearGradient>
+  </defs>
+  <circle cx="18" cy="22" r="17" fill="url(#seed-halo)"/>
+  <!-- leaf-tear: tip at the top, round at the bottom, like a curled leaf -->
+  <path d="M18 4 C24 10 27 16 27 23 C27 31 23 36 18 36 C13 36 9 31 9 23 C9 16 12 10 18 4 Z"
+        fill="url(#seed-body)" stroke="#8a5a20" stroke-width="1.6"/>
+  <!-- inner vein -->
+  <path d="M18 9 C18 16 18 26 18 32" fill="none" stroke="#fff6d8" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M18 15 C15.5 16.5 14 18.5 13.4 21 M18 19 C20.5 20.5 22 22.5 22.6 25" fill="none" stroke="#fff0c0" stroke-width="1.1" stroke-linecap="round"/>
+  <!-- stem -->
+  <path d="M18 4 C17.6 2.4 18.4 1.4 20 1" fill="none" stroke="#8a5a20" stroke-width="1.6" stroke-linecap="round"/>
+</svg>

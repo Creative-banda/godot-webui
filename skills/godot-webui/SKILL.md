@@ -93,6 +93,7 @@ Details, limits and examples: `references/visual-editor.md`.
 
 ## 5. Touch, Android and desktop (summary)
 
+- Android Back quits the game unless you take it over: set `handle_back_button = true` on the overlay, close page-owned things with `Godot.onBack(fn)` (return `true` when used), and decide the rest in the `back_requested` handler (pause, previous scene, quit). Not verified on a device.
 - Touch mode defaults to `AUTO`: the overlay takes every touch until the page calls `Godot.touchRegions()`; then only elements marked `data-webui-touch` take touches and the rest reaches the game. Use `MODAL` for full-screen menus. Details and limits: `references/touch-and-runtime.md`.
 - Android is the only supported runtime. The desktop preview (editor only) is a development aid: mouse and keyboard only, no touch pass-through, different web engine, different security. Never treat "works in the preview" as "works on the device".
 - In the Android WebView, `localStorage`/DOM storage is disabled, `eval`/`new Function` are blocked by the CSP, popups and external navigation are blocked, zoom is off, and the page cannot blur the game behind it (`backdrop-filter`). Keep persistence in Godot.

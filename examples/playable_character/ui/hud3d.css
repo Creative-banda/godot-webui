@@ -38,6 +38,42 @@ button {
   background: none;
 }
 
+/* Page loader: the page loads with body.loading (in the HTML). The full-screen #loader cover hides
+   everything until the first Godot state arrives; Godot re-adds the class with an "app_loading"
+   event while it swaps scenes, so a transition shows the loader, never an unfinished scene. */
+body.loading {
+  pointer-events: none;
+}
+
+#loader {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  background: #10162c;
+  opacity: 1;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+body:not(.loading) #loader {
+  opacity: 0;
+}
+
+#loader span {
+  font-size: clamp(12px, 1.1vw, 16px);
+  letter-spacing: 0.22em;
+  font-weight: 800;
+  color: var(--dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #loader {
+    transition: none;
+  }
+}
+
 .panel,
 .chip {
   background: var(--panel);

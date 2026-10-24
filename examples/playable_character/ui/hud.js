@@ -5,12 +5,16 @@
   // Only the elements marked data-webui-touch receive touches; everything else reaches the game.
   Godot.touchRegions();
 
+  // ---------- page lifecycle ----------
+  // The page loads with body.loading (hidden by the loader cover) and fades in when the first
+  // state arrives; Godot re-hides it with an "app_loading" event while it swaps scenes.
+  Godot.onEvent('app_loading', () => document.body.classList.add('loading'));
+  function reveal() { document.body.classList.remove('loading'); }
 
   // ---------- virtual joystick (one pointer, pointer capture, always releases)
   const zone = $('stick-zone');
   const stick = $('stick');
   const knob = $('knob');
-  const arrows = { u: stick.querySelector('.u'), d: stick.querySelector('.d'), l: stick.querySelector('.l'), r: stick.querySelector('.r') };
   const DEAD_ZONE = 0.12;
   let stickPointer = null;
   let sent = { x: 0, y: 0 };
@@ -24,11 +28,6 @@
   function paintStick(x, y) {
     const radius = stick.getBoundingClientRect().width / 2 - 8;
     knob.style.transform = `translate(${x * radius}px, ${y * radius}px)`;
-    stick.style.setProperty('--mag', Math.min(1, Math.hypot(x, y)).toFixed(2));
-    arrows.l.classList.toggle('on', x < -0.4);
-    arrows.r.classList.toggle('on', x > 0.4);
-    arrows.u.classList.toggle('on', y < -0.4);
-    arrows.d.classList.toggle('on', y > 0.4);
   }
 
   function updateStick(e) {
@@ -87,91 +86,138 @@
   }
 
   holdButton($('btn-jump'), () => Godot.emit('jump'));
-  holdButton($('btn-attack'),
-    () => Godot.emit('attack_pressed'),
-    () => Godot.emit('attack_released'));
-  holdButton($('btn-damage'), () => Godot.emit('damage_self'));
+  holdButton($('btn-flare'), () => Godot.emit('flare'));
   holdButton($('btn-pause'), () => Godot.emit('pause_toggle'));
   holdButton($('btn-resume'), () => Godot.emit('pause_toggle'));
+  holdButton($('btn-restart'), () => Godot.emit('restart'));
   holdButton($('btn-menu'), () => Godot.emit('back_to_menu'));
+  holdButton($('btn-again'), () => Godot.emit('play_again'));
+  holdButton($('btn-next'), () => Godot.emit('next_level'));
+  holdButton($('btn-results-menu'), () => Godot.emit('back_to_menu'));
 
   document.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  // ---------- Godot -> HTML
-  const vitals = $('vitals');
+  // ---------- keyboard (desktop preview): the WebView holds focus, so forward keys as intents.
+  // Same pattern as the 3D demo: the page forwards what it sees; Godot stays authoritative.
+  const held = new Set();
+  const KEYMAP = { KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right' };
+
+  function sendMoveFromKeys() {
+    const x = (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0);
+    Godot.emit('move_changed', { x, y: 0 });
+  }
+  function releaseKeys() {
+    if (held.size === 0) return;
+    held.clear();
+    sendMoveFromKeys();
+  }
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      if (!e.repeat) Godot.emit('jump');
+      e.preventDefault();
+    } else if (e.code === 'Escape' && !e.repeat) {
+      Godot.emit('pause_toggle');
+    } else if (e.code === 'KeyG' && !e.repeat) {
+      Godot.emit('warp');
+    } else if ((e.code === 'KeyX' || e.code === 'KeyJ' || e.code === 'KeyF') && !e.repeat) {
+      Godot.emit('attack_pressed');
+      Godot.emit('attack_released');  // the flare is a burst, not a hold
+    } else if (KEYMAP[e.code]) {
+      held.add(KEYMAP[e.code]);
+      sendMoveFromKeys();
+      e.preventDefault();
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (KEYMAP[e.code]) {
+      held.delete(KEYMAP[e.code]);  // both keys of a pair (A + ArrowLeft) may be held
+      sendMoveFromKeys();
+    }
+  });
+  window.addEventListener('blur', releaseKeys);
+  Godot.guard(releaseKeys);
+
+  // ---------- settings inside the pause card ----------
+  const segDifficulty = $('seg-difficulty');
+  segDifficulty.querySelectorAll('button').forEach((b) =>
+    b.addEventListener('click', () => Godot.emit('settings_changed', { difficulty: b.dataset.value })));
+  $('btn-sfx').addEventListener('click', () => Godot.emit('settings_changed', { sfx: $('btn-sfx').getAttribute('aria-pressed') !== 'true' }));
+
+  // ---------- Godot -> HTML ----------
+  const vignette = $('vignette');
+  const pips = [...$('hp').children];
+  const flarePips = [...$('flare-pips').children];
   let prevHealth = null;
-  let shownHealth = null;
-  let tween = 0;
-  let toastLevel = null;
   let wasDead = false;
+  let prevShards = null;
+  let lastTimeSec = -1;
+  let toastShown = false;
 
-  function setHealthText(value, max) { $('hp-text').textContent = `${Math.round(value)} / ${max}`; }
-
-  function tweenHealth(to, max) {
-    cancelAnimationFrame(tween);
-    const from = shownHealth ?? to;
-    const t0 = performance.now();
-    const step = (t) => {
-      const k = Math.min(1, (t - t0) / 350);
-      shownHealth = from + (to - from) * (1 - Math.pow(1 - k, 3));
-      setHealthText(shownHealth, max);
-      if (k < 1) tween = requestAnimationFrame(step);
-    };
-    tween = requestAnimationFrame(step);
-  }
-
-  function floater(text, kind) {
-    const f = document.createElement('div');
-    f.className = 'floater ' + kind;
-    f.textContent = text;
-    f.style.left = (Math.random() * 40) + 'px';
-    $('floaters').appendChild(f);
-    f.addEventListener('animationend', () => f.remove());
-  }
-
-  function showToast(text) {
-    const t = $('toast');
-    $('toast-text').textContent = text;
-    t.classList.remove('show');
-    void t.offsetWidth; // restart the animation
-    t.classList.add('show');
-  }
-
-  Godot.on('settings', (s) => { $('debug').style.display = s.show_debug ? '' : 'none'; });
+  Godot.on('settings', (s) => {
+    reveal();
+    $('btn-sfx').setAttribute('aria-pressed', String(s.sfx));
+    $('btn-sfx').textContent = s.sfx ? 'On' : 'Off';
+    segDifficulty.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.value === s.difficulty));
+    $('debug').hidden = !s.show_debug;
+  });
 
   Godot.on('state', (s) => {
-    const pct = Math.max(0, Math.min(100, (s.health / s.max_health) * 100));
-    $('hp-fill').style.width = pct + '%';
-    vitals.style.setProperty('--hue', Math.round(pct * 1.35));
-    $('hp-fill').style.setProperty('--hue', Math.round(pct * 1.35));
-    vitals.classList.toggle('low', pct <= 30);
+    reveal();
 
-    if (prevHealth === null || s.health > prevHealth) {
-      $('hp-trail').style.transition = 'none';
-      $('hp-trail').style.width = pct + '%';
-      void $('hp-trail').offsetWidth;
-      $('hp-trail').style.transition = '';
-      if (prevHealth !== null) floater('+' + (s.health - prevHealth), 'heal');
-    } else if (s.health < prevHealth) {
-      $('hp-trail').style.width = (prevHealth / s.max_health * 100) + '%';
-      requestAnimationFrame(() => { $('hp-trail').style.width = pct + '%'; });
-      floater('-' + (prevHealth - s.health), 'dmg');
-      for (const [el, cls] of [[vitals, 'shake'], [$('vignette'), 'hit']]) {
-        el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+    // Glimmers
+    if (s.shards !== prevShards) {
+      $('glow-n').textContent = s.shards;
+      $('glow-total').textContent = s.shards_total;
+      if (prevShards !== null) {
+        const chip = $('glow');
+        chip.classList.remove('pop');
+        void chip.offsetWidth;
+        chip.classList.add('pop');
       }
+      prevShards = s.shards;
     }
-    if (prevHealth !== s.health) tweenHealth(s.health, s.max_health);
-    prevHealth = s.health;
 
+    // Health pips: one pip per fifth of the bar.
+    const lit = Math.ceil(s.health / (s.max_health / pips.length));
+    pips.forEach((pip, i) => pip.classList.toggle('off', i >= lit));
+    vignette.classList.toggle('low', !s.dead && s.health <= s.max_health * 0.3);
+
+    // Timer (updates once per second; the page does no timing itself).
+    if (s.time_sec !== lastTimeSec && s.time_sec >= 0 && !s.finished) {
+      lastTimeSec = s.time_sec;
+      $('timer').textContent = `${Math.floor(s.time_sec / 60)}:${String(s.time_sec % 60).padStart(2, '0')}`;
+    }
+
+    // Flare charges.
+    flarePips.forEach((pip, i) => pip.classList.toggle('on', i < s.flares || (i === s.flares && s.flare_k >= 0.95)));
+    $('btn-flare').classList.toggle('empty', s.flares === 0);
+
+    // Overlays.
     if (s.dead !== wasDead) { $('ko').hidden = !s.dead; wasDead = s.dead; }
-    $('pause').hidden = !s.paused;
-    $('level-text').textContent = `LEVEL ${s.level} · ${s.level_name.toUpperCase()} · ${s.difficulty.toUpperCase()}`;
-    if (toastLevel !== s.level) { toastLevel = s.level; showToast(s.level_name); }
+    $('pause').hidden = !s.paused || s.finished;
 
-    $('r-pos').textContent = `${s.x}, ${s.y}`;
-    $('r-vel').textContent = `${s.vx}, ${s.vy}`;
-    $('r-floor').textContent = s.on_floor ? 'yes' : 'air';
-    $('r-atk').textContent = s.attacking ? 'ON' : 'off';
-    $('btn-attack').classList.toggle('down', s.attacking);
+    // Objective toast: once per page load, when the run begins.
+    if (!toastShown && !s.paused && !s.finished) {
+      toastShown = true;
+      $('toast-kicker').textContent = s.level_name.toUpperCase();
+      const t = $('toast');
+      t.classList.remove('show');
+      void t.offsetWidth;
+      t.classList.add('show');
+    }
+
+    if (s.show_debug) $('debug-line').textContent = `hits ${s.hits} · gate ${s.gate_open ? 'open' : 'sealed'}`;
+  });
+
+  Godot.on('results', (r) => {
+    $('results-kicker').textContent = r.level_name.toUpperCase();
+    $('r-time').textContent = r.time;
+    $('r-glims').textContent = `${r.shards}/${r.shards_total}`;
+    $('r-hits').textContent = r.hits;
+    $('r-best').textContent = r.new_best ? `New best time — ${r.best}` : `Best: ${r.best}`;
+    $('r-best').classList.toggle('newbest', r.new_best);
+    $('btn-next').textContent = `Next: ${r.next_name}`;
+    $('results').hidden = false;
+    $('pause').hidden = true;
   });
 })();

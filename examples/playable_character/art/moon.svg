@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
+  <!-- The old moon over the hollow; halo baked in, no extra circles at runtime. -->
+  <defs>
+    <radialGradient id="moon-halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f7f2df" stop-opacity="0.28"/>
+      <stop offset="45%" stop-color="#f7f2df" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#f7f2df" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="90" cy="90" r="86" fill="url(#moon-halo)"/>
+  <circle cx="90" cy="90" r="44" fill="#f2ecd8" stroke="#d8d0b4" stroke-width="2"/>
+  <circle cx="74" cy="78" r="8" fill="#e2dabd"/>
+  <circle cx="102" cy="96" r="5.5" fill="#e2dabd"/>
+  <circle cx="88" cy="110" r="4" fill="#e6dfc4"/>
+  <circle cx="108" cy="74" r="3" fill="#e6dfc4"/>
+</svg>

@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://ddrfpr7g88x1s"]
+
+[ext_resource type="Script" uid="uid://cha33hqr6q0h6" path="res://examples/playable_character/grove_gate.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://dpsiybybrd56x" path="res://examples/playable_character/art/gate.svg" id="2"]
+[ext_resource type="Texture2D" uid="uid://de2qn771l0dur" path="res://examples/playable_character/art/gate_glow.svg" id="3"]
+
+[sub_resource type="RectangleShape2D" id="arch"]
+size = Vector2(70, 150)
+
+[node name="Gate" type="Area2D" unique_id=2015073247]
+script = ExtResource("1")
+
+[node name="Shape" type="CollisionShape2D" parent="." unique_id=641729790]
+position = Vector2(-2, -75)
+shape = SubResource("arch")
+
+[node name="Art" type="Sprite2D" parent="." unique_id=1672699283]
+position = Vector2(0, -95)
+texture = ExtResource("2")
+
+[node name="Glow" type="Sprite2D" parent="." unique_id=1689231283]
+visible = false
+position = Vector2(0, -95)
+texture = ExtResource("3")

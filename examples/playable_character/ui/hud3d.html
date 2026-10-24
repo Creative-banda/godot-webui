@@ -6,7 +6,7 @@
   <title>3D HUD</title>
   <link rel="stylesheet" href="hud3d.css">
 </head>
-<body>
+<body class="loading">
   <!-- window.Godot is injected by the addon: no <script src> for it. -->
   <!-- Look zone: the whole screen, underneath the controls. Swipes on it turn the camera. -->
   <div id="look-zone" data-webui-touch></div>
@@ -47,6 +47,10 @@
   </div>
 
   <button id="btn-jump" class="round" data-webui-touch>JUMP</button>
+
+  <!-- Full-screen cover: visible while the page loads or Godot swaps scenes (body.loading),
+       fades out when the first Godot state arrives. -->
+  <div id="loader" aria-hidden="true"><span>Loading…</span></div>
 
   <script src="hud3d.js"></script>
 </body>

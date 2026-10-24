@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Texture2D" path="res://examples/playable_character/art/platform_long.svg" id="1"]
+
+[sub_resource type="RectangleShape2D" id="ledge"]
+size = Vector2(340, 24)
+
+[node name="PlatformLong" type="StaticBody2D"]
+
+[node name="Shape" type="CollisionShape2D" parent="."]
+shape = SubResource("ledge")
+
+[node name="Art" type="Sprite2D" parent="."]
+centered = false
+offset = Vector2(0, -19)
+texture = ExtResource("1")

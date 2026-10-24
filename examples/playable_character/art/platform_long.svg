@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="340" height="36" viewBox="0 0 340 36">
+  <!-- Moss-topped earth ledge of the hollow (long); art asset, editable here. -->
+  <rect x="1.5" y="8" width="337" height="25" rx="8" fill="#1c2340" stroke="#141a33" stroke-width="2"/>
+  <rect x="4" y="9" width="332" height="3" rx="1.5" fill="#2a3357"/>
+  <path d="M9 8 L14 9 L48 12 L82 9 L116 12 L150 9 L184 12 L218 9 L252 12 L286 9 L320 12 L331 8 L331 4 L9 4 Z" fill="#35695a" stroke="#274e43" stroke-width="1.4"/>
+  <path d="M198 7 L199.6 1 L201.2 7 Z" fill="#4c9a74"/><path d="M205 7 L206.4 4 L207.8 7 Z" fill="#3d7a6a"/><path d="M73 7 L74.6 2 L76.2 7 Z" fill="#4c9a74"/><path d="M84 7 L85.4 3 L86.8 7 Z" fill="#3d7a6a"/><path d="M235 7 L236.6 4 L238.2 7 Z" fill="#4c9a74"/><path d="M241 7 L242.4 3 L243.8 7 Z" fill="#3d7a6a"/><path d="M277 7 L278.6 1 L280.2 7 Z" fill="#4c9a74"/><path d="M286 7 L287.4 4 L288.8 7 Z" fill="#3d7a6a"/><path d="M77 7 L78.6 1 L80.2 7 Z" fill="#4c9a74"/><path d="M89 7 L90.4 2 L91.8 7 Z" fill="#3d7a6a"/>
+  <circle cx="37" cy="26" r="2.5" fill="#2a3357"/><circle cx="153" cy="26" r="2.5" fill="#2a3357"/>
+</svg>

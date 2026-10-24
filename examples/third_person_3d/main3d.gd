@@ -41,9 +41,9 @@ var _last_telemetry := {}
 
 func _ready() -> void:
 	if app:
-		# Opened from the menu: the shell owns the overlay. show_page() resets the handlers, so register ours after.
+		# Opened from the menu: the shell owns the overlay.
 		ui = app.ui
-		app.show_page(PAGE, GodotWebUI.TouchMode.REGIONS, _push_all)
+		show_hud()
 	else:
 		ui = GodotWebUI.new()
 		add_child(ui)
@@ -51,6 +51,18 @@ func _ready() -> void:
 		ui.page_ready.connect(_push_all)
 		# Only elements marked data-webui-touch take touches. The page marks its whole look zone.
 		ui.set_touch_mode(GodotWebUI.TouchMode.REGIONS)
+		_connect_page()
+		ui.start(UI_DIR, PAGE)
+
+
+## Points the shell overlay at the 3D HUD page and registers this scene's page handlers. Also called
+## by the benchmark after it shut the overlay down (show_page resets the handlers before these run).
+func show_hud() -> void:
+	app.show_page(PAGE, GodotWebUI.TouchMode.REGIONS, _push_all)
+	_connect_page()
+
+
+func _connect_page() -> void:
 	ui.on("move_changed", _on_move_changed)
 	ui.on("jump", func(_p: Dictionary) -> void: player.request_jump())
 	ui.on("keys_changed", _on_keys_changed)
@@ -60,8 +72,14 @@ func _ready() -> void:
 	ui.on("back_to_menu", func(_p: Dictionary) -> void:
 		if app:
 			app.show_menu())
-	if not app:
-		ui.start(UI_DIR, PAGE)
+
+
+## Android Back (the shell calls this when the page did not use it): back to the menu.
+func on_back() -> void:
+	if app:
+		app.show_menu()
+	else:
+		get_tree().quit()
 
 
 func _notification(what: int) -> void:

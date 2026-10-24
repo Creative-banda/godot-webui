@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2600" height="420" viewBox="0 0 2600 420">
+  <!-- Far ridge: rolling silhouette with round-topped trees, once part of the old forest. -->
+  <g fill="#131a38">
+    <path d="M0 420 L0 260 C120 220 200 240 300 205 C380 176 430 190 520 210 C600 228 650 200 720 178
+             C820 148 900 186 990 208 C1080 230 1140 200 1220 182 C1320 160 1400 196 1490 212
+             C1580 228 1650 202 1730 184 C1830 162 1920 198 2010 216 C2100 234 2170 208 2260 190
+             C2360 170 2450 200 2600 230 L2600 420 Z"/>
+  </g>
+  <!-- round trees on the ridge line -->
+  <g fill="#131a38">
+    <rect x="246" y="196" width="7" height="26"/><circle cx="249" cy="188" r="17"/>
+    <rect x="700" y="168" width="8" height="30"/><circle cx="704" cy="158" r="20"/>
+    <rect x="1206" y="172" width="7" height="28"/><circle cx="1210" cy="163" r="18"/>
+    <rect x="1718" y="174" width="8" height="30"/><circle cx="1722" cy="164" r="19"/>
+    <rect x="2248" y="180" width="7" height="28"/><circle cx="2252" cy="171" r="18"/>
+  </g>
+</svg>

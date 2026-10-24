@@ -42,6 +42,7 @@ func _initialize() -> void:
 	await _test_state_and_events()
 	await _test_touch_modes()
 	await _test_guard_and_recovery()
+	await _test_back_button()
 	_test_export_plugin()
 	await _test_minimal_example()
 	quit(failures)
@@ -176,6 +177,56 @@ func _test_guard_and_recovery() -> void:
 	rec.shutdown()
 	rec.queue_free()
 	GodotWebUI._backend_factory = Callable()
+
+
+func _test_back_button() -> void:
+	var made := _fake_ui()
+	var ui: GodotWebUI = made[0]
+	var fake: FakeBackend = made[1]
+	var backs := [0]
+	ui.back_requested.connect(func() -> void: backs[0] += 1)
+	var previous: bool = quit_on_go_back
+
+	# off by default: Back is left to the engine
+	ui.notification(Node.NOTIFICATION_WM_GO_BACK_REQUEST)
+	check(backs[0] == 0 and fake.sent.is_empty(), "Back is ignored while handle_back_button is off")
+
+	ui.handle_back_button = true
+	check(quit_on_go_back == false, "handle_back_button stops the engine from quitting on Back")
+
+	# page not ready yet: nothing can answer, so the game is told at once
+	ui.notification(Node.NOTIFICATION_WM_GO_BACK_REQUEST)
+	check(backs[0] == 1, "Back before the page is ready goes straight to back_requested")
+
+	fake.message.emit('{"t":"ready"}')
+	fake.sent.clear()
+
+	# the page uses it
+	ui.notification(Node.NOTIFICATION_WM_GO_BACK_REQUEST)
+	check(fake.sent == [["@e:webui.back", "{}"]], "Back is offered to the page first")
+	fake.message.emit('{"t":"event","name":"webui.back_handled","payload":{}}')
+	await create_timer(GodotWebUI.BACK_TIMEOUT_SEC + 0.2).timeout
+	check(backs[0] == 1, "a page that handles Back keeps it from the game")
+
+	# the page declines
+	ui.notification(Node.NOTIFICATION_WM_GO_BACK_REQUEST)
+	fake.message.emit('{"t":"event","name":"webui.back_unhandled","payload":{}}')
+	check(backs[0] == 2, "a page that declines Back hands it to the game")
+	await create_timer(GodotWebUI.BACK_TIMEOUT_SEC + 0.2).timeout
+	check(backs[0] == 2, "the late timeout does not report it twice")
+
+	# the page never answers
+	ui.notification(Node.NOTIFICATION_WM_GO_BACK_REQUEST)
+	await create_timer(GodotWebUI.BACK_TIMEOUT_SEC + 0.2).timeout
+	check(backs[0] == 3, "a silent page does not swallow Back")
+
+	# a stale answer after the timeout is ignored
+	fake.message.emit('{"t":"event","name":"webui.back_unhandled","payload":{}}')
+	check(backs[0] == 3, "an answer after the timeout is ignored")
+
+	ui.handle_back_button = false
+	check(quit_on_go_back == previous, "turning handle_back_button off restores quit_on_go_back")
+	ui.shutdown()
 
 
 func _test_export_plugin() -> void:

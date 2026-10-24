@@ -11,6 +11,10 @@
  *   Godot.on(name, fn)                Same as onState (kept for compatibility).
  *   Godot.off(name, fn)               Removes a handler registered with on/onState/onEvent.
  *   Godot.guard(releaseFn)            releaseFn runs on blur / page hidden / app pause. Returns an unregister fn.
+ *   Godot.onBack(fn)                  the Android Back button was pressed (needs GodotWebUI.handle_back_button).
+ *                                     fn() returns true if the page used it (closed a panel, went to the previous
+ *                                     screen); otherwise Godot gets GodotWebUI.back_requested. The newest handler
+ *                                     is asked first. Returns an unregister function.
  *   Godot.touchRegions(selector?)     elements matching selector (default '[data-webui-touch]') receive touches;
  *                                     the rest of the screen passes through to the game (touch mode "regions").
  *   Godot.available                   true when the native bridge is present.
@@ -30,6 +34,7 @@
   var eventListeners = Object.create(null);
   var last = Object.create(null);
   var guards = [];
+  var backHandlers = [];
   var warnedMissing = false;
 
   // Android exposes window.GodotNative. The desktop development preview (WRY/WebView2) only has
@@ -126,6 +131,15 @@
       };
     },
 
+    onBack: function (fn) {
+      if (typeof fn !== 'function') { console.error('[Godot] onBack() needs a function.'); return function () {}; }
+      backHandlers.push(fn);
+      return function () {
+        var i = backHandlers.indexOf(fn);
+        if (i >= 0) backHandlers.splice(i, 1);
+      };
+    },
+
     touchRegions: function (selector) {
       regionSelector = selector || '[data-webui-touch]';
       // Tells GodotWebUI (touch mode AUTO) that this page wants pass-through for everything else.
@@ -152,6 +166,15 @@
       if (state === 'pause') releaseAll('pause');
     }
   };
+
+  // ---- Back button: Godot asks, the newest handler that returns true consumes it, then Godot is told which.
+  Godot.onEvent('webui.back', function () {
+    var handled = false;
+    for (var i = backHandlers.length - 1; i >= 0 && !handled; i--) {
+      try { handled = backHandlers[i]() === true; } catch (e) { console.error('[Godot] onBack handler threw:', e); }
+    }
+    Godot.emit(handled ? 'webui.back_handled' : 'webui.back_unhandled');
+  });
 
   // ---- stuck-input protection
   window.addEventListener('blur', function () { releaseAll('blur'); });
@@ -180,11 +203,27 @@
 
   function scheduleRegions(immediate) {
     if (immediate) computeRegions();
-    if (!regionTimer) regionTimer = setInterval(computeRegions, 200);
+    if (!regionTimer) regionTimer = setInterval(computeRegions, 100);
+  }
+
+  // Scrolling and viewport changes (screen rotation, the soft keyboard) move region rectangles;
+  // report the change on the next frame instead of waiting for the next poll.
+  var scrollQueued = false;
+  function queueRegions() {
+    if (scrollQueued || !regionSelector) return;
+    scrollQueued = true;
+    requestAnimationFrame(function () {
+      scrollQueued = false;
+      computeRegions();
+    });
   }
 
   function start() {
-    window.addEventListener('resize', function () { computeRegions(); });
+    window.addEventListener('resize', queueRegions);
+    window.addEventListener('scroll', queueRegions, { capture: true, passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', queueRegions);
+    }
     flush();
     send({ t: 'ready' });
     computeRegions();

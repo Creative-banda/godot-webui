@@ -28,6 +28,7 @@ ui.start("res://ui")            # loads res://ui/index.html
 | `send(name, payload)` | Deprecated alias of `set_state`. Do not use in new code. |
 | `show_ui()` / `hide_ui()` | Show or hide the overlay. |
 | `touch_mode` (`@export`), `set_touch_mode(mode)` | `GodotWebUI.TouchMode.AUTO` (default), `MODAL`, `REGIONS`. See `touch-and-runtime.md`. |
+| `handle_back_button` (`@export`, bool, default `false`) | Take over the Android Back button. While on, Back is offered to the page first (`Godot.onBack(fn)`; return `true` to consume it) and, if the page declines or does not answer within 0.3 s, reported through `back_requested`. While on, `SceneTree.quit_on_go_back` is switched off and restored when you turn it off or `shutdown()`. Off: Back quits the app as before. Not verified on a device. |
 | `shutdown()` | Destroys the overlay and releases native resources. Idempotent; also runs when the node leaves the tree. Handlers stay registered. |
 | `is_ready: bool` | True once the page's handshake arrived. Stays true across reloads (each load sends a new handshake). |
 | `desktop_preview_hot_reload`, `desktop_preview_devtools` (`@export`, bool) | Desktop preview only; ignored on Android. |
@@ -43,6 +44,7 @@ Payload rules for `set_state` / `emit_event`: a `Dictionary` that `JSON.stringif
 | `error(code, text)` | Native or protocol problem. Also written with `push_warning`. See `troubleshooting.md`. |
 | `console_message(level, text)` | The page's `console.*` output (Android), also printed as `[WebUI:js:LEVEL] ...`. |
 | `suspended` | The app went to the background (`NOTIFICATION_APPLICATION_PAUSED`). Clear held game input. |
+| `back_requested` | Android Back was pressed and the page did not use it (only with `handle_back_button`). Decide what Back does: pause, previous scene, `get_tree().quit()`. |
 | `recovered` | The overlay was re-created after the WebView renderer died (best effort). State from `set_state` is restored; events are not. |
 
 ## JavaScript: `window.Godot`
@@ -57,6 +59,7 @@ Injected before any page script. Do not include `godot.js` yourself.
 | `Godot.on(name, fn)` | Alias of `onState` (kept for compatibility). |
 | `Godot.off(name, fn)` | Unsubscribes a handler registered with `on`, `onState` or `onEvent`. |
 | `Godot.guard(releaseFn) -> unregister` | Calls `releaseFn(reason)` on window blur, `pagehide`, hidden visibility and native app pause (`reason` is `'blur'`, `'pagehide'`, `'hidden'` or `'pause'`). Use it to release held input. |
+| `Godot.onBack(fn) -> unregister` | Android Back (with `handle_back_button`): `fn()` returns `true` to consume it (close a modal, previous screen), anything else declines and Godot gets `back_requested`. Newest handler first. |
 | `Godot.touchRegions(selector?)` | Opts this page in to touch pass-through: elements matching `selector` (default `[data-webui-touch]`) receive touches, the rest of the screen reaches the game. Also tells Godot (so `AUTO` switches to pass-through). Call once. |
 | `Godot.available` | `true` when the native bridge is present. |
 | `Godot.preview` | `true` in the desktop development preview (not on Android). |

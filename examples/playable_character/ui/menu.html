@@ -3,261 +3,89 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <title>Main Menu</title>
+  <title>Lumen Hollow</title>
   <link rel="stylesheet" href="menu.css">
 </head>
-<body>
+<body class="loading">
   <svg class="sprite-defs" aria-hidden="true">
     <defs>
-      <!-- Chunky kid-friendly icons -->
-      <symbol id="i-play" viewBox="0 0 24 24">
-        <path d="M7.5 4.2c-1.1-.7-2.5.1-2.5 1.5v12.6c0 1.4 1.4 2.2 2.5 1.5l11-6.3c1.1-.7 1.1-2.3 0-3l-11-6.3z" fill="currentColor"/>
-      </symbol>
-      <symbol id="i-cube" viewBox="0 0 24 24">
-        <path d="M12 2.5l8.5 4.7v9.6L12 21.5l-8.5-4.7V7.2L12 2.5zm0 2.3L6.3 7.9 12 11l5.7-3.1L12 4.8zM5.5 9.6v6.1l5.5 3V12.6L5.5 9.6zm13 0l-5.5 3v6.1l5.5-3V9.6z" fill="currentColor"/>
-      </symbol>
-      <symbol id="i-map" viewBox="0 0 24 24">
-        <path d="M12 2l2.4 5 5.6.8-4 4 1 5.6-5-2.6-5 2.6 1-5.6-4-4 5.6-.8z" fill="currentColor"/>
-      </symbol>
-      <symbol id="i-gear" viewBox="0 0 24 24">
-        <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm9.4 3.2l-1.8-.3c-.2-.7-.4-1.3-.7-1.9l1.1-1.5a1.2 1.2 0 0 0-.2-1.6l-1.7-1.7a1.2 1.2 0 0 0-1.6-.2l-1.5 1.1c-.6-.3-1.2-.5-1.9-.7l-.3-1.8A1.2 1.2 0 0 0 11.6 2h-2.4c-.6 0-1.1.5-1.2 1.1l-.3 1.8c-.7.2-1.3.4-1.9.7L4.3 4.5a1.2 1.2 0 0 0-1.6.2L1 6.4a1.2 1.2 0 0 0-.2 1.6l1.1 1.5c-.3.6-.5 1.2-.7 1.9l-1.8.3A1.2 1.2 0 0 0-1.6 13v2.4c0 .6.5 1.1 1.1 1.2l1.8.3c.2.7.4 1.3.7 1.9l-1.1 1.5a1.2 1.2 0 0 0 .2 1.6l1.7 1.7a1.2 1.2 0 0 0 1.6.2l1.5-1.1c.6.3 1.2.5 1.9.7l.3 1.8c.1.6.6 1.1 1.2 1.1h2.4c.6 0 1.1-.5 1.2-1.1l.3-1.8c.7-.2 1.3-.4 1.9-.7l1.5 1.1a1.2 1.2 0 0 0 1.6-.2l1.7-1.7a1.2 1.2 0 0 0 .2-1.6l-1.1-1.5c.3-.6.5-1.2.7-1.9l1.8-.3c.6-.1 1.1-.6 1.1-1.2V13c0-.6-.5-1.1-1.1-1.2z" fill="currentColor"/>
-      </symbol>
-      <symbol id="i-chart" viewBox="0 0 24 24">
-        <path d="M5 19a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5zm2-4h2V9H7v6zm4 0h2V7h-2v8zm4 0h2v-4h-2v4z" fill="currentColor"/>
-      </symbol>
-      <symbol id="i-info" viewBox="0 0 24 24">
-        <path fill-rule="evenodd" d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm1 15h-2v-5h2v5zm0-7h-2V7h2v3z" fill="currentColor"/>
-      </symbol>
-      <symbol id="i-power" viewBox="0 0 24 24">
-        <path d="M12 3a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-3 0v-6A1.5 1.5 0 0 1 12 3z" fill="currentColor"/>
-        <path d="M6.3 6.3a1.5 1.5 0 0 1 2.1.2 1.5 1.5 0 0 1-.2 2.1A7 7 0 1 0 15.8 8.6a1.5 1.5 0 1 1 1.9-2.3 10 10 0 1 1-11.4 0z" fill="currentColor"/>
-      </symbol>
-      <symbol id="i-back" viewBox="0 0 24 24">
-        <path d="M15.7 4.3a1.5 1.5 0 0 1 0 2.1L9.8 12l5.9 5.6a1.5 1.5 0 1 1-2.1 2.1l-7-6.6a1.5 1.5 0 0 1 0-2.1l7-6.7a1.5 1.5 0 0 1 2.1 0z" fill="currentColor"/>
-      </symbol>
-      <symbol id="i-skull" viewBox="0 0 24 24">
-        <path fill-rule="evenodd" d="M12 2c-5 0-9 3.6-9 8.2 0 2.5 1.2 4.7 3.1 6.2v3.6c0 .8.8 1.4 1.6 1.1l2.3-.9 2 1c.6.3 1.3.1 1.8-.3l1.8-1.5 2.1.7c.8.3 1.7-.3 1.7-1.1v-2.6c1.9-1.5 3.1-3.7 3.1-6.2C21 5.6 17 2 12 2zm-3.5 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm7 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" fill="currentColor"/>
-      </symbol>
-      <symbol id="i-up" viewBox="0 0 24 24">
-        <path d="M12 3a1.5 1.5 0 0 1 1.1.5l7 8a1.5 1.5 0 0 1-1.1 2.5h-4v6a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 20v-6H5a1.5 1.5 0 0 1-1.1-2.5l7-8A1.5 1.5 0 0 1 12 3z" fill="currentColor"/>
-      </symbol>
-      <symbol id="i-pad" viewBox="0 0 24 24">
-        <path d="M17.5 4H6.5A5.5 5.5 0 0 0 1 9.5c0 3.8 2.6 6.8 6.2 7.4L9 20c.4.6 1.2.7 1.8.3l2.8-2.3h.4l2.8 2.3c.6.4 1.4.3 1.8-.3l1.8-3.1c3.6-.6 6.2-3.6 6.2-7.4A5.5 5.5 0 0 0 17.5 4zM8 12H6v-2h2V8h2v2h2v2h-2v2H8v-2zm8.5 2a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm2-3.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" fill="currentColor"/>
-      </symbol>
+      <symbol id="i-glim" viewBox="0 0 24 24"><path d="M12 2l4.5 7L12 22 7.5 9z"/></symbol>
+      <symbol id="i-gear" viewBox="0 0 24 24"><path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8zm8.8 4.2l-1.7-.5a7.2 7.2 0 0 0-.5-1.3l.9-1.5-1.9-1.9-1.5.9a7.2 7.2 0 0 0-1.3-.5L14.3 5h-2.7l-.5 1.7c-.5.1-.9.3-1.3.5l-1.5-.9-1.9 1.9.9 1.5c-.2.4-.4.8-.5 1.3l-1.7.5v2.7l1.7.5c.1.5.3.9.5 1.3l-.9 1.5 1.9 1.9 1.5-.9c.4.2.8.4 1.3.5l.5 1.7h2.7l.5-1.7c.5-.1.9-.3 1.3-.5l1.5.9 1.9-1.9-.9-1.5c.2-.4.4-.8.5-1.3l1.7-.5z"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm1 15h-2v-5h2v5zm0-7h-2V7h2v3z"/></symbol>
+      <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-3 0v-6A1.5 1.5 0 0 1 12 3z"/><path d="M6.3 6.3a1.5 1.5 0 0 1 2.1.2 1.5 1.5 0 0 1-.2 2.1A7 7 0 1 0 15.8 8.6a1.5 1.5 0 1 1 1.9-2.3 10 10 0 1 1-11.4 0z"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13c0 .9 1 1.5 1.8 1L20 13c.8-.5.8-1.6 0-2.1L9.8 4.5C9 4 8 4.6 8 5.5z"/></symbol>
+      <symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 2.5l8.5 4.7v9.6L12 21.5l-8.5-4.7V7.2L12 2.5zm0 2.3L6.3 7.9 12 11l5.7-3.1L12 4.8z"/></symbol>
     </defs>
   </svg>
 
-  <canvas id="fx"></canvas>
+  <div id="vignette" aria-hidden="true"></div>
 
-  <div id="app" data-screen="main">
-    <!-- Brand column / banner -->
-    <aside id="brand">
-      <div class="logo">
-        <svg viewBox="0 0 72 72" aria-hidden="true">
-          <defs>
-            <linearGradient id="logo-candy" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#ff7eb3"/>
-              <stop offset="50%" stop-color="#ffd166"/>
-              <stop offset="100%" stop-color="#06d6a0"/>
-            </linearGradient>
-          </defs>
-          <!-- Squishy 3D jelly squircle -->
-          <rect x="5" y="5" width="62" height="62" rx="22" fill="url(#logo-candy)"/>
-          <path d="M12 12 Q36 6 60 12" stroke="rgba(255,255,255,0.7)" stroke-width="4" stroke-linecap="round" fill="none"/>
-          <!-- Playful controller / game smiley face -->
-          <circle cx="26" cy="33" r="5" fill="#1e1338"/>
-          <circle cx="46" cy="33" r="5" fill="#1e1338"/>
-          <circle cx="28" cy="31" r="1.8" fill="#ffffff"/>
-          <circle cx="48" cy="31" r="1.8" fill="#ffffff"/>
-          <ellipse cx="20" cy="40" rx="3.5" ry="2" fill="#ff4785" opacity="0.6"/>
-          <ellipse cx="52" cy="40" rx="3.5" ry="2" fill="#ff4785" opacity="0.6"/>
-          <path d="M28 41 Q36 49 44 41" stroke="#1e1338" stroke-width="4" stroke-linecap="round" fill="none"/>
-        </svg>
+  <div id="stage">
+    <header id="brand">
+      <svg id="mark" viewBox="0 0 72 72" aria-hidden="true">
+        <defs>
+          <linearGradient id="mark-amber" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffe9c4"/>
+            <stop offset="100%" stop-color="#ffb84d"/>
+          </linearGradient>
+        </defs>
+        <circle cx="36" cy="38" r="26" fill="rgba(255,184,77,0.10)"/>
+        <circle cx="36" cy="38" r="17" fill="rgba(255,184,77,0.16)"/>
+        <path d="M36 20l7 12-7 20-7-20z" fill="url(#mark-amber)"/>
+        <circle cx="36" cy="38" r="4.5" fill="#fff6e2"/>
+      </svg>
+      <div class="title">
+        <h1>Lumen <b>Hollow</b></h1>
+        <p class="tag">Gather the lost glimmers.<br>Wake the gate.</p>
       </div>
-      <div class="brand-text">
-        <h1>WEB<span>UI</span></h1>
-        <p class="tag">Godot gameplay.<br>HTML interface.</p>
-      </div>
-      <div class="chips">
-        <span class="chip"><i></i>HTML · CSS · JS</span>
-        <span class="chip alt"><i></i>Godot <em id="brand-ver">4.x</em></span>
-      </div>
-    </aside>
+    </header>
 
-    <!-- Screens -->
     <main id="panel">
       <section id="screen-main" class="screen active">
-        <button class="hero press" id="btn-play">
-          <span class="hero-ico"><svg><use href="#i-play"/></svg></span>
-          <span class="hero-txt"><b>Play Game</b><small id="play-sub">Continue · Level 1</small></span>
-          <span class="pulse"></span>
+        <button class="cta" id="btn-play">
+          <svg><use href="#i-play"/></svg>
+          <span class="cta-txt"><b>Begin</b><small id="best-line">A quiet walk through the grove</small></span>
         </button>
-        <button class="hero3d press" id="btn-play-3d">
-          <svg><use href="#i-cube"/></svg>
-          <span><b>3D Arena</b><small>Third-person demo · swipe to look</small></span>
-        </button>
-        <div class="tiles">
-          <button class="tile press tile-levels" data-goto="levels"><svg><use href="#i-map"/></svg><b>Levels</b></button>
-          <button class="tile press tile-settings" data-goto="settings"><svg><use href="#i-gear"/></svg><b>Settings</b></button>
-          <button class="tile press tile-stats" data-goto="stats"><svg><use href="#i-chart"/></svg><b>Stats</b></button>
-          <button class="tile press tile-about" data-goto="about"><svg><use href="#i-info"/></svg><b>About</b></button>
-        </div>
-        <button class="quit press" id="btn-quit" title="Quit the game"><svg><use href="#i-power"/></svg>Quit game</button>
-      </section>
-
-      <section id="screen-levels" class="screen">
-        <header><button class="back press" data-goto="main" aria-label="Back"><svg><use href="#i-back"/></svg></button><h2>Choose a level</h2></header>
-        <div class="levels">
-          <button class="level press" data-level="1">
-            <svg class="art" viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-              <defs>
-                <linearGradient id="sky-candy-1" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#60efff"/>
-                  <stop offset="50%" stop-color="#b8f2e6"/>
-                  <stop offset="100%" stop-color="#ffd166"/>
-                </linearGradient>
-                <linearGradient id="hill-1" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#06d6a0"/>
-                  <stop offset="100%" stop-color="#049971"/>
-                </linearGradient>
-                <linearGradient id="hill-2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#70e000"/>
-                  <stop offset="100%" stop-color="#38b000"/>
-                </linearGradient>
-              </defs>
-              <!-- Bright sunny meadow with lollipop trees & fluffy clouds -->
-              <rect width="200" height="110" fill="url(#sky-candy-1)"/>
-              <!-- Smiling sun -->
-              <circle cx="155" cy="30" r="18" fill="#ffd166"/>
-              <circle cx="155" cy="30" r="15" fill="#ffe494"/>
-              <ellipse cx="149" cy="28" rx="1.6" ry="2.2" fill="#d47a00"/>
-              <ellipse cx="161" cy="28" rx="1.6" ry="2.2" fill="#d47a00"/>
-              <path d="M152 32 Q155 35 158 32" stroke="#d47a00" stroke-width="1.2" stroke-linecap="round" fill="none"/>
-              <!-- Fluffy cloud -->
-              <path d="M30 32 q5-9 14-4 q6-6 13 0 q8 0 8 7 q0 6-7 6 h-22 q-6 0-6-9 z" fill="#ffffff" opacity="0.9"/>
-              <!-- Rolling candy hills -->
-              <path d="M0 72 Q50 50 110 74 T200 68 V110 H0z" fill="url(#hill-1)"/>
-              <path d="M0 86 Q60 68 130 88 T200 84 V110 H0z" fill="url(#hill-2)"/>
-              <!-- Lollipop tree -->
-              <line x1="45" y1="65" x2="45" y2="88" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
-              <circle cx="45" cy="62" r="11" fill="#ff4785"/>
-              <circle cx="45" cy="62" r="7" fill="#ff7eb3"/>
-              <circle cx="45" cy="62" r="3" fill="#ffffff"/>
-              <!-- Cute player cube -->
-              <rect x="105" y="70" width="16" height="16" rx="4" fill="#38b6ff"/>
-              <circle cx="109" cy="76" r="1.5" fill="#ffffff"/>
-              <circle cx="115" cy="76" r="1.5" fill="#ffffff"/>
-            </svg>
-            <span class="meta"><b>01 · Training Yard</b><small>Normal gravity</small></span>
-            <span class="check"></span>
-          </button>
-          <button class="level press" data-level="2">
-            <svg class="art" viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-              <defs>
-                <linearGradient id="sky-space-2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#140152"/>
-                  <stop offset="60%" stop-color="#22007c"/>
-                  <stop offset="100%" stop-color="#49117c"/>
-                </linearGradient>
-                <radialGradient id="sweet-moon">
-                  <stop offset="0%" stop-color="#fff8db"/>
-                  <stop offset="70%" stop-color="#ffd166"/>
-                  <stop offset="100%" stop-color="#ffb703"/>
-                </radialGradient>
-              </defs>
-              <!-- Cosmic Candy Moon with cute twinkling stars -->
-              <rect width="200" height="110" fill="url(#sky-space-2)"/>
-              <!-- Twinkling stars -->
-              <g fill="#ffe066">
-                <circle cx="25" cy="20" r="1.5"/><circle cx="70" cy="18" r="2"/><circle cx="95" cy="38" r="1.2"/>
-                <circle cx="170" cy="22" r="1.8"/><circle cx="40" cy="55" r="1.5"/><circle cx="185" cy="48" r="1.3"/>
-              </g>
-              <!-- Giant smiling cheese moon -->
-              <circle cx="145" cy="40" r="25" fill="url(#sweet-moon)"/>
-              <circle cx="138" cy="33" r="4.5" fill="#f4a261" opacity="0.4"/>
-              <circle cx="152" cy="48" r="3.2" fill="#f4a261" opacity="0.4"/>
-              <circle cx="155" cy="32" r="2.2" fill="#f4a261" opacity="0.4"/>
-              <!-- Cosmic clouds & candy platforms -->
-              <path d="M0 90 Q60 76 120 90 T200 86 V110 H0z" fill="#3c096c"/>
-              <rect x="25" y="72" width="60" height="12" rx="6" fill="#9d4edd"/>
-              <rect x="27" y="74" width="56" height="4" rx="2" fill="#c77dff" opacity="0.8"/>
-              <!-- Floaty player cube with bubble helmet -->
-              <rect x="50" y="58" width="14" height="14" rx="3.5" fill="#38b6ff"/>
-              <circle cx="57" cy="65" r="11" fill="none" stroke="#60efff" stroke-width="1.8" opacity="0.8"/>
-            </svg>
-            <span class="meta"><b>02 · Moon Ledge</b><small>Low gravity · floaty jumps</small></span>
-            <span class="check"></span>
-          </button>
-        </div>
-        <button class="cta press" id="btn-start-level"><svg><use href="#i-play"/></svg>Start level <span id="start-n">1</span></button>
+        <nav class="row">
+          <button class="ghost" id="btn-settings"><svg><use href="#i-gear"/></svg>Settings</button>
+          <button class="ghost" id="btn-about"><svg><use href="#i-info"/></svg>About</button>
+          <button class="ghost" id="btn-quit"><svg><use href="#i-power"/></svg>Quit</button>
+        </nav>
       </section>
 
       <section id="screen-settings" class="screen">
-        <header><button class="back press" data-goto="main" aria-label="Back"><svg><use href="#i-back"/></svg></button><h2>Settings</h2></header>
-        <p class="hint">Godot owns these values. Change one and watch it come back from Godot.</p>
-        <div class="row">
-          <span class="lbl">Music volume</span>
-          <input type="range" id="set-music" min="0" max="1" step="0.05">
-          <output id="out-music" class="val">0%</output>
-        </div>
-        <div class="row">
-          <span class="lbl">Sound effects</span>
-          <label class="switch"><input type="checkbox" id="set-sfx"><i></i></label>
-        </div>
-        <div class="row">
-          <span class="lbl">Difficulty</span>
-          <div class="seg" id="set-difficulty">
-            <i class="pill"></i>
-            <button data-value="easy" data-i="0">Easy</button>
-            <button data-value="normal" data-i="1">Normal</button>
-            <button data-value="hard" data-i="2">Hard</button>
+        <header><button class="back" data-goto="main" aria-label="Back">‹</button><h2>Settings</h2></header>
+        <div class="rows">
+          <div class="row"><span>Sound effects</span><button id="set-sfx" class="toggle" aria-pressed="true">On</button></div>
+          <div class="row"><span>Difficulty</span>
+            <span class="seg" id="set-difficulty"><button data-value="easy">Easy</button><button data-value="normal">Normal</button><button data-value="hard">Hard</button></span>
           </div>
+          <div class="row"><span>Debug readout in game</span><button id="set-debug" class="toggle" aria-pressed="true">On</button></div>
         </div>
-        <div class="row">
-          <span class="lbl">Debug readout in game</span>
-          <label class="switch"><input type="checkbox" id="set-debug"><i></i></label>
-        </div>
-        <div class="row">
-          <span class="lbl">Player name (text)</span>
-          <input type="text" id="input-player-name" class="candy-input" placeholder="Hero name" value="Player 1" maxlength="20">
-        </div>
-        <div class="row">
-          <span class="lbl">Target score (numbers only)</span>
-          <input type="number" id="input-target-score" class="candy-input num-input" placeholder="100" value="500" min="0" max="99999" step="10">
-        </div>
-      </section>
-
-      <section id="screen-stats" class="screen">
-        <header><button class="back press" data-goto="main" aria-label="Back"><svg><use href="#i-back"/></svg></button><h2>Your stats</h2></header>
-        <div class="stat-grid">
-          <div class="stat"><svg><use href="#i-pad"/></svg><b data-count id="st-plays">0</b><small>Games started</small></div>
-          <div class="stat"><svg><use href="#i-skull"/></svg><b data-count id="st-deaths">0</b><small>Deaths</small></div>
-          <div class="stat"><svg><use href="#i-up"/></svg><b data-count id="st-jumps">0</b><small>Jumps</small></div>
-          <div class="stat gauge">
-            <div class="rwrap"><svg viewBox="0 0 80 80" class="ring"><circle cx="40" cy="40" r="32" class="bg"/><circle cx="40" cy="40" r="32" class="fg" id="ring-fg" pathLength="100"/></svg>
-            <b id="ring-val">0.0</b></div><small>Deaths / game</small>
-          </div>
-        </div>
+        <p class="hint">Godot owns these values; the page only asks and displays.</p>
       </section>
 
       <section id="screen-about" class="screen">
-        <header><button class="back press" data-goto="main" aria-label="Back"><svg><use href="#i-back"/></svg></button><h2>How this UI works</h2></header>
-        <div class="flow">
-          <div class="node"><b>HTML</b><small>this screen</small></div>
-          <div class="wire"><i></i><i></i><i></i></div>
-          <div class="node"><b>Bridge</b><small>JSON events</small></div>
-          <div class="wire"><i></i><i></i><i></i></div>
-          <div class="node g"><b>Godot</b><small>real game</small></div>
+        <header><button class="back" data-goto="main" aria-label="Back">‹</button><h2>About</h2></header>
+        <p class="blurb">A tiny night-walk platformer: the grove has lost its glimmers and its gate
+        sleeps. Bring the light home. Built to show an HTML interface living over a real game —
+        everything you touch here talks to the engine over a small bridge.</p>
+        <div class="links">
+          <button class="linklike" id="btn-play-3d"><svg><use href="#i-cube"/></svg>3D arena — experimental swipe-look demo</button>
+          <button class="linklike" id="btn-bench">Run the FPS benchmark</button>
         </div>
-        <dl>
-          <dt>Engine</dt><dd id="ab-engine">...</dd>
-          <dt>Platform</dt><dd id="ab-os">...</dd>
-          <dt>Renderer</dt><dd id="ab-renderer">...</dd>
+        <dl class="meta">
+          <dt>Runs on</dt><dd id="ab-engine">…</dd>
+          <dt>Interface</dt><dd>HTML · CSS · JavaScript</dd>
         </dl>
-        <p class="hint">Everything you see here is a web page over the game surface. Godot draws the background and all gameplay.</p>
       </section>
     </main>
   </div>
+
+  <!-- Full-screen cover: visible while the page loads or Godot swaps scenes (body.loading),
+       fades out when the first Godot state arrives. -->
+  <div id="loader" aria-hidden="true"><span>Loading…</span></div>
+
   <script src="menu.js"></script>
 </body>
 </html>

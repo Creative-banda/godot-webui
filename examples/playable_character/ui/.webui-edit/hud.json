@@ -1,9 +1,17 @@
 {
-  "events": [],
   "states": {
-    "info": {},
-    "settings": {},
-    "state": {},
-    "stats": {}
-  }
+    "settings": { "music": 0.7, "sfx": true, "difficulty": "normal", "show_debug": false },
+    "state": {
+      "shards": 3, "shards_total": 8, "health": 80, "max_health": 100, "dead": false,
+      "paused": false, "finished": false, "flares": 2, "flares_max": 3, "flare_k": 1.0,
+      "gate_open": false, "time_sec": 47, "hits": 2, "level": 1,
+      "level_name": "The Hollow", "difficulty": "normal", "show_debug": false
+    },
+    "results": {
+      "time": "1:23.4", "shards": 8, "shards_total": 8, "hits": 2, "deaths": 0,
+      "best": "1:23.4", "new_best": true,
+      "level_name": "The Hollow", "next_name": "Deep Hollow"
+    }
+  },
+  "events": []
 }

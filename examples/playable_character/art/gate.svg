@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="190" viewBox="0 0 200 190">
+  <!-- The grove gate: an old stone arch set into a rise; it wakes when the seeds return. -->
+  <g stroke="#232a4d" stroke-width="3">
+    <!-- left pillar -->
+    <path d="M28 190 L28 96 C28 60 44 40 70 32 L82 60 C62 68 52 82 52 96 L52 190 Z" fill="#3a4266"/>
+    <!-- right pillar -->
+    <path d="M172 190 L172 96 C172 60 156 40 130 32 L118 60 C138 68 148 82 148 96 L148 190 Z" fill="#3a4266"/>
+    <!-- keystone arch -->
+    <path d="M70 32 C86 20 114 20 130 32 L122 58 C110 50 90 50 78 58 Z" fill="#434c74"/>
+  </g>
+  <!-- stone courses -->
+  <g stroke="#2a3150" stroke-width="2" fill="none">
+    <path d="M31 130 L51 130 M31 165 L51 165 M40 96 L40 130 M149 130 L169 165 M159 96 L159 130"/>
+    <path d="M84 44 L116 44 M90 54 L110 54"/>
+  </g>
+  <!-- carved seed runes (dim until the gate wakes) -->
+  <g fill="#c9a45a">
+    <path d="M100 66 C103 70 105 74 105 78 C105 83 103 86 100 86 C97 86 95 83 95 78 C95 74 97 70 100 66 Z"/>
+    <path d="M74 96 C76.6 99.4 78 102.4 78 105.6 C78 109.4 76.4 111.8 74 111.8 C71.6 111.8 70 109.4 70 105.6 C70 102.4 71.4 99.4 74 96 Z"/>
+    <path d="M126 96 C128.6 99.4 130 102.4 130 105.6 C130 109.4 128.4 111.8 126 111.8 C123.6 111.8 122 109.4 122 105.6 C122 102.4 123.4 99.4 126 96 Z"/>
+  </g>
+  <!-- threshold stone -->
+  <rect x="52" y="176" width="96" height="14" rx="3" fill="#333a5e" stroke="#232a4d" stroke-width="3"/>
+</svg>

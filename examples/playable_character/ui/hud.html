@@ -3,76 +3,96 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <title>Game HUD</title>
+  <title>Lumen Hollow</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="loading">
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
-      <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.7 4.5 6.4 4.5c2 0 3.6 1.1 4.6 2.7h2c1-1.6 2.6-2.7 4.6-2.7 3.7 0 5.5 3.9 4 7.3C19.5 16.4 12 21 12 21z"/></symbol>
-      <symbol id="i-jump" viewBox="0 0 24 24"><path d="M12 3l8 9h-5v9H9v-9H4z"/></symbol>
-      <symbol id="i-slash" viewBox="0 0 24 24"><path d="M4 20L18.5 5.5l-.8-2.7 2.7.8L21.2 6.3 6.7 20.8z M3 17l4 4-4 1z"/></symbol>
-      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1.2"/><rect x="14" y="4" width="4" height="16" rx="1.2"/></symbol>
-      <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></symbol>
-      <symbol id="i-chev" viewBox="0 0 24 24"><path d="M8 5l8 7-8 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-glim" viewBox="0 0 24 24"><path d="M12 2l4.5 7L12 22 7.5 9z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1.4"/><rect x="14" y="4" width="4" height="16" rx="1.4"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13c0 .9 1 1.5 1.8 1L20 13c.8-.5.8-1.6 0-2.1L9.8 4.5C9 4 8 4.6 8 5.5z"/></symbol>
+      <symbol id="i-flare" viewBox="0 0 24 24"><path d="M12 2c1 4-1 5-1 8a4 4 0 0 0 8 .5c2 3-1 10-7 12 6-1 7-6 5-9-1 1.5-3 1.6-4 .3 1.6-2.6.4-5.4-1-11.8z"/><path d="M10 22c-4-2-6-6-4.5-10C6.6 14 8 15.6 9.7 16c-.4-2.5 1-4.3 3.3-5-2 3.2-3.6 7.3-3 11z"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
     </defs>
   </svg>
 
   <div id="vignette"></div>
 
-  <!-- Godot -> HTML: everything below is rendered from the "state" message. -->
-  <div id="vitals" class="glass">
-    <svg class="heart"><use href="#i-heart"/></svg>
-    <div class="vbody">
-      <div class="vrow"><span class="cap">HEALTH</span><span id="hp-text" class="num">--</span></div>
-      <div class="track"><div id="hp-trail"></div><div id="hp-fill"></div><div class="ticks"></div></div>
+  <header id="top">
+    <div class="side left">
+      <div id="glow" class="chip"><svg class="glim"><use href="#i-glim"/></svg><b id="glow-n">0</b><span>/ <i id="glow-total">8</i></span></div>
+      <div id="hp"><i></i><i></i><i></i><i></i><i></i></div>
+      <div id="debug" class="debug" hidden><span id="debug-line"></span></div>
     </div>
-    <div id="floaters"></div>
-  </div>
-
-  <div id="topmid">
-    <div id="level" class="glass chip"><i class="dot"></i><span id="level-text">--</span></div>
-    <button id="btn-pause" class="glass iconbtn fx" data-webui-touch aria-label="Pause"><svg><use href="#i-pause"/></svg></button>
-  </div>
-
-  <!-- HTML -> Godot: this button only asks; Godot decides how much damage happens. -->
-  <div id="debug" class="glass">
-    <div class="cap">GODOT TELEMETRY</div>
-    <div class="grid mono">
-      <span>pos</span><b id="r-pos">--</b>
-      <span>vel</span><b id="r-vel">--</b>
-      <span>floor</span><b id="r-floor">--</b>
-      <span>attack</span><b id="r-atk">--</b>
+    <div id="timer" class="chip">0:00</div>
+    <div class="side right">
+      <button id="btn-pause" class="iconbtn" data-webui-touch aria-label="Pause"><svg><use href="#i-pause"/></svg></button>
     </div>
-    <button id="btn-damage" class="hurt fx" data-webui-touch title=""><svg><use href="#i-bolt"/></svg>Give Damage</button>
-  </div>
+  </header>
 
-  <div id="toast"><small>NOW ENTERING</small><b id="toast-text"></b></div>
+  <div id="toast"><small id="toast-kicker">THE HOLLOW</small><b id="toast-text">Gather the glimmers</b></div>
 
   <div id="stick-zone" data-webui-touch>
-    <div id="stick">
-      <i class="arr u"></i><i class="arr d"></i><i class="arr l"></i><i class="arr r"></i>
-      <div id="knob"></div>
-    </div>
+    <div id="stick"><div id="knob"></div></div>
   </div>
 
-  <button id="btn-attack" class="act atk fx" data-webui-touch><svg><use href="#i-slash"/></svg><span>ATTACK</span></button>
-  <button id="btn-jump" class="act jmp fx" data-webui-touch><svg><use href="#i-jump"/></svg><span>JUMP</span></button>
+  <div id="actions">
+    <button id="btn-flare" class="act flare" data-webui-touch aria-label="Flare">
+      <svg><use href="#i-flare"/></svg>
+      <span>FLARE</span>
+      <i id="flare-pips"><b class="on"></b><b class="on"></b><b class="on"></b></i>
+    </button>
+    <button id="btn-jump" class="act jump" data-webui-touch aria-label="Jump">
+      <svg><use href="#i-play"/></svg>
+      <span>JUMP</span>
+    </button>
+  </div>
 
   <div id="pause" hidden>
     <div class="card" data-webui-touch>
-      <div class="cap">GAME PAUSED</div>
-      <h2>Take a breath</h2>
-      <button id="btn-resume" class="cta fx"><svg><use href="#i-chev"/></svg>Resume</button>
-      <button id="btn-menu" class="ghost fx">Main menu</button>
+      <small>PAUSED</small>
+      <h2>Catch your breath</h2>
+      <div class="settings">
+        <div class="row"><span>Sound</span><button id="btn-sfx" class="toggle" aria-pressed="true">On</button></div>
+        <div class="row"><span>Difficulty</span>
+          <span class="seg" id="seg-difficulty"><button data-value="easy">Easy</button><button data-value="normal">Normal</button><button data-value="hard">Hard</button></span>
+        </div>
+      </div>
+      <button id="btn-resume" class="cta"><svg><use href="#i-play"/></svg>Resume</button>
+      <div class="row2">
+        <button id="btn-restart" class="ghost">Restart</button>
+        <button id="btn-menu" class="ghost">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="results" hidden>
+    <div class="card wide" data-webui-touch>
+      <small id="results-kicker">THE GATE AWAKENS</small>
+      <h2>Grove Complete</h2>
+      <div class="stats">
+        <div class="stat"><b id="r-time">0:00.0</b><small>time</small></div>
+        <div class="stat"><b id="r-glims">8/8</b><small>glimmers</small></div>
+        <div class="stat"><b id="r-hits">0</b><small>hits taken</small></div>
+      </div>
+      <p id="r-best" class="best"></p>
+      <button id="btn-again" class="cta">Play again</button>
+      <div class="row2">
+        <button id="btn-next" class="ghost">Next: Deep Hollow</button>
+        <button id="btn-results-menu" class="ghost">Menu</button>
+      </div>
     </div>
   </div>
 
   <div id="ko" hidden>
     <b>K.O.</b>
-    <div class="respawn"><i></i></div>
-    <small>Godot is respawning you...</small>
+    <small>The hollow rekindles you...</small>
   </div>
+
+  <!-- Full-screen cover: visible while the page loads or Godot swaps scenes (body.loading),
+       fades out when the first Godot state arrives. -->
+  <div id="loader" aria-hidden="true"><span>Loading…</span></div>
 
   <script src="hud.js"></script>
 </body>

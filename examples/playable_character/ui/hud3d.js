@@ -184,10 +184,23 @@
     });
   }
 
+  // Android Back: close the camera panel first; otherwise Godot goes back to the menu.
+  Godot.onBack(() => {
+    if (panel.hidden) return false;
+    panel.hidden = true;
+    return true;
+  });
+
   document.addEventListener('contextmenu', (e) => e.preventDefault());
 
   // ---------- Godot -> HTML
+  // Page lifecycle: the page loads hidden (body.loading, see hud3d.css) and fades in on the first
+  // state; Godot re-hides it with an "app_loading" event while it swaps scenes.
+  Godot.onEvent('app_loading', () => document.body.classList.add('loading'));
+  function reveal() { document.body.classList.remove('loading'); }
+
   Godot.onState('camera', (s) => {
+    reveal();
     if (document.activeElement !== slider) slider.value = s.sensitivity;
     $('sens-value').textContent = s.sensitivity.toFixed(1) + 'x';
     $('btn-menu').hidden = !s.can_exit;
@@ -196,6 +209,7 @@
 
   let swiped = false;
   Godot.onState('telemetry', (s) => {
+    reveal();
     $('t-swipe').textContent = s.swiping ? 'swiping' : 'idle';
     $('t-swipe').classList.toggle('on', s.swiping);
     $('t-yaw').textContent = s.yaw + '°';

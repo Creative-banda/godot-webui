@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://53fk23m0io0"]
+
+[ext_resource type="Texture2D" uid="uid://ddy6t6flu222" path="res://examples/playable_character/art/platform_mid.svg" id="1"]
+
+[sub_resource type="RectangleShape2D" id="ledge"]
+size = Vector2(240, 24)
+
+[node name="PlatformMid" type="StaticBody2D" unique_id=2055850667]
+
+[node name="Shape" type="CollisionShape2D" parent="." unique_id=431536965]
+position = Vector2(119, -1)
+shape = SubResource("ledge")
+
+[node name="Art" type="Sprite2D" parent="." unique_id=241492381]
+texture = ExtResource("1")
+centered = false
+offset = Vector2(0, -19)

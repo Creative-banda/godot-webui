@@ -200,10 +200,11 @@ func take_hit() -> void:
 | `on(name, callable)`, `off(name, callable)`, `clear_handlers()` | Register handlers for page events; the handler receives the payload `Dictionary`. Names starting with `webui.` are reserved. |
 | `set_state(name, payload)`, `emit_event(name, payload = {})` | Godot → page, see above. `send()` is the deprecated alias of `set_state`. |
 | `show_ui()`, `hide_ui()` | Toggle visibility. |
+| `handle_back_button` (`@export`, bool, default `false`) | Take over the Android Back button. While on, Back is offered to the page first (`Godot.onBack(fn)`; return `true` to consume it) and, if the page declines or does not answer within 0.3 s, reported through `back_requested`. While on, `SceneTree.quit_on_go_back` is switched off and restored when you turn it off or `shutdown()`. Off: Back quits the app as before. Not verified on a device. |
 | `touch_mode`, `set_touch_mode(mode)` | `GodotWebUI.TouchMode.AUTO` (default), `MODAL`, `REGIONS`; see below. |
 | `shutdown()` | Destroy the WebView (also done on `_exit_tree`). Safe to call repeatedly. |
 | `is_ready` | `true` once the page's handshake has arrived. |
-| Signals | `page_ready`, `event_received(event_name, payload)`, `error(code, text)`, `console_message(level, text)`, `suspended`, `recovered` |
+| Signals | `page_ready`, `event_received(event_name, payload)`, `error(code, text)`, `console_message(level, text)`, `suspended`, `back_requested`, `recovered` |
 
 ### JavaScript API (`Godot`)
 
@@ -212,6 +213,7 @@ func take_hit() -> void:
 | `Godot.emit(name, payload?)` | Page → Godot. Name matches `^[A-Za-z][A-Za-z0-9_.:-]{0,63}$`; payload is a plain object under 64 KB. |
 | `Godot.onState(name, fn)`, `Godot.onEvent(name, fn)`, `Godot.on(name, fn)`, `Godot.off(name, fn)` | Receive state / events from Godot; `on` is `onState`. A state handler is called at once with the latest value if one already arrived. |
 | `Godot.guard(releaseFn)` | Runs `releaseFn` on window blur, page hide and native app pause. Returns an unregister function. |
+| `Godot.onBack(fn)` | Android Back (needs `handle_back_button`). `fn()` returns `true` if the page used it (closed a panel, previous screen), otherwise Godot gets `back_requested`. The newest handler is asked first. Returns an unregister function. |
 | `Godot.touchRegions(selector?)` | Opt in to pass-through for everything outside the matching elements (default selector `[data-webui-touch]`). |
 | `Godot.available`, `Godot.preview` | Native bridge present; running in the desktop preview. |
 
@@ -310,12 +312,13 @@ AGENTS.md                      Guidance for AI coding agents working in this rep
 
 - **Android only.** No iOS backend exists, and desktop is a development preview only, not a supported runtime.
 - **Verified:** the GDScript loads in Godot 4.7.1; both headless tests pass on desktop (they use fake backends, not a WebView); the native plugin compiles to AARs; real debug Android exports of isolated project copies package the UI files and the native plugin correctly and fail or warn clearly on the misconfigurations described above; and the first version of the demo ran on one Android device, where the overlay, transparency, input, state updates and menu/game navigation worked.
-- **Not verified on device:** anything added after that device run, notably `AUTO` touch mode, `set_state`/`emit_event` on the real bridge, the duplicate-overlay guard and renderer-death recovery (the last cannot be triggered easily); also touch pass-through to a game that handles its own touches, a game-layer finger together with a HUD finger, pause/resume with held input, orientation changes, repeated page or scene transitions, release builds and minification, image/font/audio assets inside the real WebView (they package correctly, but loading them on a device was not run), notch and safe-area behaviour, and low-end device performance.
+- **Not verified on device:** anything added after the recent device runs, notably `AUTO` touch mode, the duplicate-overlay guard and renderer-death recovery (the last cannot be triggered easily); also touch pass-through to a game that handles its own touches, a game-layer finger together with a HUD finger (the per-pointer routing fix is code-reviewed; two simultaneous fingers cannot be injected over adb), orientation changes (the demo export locks landscape), release builds and minification (a signed release export additionally needs a release keystore in the export credentials), notch and safe-area behaviour beyond the demo's landscape layout, and low-end device performance.
+- **Verified on device (vivo V2312, Android 15):** menu/game/3D navigation with page loaders, `set_state`/`emit_event` over the real bridge (demo + automated FPS benchmark), REGIONS pass-through with swipe-look into the game, HTML text input with the soft keyboard (focus, typing, dismissal — Back dismisses the IME before the app sees it), backgrounding with HOME and resume (page state intact, input routing intact), repeated scene transitions and an overlay shutdown/restart cycle.
 - **Compatibility:** only Godot 4.7.1 has been used.
-- **Touch pass-through** is decided at touch-down from element bounding boxes reported by the page (refreshed about every 200 ms), not per pixel. A gesture that starts on the HUD stays with the WebView.
+- **Touch pass-through** is decided at touch-down from element bounding boxes reported by the page (refreshed about every 100 ms, and immediately on scrolling and viewport changes such as rotation or the soft keyboard), not per pixel. A gesture that starts on the HUD stays with the WebView, and further fingers go to the WebView too while it holds a gesture; captured gestures are tracked per pointer, so lifting one finger no longer ends the gestures still held (previously it could leave a control stuck).
 - **One overlay at a time:** the native plugin holds a single WebView.
 - **Recovery** after a dead WebView renderer is best effort and untested on a device (see Resilience).
-- **Not implemented:** Android Back button handling, text input and on-screen keyboard handling, gamepad or focus navigation inside the page.
+- **Not implemented:** gamepad or focus navigation inside the page, more than one overlay.
 - **Startup:** the first WebView start took roughly 0.8 s on the tested device.
 - The overlay sits above the game surface; Godot cannot draw over it. The WebView cannot blur the game behind it, so `backdrop-filter` has no effect on the game.
 
