@@ -8,10 +8,14 @@
       "level_name": "The Hollow", "difficulty": "normal", "show_debug": false
     },
     "results": {
-      "time": "1:23.4", "shards": 8, "shards_total": 8, "hits": 2, "deaths": 0,
-      "best": "1:23.4", "new_best": true,
+      "time": "1:23.4", "time_sec": 83.4, "shards": 8, "shards_total": 8, "hits": 2, "deaths": 0,
+      "best": "1:23.4", "new_best": true, "verdict": "Swift keeper",
       "level_name": "The Hollow", "next_name": "Deep Hollow"
     }
   },
-  "events": []
+  "events": [
+    { "name": "seed_collected", "payload": { "x": 0.31, "y": 0.62, "shards": 4, "total": 8 } },
+    { "name": "gate_awake", "payload": {} },
+    { "name": "victory", "payload": {} }
+  ]
 }

@@ -98,10 +98,6 @@ func on_back() -> void:
 	_set_paused(not get_tree().paused)
 
 
-func _exit_tree() -> void:
-	get_tree().paused = false
-
-
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED:
 		player.clear_input()  # app backgrounded: never leave input held
@@ -146,10 +142,28 @@ func _physics_process(_delta: float) -> void:
 func _on_glimmer_collected(_glimmer: Glimmer) -> void:
 	shards += 1
 	app.sfx("pick", 1.0 + shards * 0.06)
+	# One-shot event so the HUD can answer the pickup where it happened on screen.
+	app.ui.emit_event("seed_collected", {
+		"x": _screen_pos_of_player().x,
+		"y": _screen_pos_of_player().y,
+		"shards": shards,
+		"total": shards_total,
+	})
 	if shards >= shards_total:
 		gate.open = true
 		app.sfx("gate")
+		app.ui.emit_event("gate_awake", {})
 	_push_state()
+
+
+## The player's position in fractions of the viewport, so the page can place effects without
+## knowing the resolution.
+func _screen_pos_of_player() -> Vector2:
+	var center := camera.get_screen_center_position()
+	var size := get_viewport().get_visible_rect().size
+	return Vector2(
+		(player.global_position.x - center.x) / size.x + 0.5,
+		(player.global_position.y - center.y) / size.y + 0.5)
 
 
 func _attempt_flare() -> void:
@@ -217,21 +231,71 @@ func _victory() -> void:
 		return
 	finished = true
 	player.clear_input()
+	# The payoff: a breath of slow motion while light bursts from the gate, a warm flash from the
+	# page, then the results.
+	app.ui.emit_event("victory", {})
+	Engine.time_scale = 0.35
+	_gate_burst()
+	await get_tree().create_timer(0.55, true, false, true).timeout
+	Engine.time_scale = 1.0
 	var record := app.record_victory(app.level, _elapsed, hits)
 	app.sfx("win")
-	_shake = 0.0
 	ui_set_state("results", {
 		"time": _format_time(_elapsed),
+		"time_sec": snappedf(_elapsed, 0.1),
 		"shards": shards,
 		"shards_total": shards_total,
 		"hits": hits,
 		"deaths": deaths,
 		"best": record.best,
 		"new_best": record.new_best,
+		"verdict": _verdict(),
 		"level_name": DemoApp.LEVELS[app.level].name,
 		"next_name": DemoApp.LEVELS[2 if app.level == 1 else 1].name,
 	})
 	_push_state()
+
+
+func _verdict() -> String:
+	if hits == 0 and deaths == 0:
+		return "Flawless run — not a scratch"
+	if _elapsed < 75.0:
+		return "Swift keeper"
+	if deaths == 0:
+		return "A steady walk home"
+	return "The hollow tests everyone"
+
+
+## One-shot golden burst at the gate when the run completes.
+func _gate_burst() -> void:
+	var ring := FlareRing.new()
+	ring.position = gate.position + Vector2(0, -110.0)
+	add_child(ring)
+	var burst := CPUParticles2D.new()
+	burst.one_shot = true
+	burst.emitting = true
+	burst.amount = 26
+	burst.lifetime = 0.9
+	burst.explosiveness = 1.0
+	burst.direction = Vector2.UP
+	burst.spread = 160.0
+	burst.initial_velocity_min = 90.0
+	burst.initial_velocity_max = 260.0
+	burst.gravity = Vector2(0, 220)
+	burst.scale_amount_min = 1.6
+	burst.scale_amount_max = 3.4
+	burst.color = Color(1.0, 0.88, 0.55)
+	var additive := CanvasItemMaterial.new()
+	additive.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	burst.material = additive
+	burst.position = gate.position + Vector2(0, -110.0)
+	add_child(burst)
+	get_tree().create_timer(1.4).timeout.connect(burst.queue_free)
+
+
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0
+	get_tree().paused = false
 
 
 func _set_paused(value: bool) -> void:

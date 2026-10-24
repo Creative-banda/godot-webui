@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3 uid="uid://dhw6hisdseolt"]
+[gd_scene load_steps=26 format=3 uid="uid://dhw6hisdseolt"]
 
 [ext_resource type="Script" uid="uid://ut35uq1dq87c" path="res://examples/playable_character/game.gd" id="1"]
 [ext_resource type="Script" uid="uid://dy0p2t46use1i" path="res://addons/webui/webui_screen.gd" id="2"]
@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" path="res://examples/playable_character/art/moon.svg" id="8"]
 [ext_resource type="Texture2D" path="res://examples/playable_character/art/stars.svg" id="9"]
 [ext_resource type="Texture2D" path="res://examples/playable_character/art/glow_dot.svg" id="10"]
+[ext_resource type="Texture2D" path="res://examples/playable_character/art/glow_mushroom.svg" id="17"]
 [ext_resource type="PackedScene" path="res://examples/playable_character/platform_small.tscn" id="11"]
 [ext_resource type="PackedScene" path="res://examples/playable_character/platform_mid.tscn" id="12"]
 [ext_resource type="PackedScene" path="res://examples/playable_character/glimmer.tscn" id="13"]
@@ -224,6 +225,32 @@ patrol_range = 150.0
 [node name="DeepWisp" parent="Wisps" instance=ExtResource("14")]
 position = Vector2(3160, 524)
 patrol_range = 150.0
+
+[node name="Decor" type="Node2D" parent="."]
+
+[node name="MushroomGlade" type="Sprite2D" parent="Decor"]
+position = Vector2(330, 652)
+texture = ExtResource("17")
+
+[node name="MushroomGapEdge" type="Sprite2D" parent="Decor"]
+position = Vector2(1150, 652)
+scale = Vector2(0.85, 0.85)
+texture = ExtResource("17")
+
+[node name="MushroomCrossing" type="Sprite2D" parent="Decor"]
+position = Vector2(2050, 652)
+flip_h = true
+texture = ExtResource("17")
+
+[node name="MushroomDeep" type="Sprite2D" parent="Decor"]
+position = Vector2(2900, 652)
+scale = Vector2(1.1, 1.1)
+texture = ExtResource("17")
+
+[node name="MushroomGate" type="Sprite2D" parent="Decor"]
+position = Vector2(3520, 652)
+scale = Vector2(0.9, 0.9)
+texture = ExtResource("17")
 
 [node name="KillFloor" type="Area2D" parent="."]
 position = Vector2(2110, 880)

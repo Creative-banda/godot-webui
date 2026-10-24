@@ -17,8 +17,19 @@
  *                                     is asked first. Returns an unregister function.
  *   Godot.touchRegions(selector?)     elements matching selector (default '[data-webui-touch]') receive touches;
  *                                     the rest of the screen passes through to the game (touch mode "regions").
+ *   Godot.editText(options)           opens the keyboard-aware text editor (see below); returns {close()}.
+ *   Godot.editText.attach(el, opts)   opens the editor from an existing field/button; writes the result back.
  *   Godot.available                   true when the native bridge is present.
  *   Godot.preview                     true in the desktop development preview (not Android).
+ *
+ * Godot.editText({ title, value, placeholder, mode, maxLength, confirmLabel, cancelLabel,
+ *                   onConfirm(value), onCancel }) shows a compact editor pinned to the top of the
+ * visible viewport, so the Android keyboard never covers the field or its buttons. mode: 'text'
+ * (default), 'password', 'numeric' or 'multiline'. Enter/IME Done confirms (single line), Escape or
+ * Android Back cancels, and callbacks fire exactly once. While the editor is open it consumes the
+ * Android Back button. editText.attach(el, options) wires the same editor to an element: tapping it
+ * opens the editor with the element's current value; confirming writes the value back (to .value
+ * for inputs/textareas, else .textContent) before calling options.onConfirm.
  */
 (function () {
   'use strict';
@@ -147,6 +158,10 @@
       scheduleRegions(true);
     },
 
+    // Keyboard-aware text editor; see the header comment for the options.
+    // The real function (not a wrapper) so editText.attach below is reachable through Godot.
+    editText: editText,
+
     // ---- called by native; not part of the public API
     __receive: function (name, json) {
       var value;
@@ -182,6 +197,209 @@
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) releaseAll('hidden');
   });
+
+  // ---- keyboard-aware text editor ---------------------------------------------------------------
+  // A small editor card pinned to the top of the visible viewport: on Android the soft keyboard
+  // pans over the page (or, with interactive-widget=resizes-content, shrinks it), so a top-anchored
+  // card and its action buttons always stay in view. One editor can be open at a time; while it
+  // is open it consumes the Android Back button (cancel). Confirm/cancel callbacks fire once.
+
+  var editorSession = null;
+
+  function ensureEditorStyles() {
+    if (document.getElementById('webui-textedit-style')) return;
+    var s = document.createElement('style');
+    s.id = 'webui-textedit-style';
+    s.textContent = ''
+      + '#webui-textedit{position:fixed;top:max(3vh,env(safe-area-inset-top));left:50%;'
+      + 'transform:translateX(-50%);z-index:800;width:min(560px,92vw);padding:14px 16px 12px;'
+      + 'border-radius:16px;background:var(--webui-te-panel,rgba(10,14,30,.96));'
+      + 'border:1.5px solid var(--webui-te-border,rgba(244,238,222,.16));'
+      + 'box-shadow:0 18px 50px rgba(0,0,0,.5);color:var(--webui-te-ink,#f2eddd);'
+      + 'font-family:inherit;animation:webui-te-in .18s ease}'
+      + '@keyframes webui-te-in{from{opacity:0;transform:translateX(-50%) translateY(-10px)}}'
+      + '@media(prefers-reduced-motion:reduce){#webui-textedit{animation:none}}'
+      + '#webui-textedit .webui-te-title{display:block;font-size:11px;letter-spacing:.26em;'
+      + 'font-weight:800;opacity:.6;margin-bottom:8px;white-space:nowrap;overflow:hidden;'
+      + 'text-overflow:ellipsis}'
+      + '#webui-textedit .webui-te-field{width:100%;border:0;border-radius:10px;'
+      + 'background:rgba(127,127,127,.14);color:inherit;font-family:inherit;font-size:16px;'
+      + 'font-weight:600;line-height:1.4;padding:10px 12px;outline:none;box-sizing:border-box;'
+      + 'resize:none;-webkit-appearance:none;appearance:none}'
+      + '#webui-textedit .webui-te-field:focus{background:rgba(127,127,127,.2);'
+      + 'box-shadow:inset 0 0 0 1.5px var(--webui-te-accent,#ffb84d)}'
+      + '#webui-textedit .webui-te-count{font-size:10px;opacity:.5;text-align:right;margin-top:4px}'
+      + '#webui-textedit .webui-te-row{display:flex;gap:8px;margin-top:10px}'
+      + '#webui-textedit .webui-te-btn{flex:1;padding:10px 12px;border-radius:11px;font:inherit;'
+      + 'font-weight:800;font-size:14px;transition:transform .12s ease}'
+      + '#webui-textedit .webui-te-btn:active{transform:scale(.96)}'
+      + '#webui-textedit .webui-te-ok{background:var(--webui-te-accent,#ffb84d);'
+      + 'color:var(--webui-te-accent-ink,#221832)}'
+      + '#webui-textedit .webui-te-no{background:rgba(127,127,127,.12);'
+      + 'border:1.5px solid var(--webui-te-border,rgba(244,238,222,.16))}';
+    document.head.appendChild(s);
+  }
+
+  function editText(options) {
+    options = options || {};
+    if (editorSession) editorSession.close();  // settle any previous editor as a cancel
+    ensureEditorStyles();
+
+    var mode = ['password', 'numeric', 'multiline'].indexOf(options.mode) >= 0 ? options.mode : 'text';
+    var maxLength = Math.max(0, options.maxLength | 0);
+
+    var root = document.createElement('div');
+    root.id = 'webui-textedit';
+    root.setAttribute('data-webui-touch', '');  // reachable in REGIONS pass-through mode
+    var title = document.createElement('span');
+    title.className = 'webui-te-title';
+    title.textContent = options.title || 'Edit';
+    root.appendChild(title);
+
+    var field = document.createElement(mode === 'multiline' ? 'textarea' : 'input');
+    field.className = 'webui-te-field';
+    field.setAttribute('autocomplete', 'off');
+    if (mode === 'numeric') {
+      field.type = 'number';
+      field.setAttribute('inputmode', 'decimal');
+    } else {
+      field.type = mode === 'password' ? 'password' : 'text';
+    }
+    var value = options.value == null ? '' : String(options.value);
+    field.value = value;
+    if (options.placeholder) field.placeholder = options.placeholder;
+    if (maxLength) field.maxLength = maxLength;
+    if (mode === 'multiline') field.rows = 3;
+    root.appendChild(field);
+
+    var counter = null;
+    if (maxLength) {
+      counter = document.createElement('span');
+      counter.className = 'webui-te-count';
+      counter.textContent = value.length + '/' + maxLength;
+      root.appendChild(counter);
+    }
+
+    var row = document.createElement('div');
+    row.className = 'webui-te-row';
+    var btnCancel = document.createElement('button');
+    btnCancel.type = 'button';
+    btnCancel.className = 'webui-te-btn webui-te-no';
+    btnCancel.setAttribute('data-webui-touch', '');
+    btnCancel.textContent = options.cancelLabel || 'Cancel';
+    var btnOk = document.createElement('button');
+    btnOk.type = 'button';
+    btnOk.className = 'webui-te-btn webui-te-ok';
+    btnOk.setAttribute('data-webui-touch', '');
+    btnOk.textContent = options.confirmLabel || 'Done';
+    row.appendChild(btnCancel);
+    row.appendChild(btnOk);
+    root.appendChild(row);
+    document.body.appendChild(root);
+
+    var settled = false;
+    var offBack = null;
+
+    function settle(confirmed) {
+      if (settled) return;
+      settled = true;
+      document.removeEventListener('keydown', onKey, true);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', onViewport);
+        window.visualViewport.removeEventListener('scroll', onViewport);
+      }
+      if (offBack) { offBack(); offBack = null; }
+      try { field.blur(); } catch (e) { /* closing the keyboard is best effort */ }
+      root.remove();
+      editorSession = null;
+      if (confirmed) {
+        if (typeof options.onConfirm === 'function') options.onConfirm(field.value);
+      } else if (typeof options.onCancel === 'function') {
+        options.onCancel();
+      }
+    }
+
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        settle(false);
+      } else if (e.key === 'Enter' && !e.isComposing) {
+        if (mode !== 'multiline' || e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          settle(true);  // the IME Done action arrives as Enter
+        }
+      }
+    }
+
+    // Keep the card above the keyboard: with interactive-widget=resizes-content the layout
+    // viewport shrinks and the fixed card follows; in pan fallbacks, shift it up manually.
+    function onViewport() {
+      var vv = window.visualViewport;
+      if (!vv) return;
+      var rect = root.getBoundingClientRect();
+      var keyboardTop = (vv.height + vv.offsetTop) * (window.innerWidth / vv.width);
+      var overflow = rect.bottom - keyboardTop;
+      var shift = overflow > 0 ? Math.min(overflow, Math.max(rect.top - 8, 0)) : 0;
+      root.style.transform = 'translateX(-50%) translateY(' + (-shift) + 'px)';
+    }
+
+    function onInput() {
+      if (counter) counter.textContent = field.value.length + '/' + maxLength;
+    }
+
+    document.addEventListener('keydown', onKey, true);
+    field.addEventListener('input', onInput);
+    btnCancel.addEventListener('click', function () { settle(false); });
+    btnOk.addEventListener('click', function () { settle(true); });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', onViewport);
+      window.visualViewport.addEventListener('scroll', onViewport);
+    }
+    // While the editor is open it owns Android Back (newest onBack handler is asked first).
+    if (typeof Godot.onBack === 'function') {
+      offBack = Godot.onBack(function () { settle(false); return true; });
+    }
+
+    editorSession = {
+      close: function (confirmed) { settle(!!confirmed); },
+      focusField: function () {
+        // Focus synchronously (inside the tap's user gesture, so Android shows the keyboard),
+        // then select in the next frame.
+        try { field.focus(); } catch (e) { /* ignore */ }
+        requestAnimationFrame(function () {
+          field.focus();
+          if (field.value.length && field.setSelectionRange && field.type !== 'number') {
+            field.setSelectionRange(0, field.value.length);  // typed-over rename, but adjustable
+          }
+        });
+      }
+    };
+    editorSession.focusField();
+    requestAnimationFrame(onViewport);
+    return editorSession;
+  }
+
+  // Wire an existing element (input, textarea or button) to open the editor with its value.
+  editText.attach = function (el, options) {
+    if (typeof el === 'string') el = document.getElementById(el);
+    if (!el) return;
+    options = options || {};
+    var isField = /^(INPUT|TEXTAREA)$/.test(el.tagName);
+    if (isField) el.readOnly = true;  // the underlying field never opens the IME itself
+    el.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      var merged = {};
+      for (var key in options) merged[key] = options[key];
+      merged.value = isField ? el.value : el.textContent;
+      var userConfirm = merged.onConfirm;
+      merged.onConfirm = function (v) {
+        if (isField) el.value = v;
+        else el.textContent = v;
+        if (typeof userConfirm === 'function') userConfirm(v);
+      };
+      editText(merged);
+    });
+  };
 
   // ---- touch regions (pass-through of everything else to the game)
   var regionSelector = null;

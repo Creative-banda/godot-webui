@@ -215,6 +215,7 @@ func take_hit() -> void:
 | `Godot.guard(releaseFn)` | Runs `releaseFn` on window blur, page hide and native app pause. Returns an unregister function. |
 | `Godot.onBack(fn)` | Android Back (needs `handle_back_button`). `fn()` returns `true` if the page used it (closed a panel, previous screen), otherwise Godot gets `back_requested`. The newest handler is asked first. Returns an unregister function. |
 | `Godot.touchRegions(selector?)` | Opt in to pass-through for everything outside the matching elements (default selector `[data-webui-touch]`). |
+| `Godot.editText(options)` / `Godot.editText.attach(el, options)` | Keyboard-aware text editor: a card pinned above the Android keyboard with a real focused input (title, placeholder, value, `text`/`password`/`numeric`/`multiline` modes, maxLength, confirm/cancel callbacks). `attach` wires it to an existing field or button. See `skills/godot-webui/references/api.md`. |
 | `Godot.available`, `Godot.preview` | Native bridge present; running in the desktop preview. |
 
 To avoid stuck input, use Pointer Events with `setPointerCapture`, release on `pointerup`, `pointercancel` and `lostpointercapture`, and register the release with `Godot.guard()`. The demo's `ui/hud.js` shows the pattern.

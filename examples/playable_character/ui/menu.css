@@ -93,10 +93,37 @@ body:not(.loading) #loader {
   background: radial-gradient(ellipse at 50% 42%, transparent 58%, rgba(4, 6, 16, 0.5) 100%);
 }
 
+/* Entrance: when the page reveals, the title block and actions rise in, one after the other. */
+#brand, #panel {
+  opacity: 0;
+}
+
+body:not(.loading) #brand {
+  animation: rise 0.5s 0.05s ease both;
+}
+
+body:not(.loading) #panel {
+  animation: rise 0.5s 0.18s ease both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  #loader, .screen, .cta::after, #mark {
+  #loader, .screen, .cta::after, #mark, #brand, #panel {
     transition: none;
     animation: none;
+  }
+  #brand, #panel {
+    opacity: 1;
   }
 }
 
@@ -352,6 +379,31 @@ body:not(.loading) #loader {
   background: rgba(255, 184, 77, 0.16);
   border-color: rgba(255, 184, 77, 0.5);
   color: var(--glow);
+}
+
+/* Read-only value chips that open the keyboard-aware editor (Godot.editText.attach). */
+.fieldbtn {
+  max-width: 52%;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: rgba(244, 238, 222, 0.07);
+  border: 1.5px solid var(--line);
+  font-weight: 700;
+  font-size: clamp(12px, 1vw, 14.5px);
+  color: var(--ink);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform 0.12s ease;
+}
+
+.fieldbtn:active {
+  transform: scale(0.96);
+}
+
+.fieldbtn-wide {
+  max-width: 62%;
 }
 
 .seg {

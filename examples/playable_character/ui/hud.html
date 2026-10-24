@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Lumen Hollow</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -32,6 +32,12 @@
   </header>
 
   <div id="toast"><small id="toast-kicker">THE HOLLOW</small><b id="toast-text">Gather the glimmers</b></div>
+
+  <!-- Showcase moments (Godot one-shot events fill these in): a seed pinged at the pickup spot,
+       the gate-awake banner, a right-edge nudge while the gate is open, and the victory flash. -->
+  <div id="awake" hidden><small>THE LAST SEED</small><b>The gate awakens</b></div>
+  <div id="gate-hint" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5l8 7-8 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div id="flash" aria-hidden="true"></div>
 
   <div id="stick-zone" data-webui-touch>
     <div id="stick"><div id="knob"></div></div>
@@ -71,9 +77,10 @@
     <div class="card wide" data-webui-touch>
       <small id="results-kicker">THE GATE AWAKENS</small>
       <h2>Grove Complete</h2>
+      <p id="r-verdict" class="verdict"></p>
       <div class="stats">
         <div class="stat"><b id="r-time">0:00.0</b><small>time</small></div>
-        <div class="stat"><b id="r-glims">8/8</b><small>glimmers</small></div>
+        <div class="stat"><b id="r-glims">8/8</b><small>seeds</small></div>
         <div class="stat"><b id="r-hits">0</b><small>hits taken</small></div>
       </div>
       <p id="r-best" class="best"></p>

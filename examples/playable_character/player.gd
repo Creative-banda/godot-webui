@@ -158,10 +158,16 @@ func _physics_process(delta: float) -> void:
 	_update_body()
 
 
-## Presentation only: squash & stretch from the feet, facing flip, hit blink, KO grey.
+## Presentation only: squash & stretch from the feet, facing flip, walk bob and lean, hit blink,
+## KO grey.
 func _update_body() -> void:
 	_body.scale = Vector2(2.0 - _squash, _squash)
 	_body.flip_h = _facing < 0.0
+	if is_on_floor() and absf(velocity.x) > 40.0:
+		_body.position.y = sin(Time.get_ticks_msec() * 0.02) * 2.0
+	else:
+		_body.position.y = 0.0
+	_body.rotation = clampf(velocity.x * 0.00016, -0.05, 0.05)
 	if dead:
 		_body.modulate = Color(0.55, 0.55, 0.62)
 	elif _invulnerable > 0.0 and fmod(_invulnerable, 0.16) > 0.08:

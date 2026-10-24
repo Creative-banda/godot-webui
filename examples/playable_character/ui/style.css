@@ -88,7 +88,9 @@ body:not(.loading) #loader {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #loader, .card, #vignette.hit, #glow.pop {
+  #loader, .card, #vignette.hit, #glow.pop, .seedfly, #awake.show, #gate-hint, #flash.show,
+  #results .card small, #results .card h2, #results .verdict, #results .stats,
+  #results .best, #results .cta, #results .row2 {
     transition: none;
     animation: none;
   }
@@ -412,6 +414,119 @@ body:not(.loading) #loader {
   background: var(--violet);
 }
 
+/* ---------- showcase moments ---------- */
+/* A seed pickup: a small light rises from the pickup spot toward the counter, then fades. */
+.seedfly {
+  position: fixed;
+  z-index: 400;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff6d8 0%, #ffdf9e 45%, rgba(255, 184, 77, 0) 75%);
+  pointer-events: none;
+  animation: seedfly 0.7s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes seedfly {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-22vw), calc(-16vh)) scale(0.4);
+    opacity: 0;
+  }
+}
+
+/* The last seed: a centered banner moment. */
+#awake {
+  position: fixed;
+  top: 26%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+}
+
+#awake small {
+  display: block;
+  letter-spacing: 0.42em;
+  font-size: clamp(9px, 0.8vw, 12px);
+  font-weight: 800;
+  color: var(--dim);
+}
+
+#awake b {
+  display: block;
+  margin-top: 5px;
+  font-size: clamp(24px, 2.9vw, 44px);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: var(--glow);
+  text-shadow: 0 2px 26px rgba(255, 184, 77, 0.35);
+}
+
+#awake.show {
+  animation: toast 2.8s ease forwards;
+}
+
+/* While the gate is open: a quiet amber chevron breathing at the right edge. */
+#gate-hint {
+  position: fixed;
+  top: 50%;
+  right: max(10px, env(safe-area-inset-right));
+  width: clamp(20px, 1.8vw, 28px);
+  height: clamp(20px, 1.8vw, 28px);
+  margin-top: clamp(-14px, -1.3vw, -10px);
+  color: var(--amber);
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+body.gate-open #gate-hint {
+  opacity: 0.85;
+  animation: hintnudge 1.6s ease-in-out infinite;
+}
+
+@keyframes hintnudge {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+}
+
+/* Entering the gate: one warm breath of light across the screen. */
+#flash {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: radial-gradient(ellipse at center, rgba(255, 236, 190, 0.95), rgba(255, 184, 77, 0.55));
+  opacity: 0;
+  pointer-events: none;
+}
+
+#flash.show {
+  animation: victoryflash 0.9s ease-out forwards;
+}
+
+@keyframes victoryflash {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* ---------- overlays: pause / results / ko ---------- */
 #pause, #results {
   position: fixed;
@@ -434,6 +549,42 @@ body:not(.loading) #loader {
   background: rgba(10, 14, 30, 0.92);
   border: 1.5px solid var(--line);
   animation: cardin 0.28s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+/* Results entrance: the card lands, then its rows arrive one after another. */
+#results .card small,
+#results .card h2,
+#results .verdict,
+#results .stats,
+#results .best,
+#results .cta,
+#results .row2 {
+  animation: rise 0.4s ease both;
+}
+
+#results .verdict { animation-delay: 0.10s; }
+#results .stats { animation-delay: 0.18s; }
+#results .best { animation-delay: 0.26s; }
+#results .cta { animation-delay: 0.32s; }
+#results .row2 { animation-delay: 0.40s; }
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.verdict {
+  margin: -6px 0 12px;
+  font-size: clamp(12px, 1.05vw, 15px);
+  font-weight: 700;
+  color: var(--teal);
+  letter-spacing: 0.04em;
 }
 
 @keyframes cardin {

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Lumen Hollow</title>
   <link rel="stylesheet" href="menu.css">
 </head>
@@ -61,6 +61,12 @@
             <span class="seg" id="set-difficulty"><button data-value="easy">Easy</button><button data-value="normal">Normal</button><button data-value="hard">Hard</button></span>
           </div>
           <div class="row"><span>Debug readout in game</span><button id="set-debug" class="toggle" aria-pressed="true">On</button></div>
+          <div class="row"><span>Keeper name</span>
+            <button id="set-name" class="fieldbtn" type="button" title="Edit keeper name">Keeper</button>
+          </div>
+          <div class="row"><span>Grove note</span>
+            <button id="set-note" class="fieldbtn fieldbtn-wide" type="button" title="Edit grove note">—</button>
+          </div>
         </div>
         <p class="hint">Godot owns these values; the page only asks and displays.</p>
       </section>

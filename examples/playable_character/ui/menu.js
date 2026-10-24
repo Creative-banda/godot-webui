@@ -45,6 +45,18 @@
   document.querySelectorAll('#set-difficulty button').forEach((b) =>
     b.addEventListener('click', () => Godot.emit('settings_changed', { difficulty: b.dataset.value })));
 
+  // Text entry: the keyboard-aware editor keeps the field visible above the Android keyboard.
+  // The chip never opens the IME itself; confirming sends the change through the bridge and the
+  // value comes back from Godot (drawn in the settings handler below).
+  Godot.editText.attach($('set-name'), {
+    title: 'KEEPER NAME', placeholder: 'Your name', maxLength: 16,
+    onConfirm: (v) => Godot.emit('settings_changed', { player_name: v }),
+  });
+  Godot.editText.attach($('set-note'), {
+    title: 'GROVE NOTE', placeholder: 'A note for your next run', mode: 'multiline', maxLength: 120,
+    onConfirm: (v) => Godot.emit('settings_changed', { grove_note: v }),
+  });
+
   // ---------- Godot -> HTML ----------
   Godot.on('settings', (s) => {
     reveal();
@@ -52,6 +64,8 @@
     $('set-sfx').textContent = s.sfx ? 'On' : 'Off';
     $('set-debug').setAttribute('aria-pressed', String(s.show_debug));
     $('set-debug').textContent = s.show_debug ? 'On' : 'Off';
+    $('set-name').textContent = s.player_name || 'Keeper';
+    $('set-note').textContent = s.grove_note || '—';
     document.querySelectorAll('#set-difficulty button').forEach((b) =>
       b.classList.toggle('on', b.dataset.value === s.difficulty));
   });

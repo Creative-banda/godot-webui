@@ -61,10 +61,46 @@ Injected before any page script. Do not include `godot.js` yourself.
 | `Godot.guard(releaseFn) -> unregister` | Calls `releaseFn(reason)` on window blur, `pagehide`, hidden visibility and native app pause (`reason` is `'blur'`, `'pagehide'`, `'hidden'` or `'pause'`). Use it to release held input. |
 | `Godot.onBack(fn) -> unregister` | Android Back (with `handle_back_button`): `fn()` returns `true` to consume it (close a modal, previous screen), anything else declines and Godot gets `back_requested`. Newest handler first. |
 | `Godot.touchRegions(selector?)` | Opts this page in to touch pass-through: elements matching `selector` (default `[data-webui-touch]`) receive touches, the rest of the screen reaches the game. Also tells Godot (so `AUTO` switches to pass-through). Call once. |
+| `Godot.editText(options) -> {close(confirmed?)}` | Opens the keyboard-aware text editor (see below). |
+| `Godot.editText.attach(el, options)` | Wires an element (input, textarea or button) to open the editor with its current value; confirming writes the value back (`.value` for fields, `.textContent` otherwise) before calling `options.onConfirm`. The element is made read-only so it never opens the IME itself. |
 | `Godot.available` | `true` when the native bridge is present. |
 | `Godot.preview` | `true` in the desktop development preview (not on Android). |
 
 Handlers that throw are caught and logged; they do not break other handlers.
+
+### `Godot.editText` — the keyboard-aware text editor
+
+On Android the soft keyboard pans over the page (bottom inputs get covered). `Godot.editText`
+opens a compact editor card pinned to the **top** of the visible viewport — the field, its
+cursor and the action buttons always stay above the keyboard — using a real `input`/`textarea`
+that receives focus and opens the native IME. It styles itself (override with the
+`--webui-te-panel`, `--webui-te-border`, `--webui-te-ink`, `--webui-te-accent` and
+`--webui-te-accent-ink` CSS variables) and needs no extra files or bridge messages.
+
+```js
+Godot.editText.attach(document.getElementById('name'), {
+  title: 'KEEPER NAME',            // small label (default 'Edit')
+  placeholder: 'Your name',
+  maxLength: 16,
+  onConfirm: (v) => Godot.emit('settings_changed', { name: v }),
+});
+
+Godot.editText({ value: 'note', mode: 'multiline', maxLength: 120,   // or open it yourself
+                 onConfirm(v) {}, onCancel() {} });
+```
+
+Options: `title`, `value` (initial text, `''` default), `placeholder`, `mode` (`'text'`
+default, `'password'`, `'numeric'`, `'multiline'`), `maxLength`, `confirmLabel` (default
+`'Done'`), `cancelLabel` (default `'Cancel'`), `onConfirm(value)`, `onCancel()`.
+
+Behavior: Enter or the IME Done action confirms (single-line modes; Ctrl+Enter in multiline),
+Escape and Android Back cancel, callbacks fire exactly once, and reopening preserves the value
+(existing text is selected on open so typing replaces it; an empty field just gets the cursor).
+While open the editor consumes Android Back. Only one editor can be open at a time. The page
+behind keeps working normally; on confirm/cancel send the change through the bridge and let
+Godot validate and echo the state back. For pages with inputs, add
+`interactive-widget=resizes-content` to the viewport `<meta>` so the layout viewport shrinks
+with the keyboard instead of panning.
 
 ## Internals you must not rely on
 

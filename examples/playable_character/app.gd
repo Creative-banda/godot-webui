@@ -20,7 +20,8 @@ const LEVELS := {
 }
 
 var ui := GodotWebUI.new()
-var settings := {"music": 0.7, "sfx": true, "difficulty": "normal", "show_debug": true}
+var settings := {"music": 0.7, "sfx": true, "difficulty": "normal", "show_debug": true,
+	"player_name": "Keeper", "grove_note": ""}
 var stats := {"plays": 0, "deaths": 0, "jumps": 0}
 var best := {}  # level -> best victory time in seconds
 var level := 1
@@ -140,6 +141,10 @@ func change_settings(p: Dictionary) -> void:
 		settings.difficulty = p.difficulty
 	if typeof(p.get("show_debug")) == TYPE_BOOL:
 		settings.show_debug = p.show_debug
+	if typeof(p.get("player_name")) == TYPE_STRING:
+		settings.player_name = (p.player_name as String).strip_edges().substr(0, 16)
+	if typeof(p.get("grove_note")) == TYPE_STRING:
+		settings.grove_note = (p.grove_note as String).strip_edges().substr(0, 120)
 	_apply_settings()
 	_save()
 	ui.set_state("settings", settings)

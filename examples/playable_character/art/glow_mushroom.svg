@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="96" viewBox="0 0 52 96">
+  <!-- A glow mushroom of the hollow: one of the grove's quiet lamps. -->
+  <defs>
+    <radialGradient id="cap-light" cx="50%" cy="46%" r="55%">
+      <stop offset="0%" stop-color="#ffd98a" stop-opacity="0.75"/>
+      <stop offset="45%" stop-color="#ffb84d" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#ffb84d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="26" cy="30" rx="25" ry="24" fill="url(#cap-light)"/>
+  <!-- stem -->
+  <path d="M22 34 C21 50 19 68 17 92 L28 92 C27 68 27 50 27 34 Z" fill="#232b4e" stroke="#1a2038" stroke-width="2"/>
+  <!-- cap -->
+  <path d="M6 34 C6 18 15 8 26 8 C37 8 46 18 46 34 C46 38 43 40 26 40 C9 40 6 38 6 34 Z"
+        fill="#e89b3c" stroke="#1a2038" stroke-width="2.5"/>
+  <path d="M11 26 C13 17 19 12 26 12" fill="none" stroke="#ffd98a" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <!-- spots -->
+  <circle cx="18" cy="28" r="2.2" fill="#ffd98a"/>
+  <circle cx="31" cy="25" r="1.7" fill="#ffd98a"/>
+  <circle cx="36" cy="31" r="2.4" fill="#ffd98a"/>
+  <!-- grass at the base -->
+  <path d="M8 92 L9.4 84 L10.8 92 Z M40 92 L41.4 85 L42.8 92 Z" fill="#35695a"/>
+</svg>

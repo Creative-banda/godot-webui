@@ -143,6 +143,37 @@
     b.addEventListener('click', () => Godot.emit('settings_changed', { difficulty: b.dataset.value })));
   $('btn-sfx').addEventListener('click', () => Godot.emit('settings_changed', { sfx: $('btn-sfx').getAttribute('aria-pressed') !== 'true' }));
 
+  // ---------- Godot -> HTML: showcase moments ----------
+  // A seed pickup pings a small light from where it happened toward the counter (transform-only).
+  Godot.onEvent('seed_collected', (e) => {
+    const dot = document.createElement('div');
+    dot.className = 'seedfly';
+    dot.style.left = (e.x * window.innerWidth) + 'px';
+    dot.style.top = (e.y * window.innerHeight) + 'px';
+    document.body.appendChild(dot);
+    dot.addEventListener('animationend', () => dot.remove());
+  });
+
+  // The last seed: a banner moment, then a quiet nudge at the right edge while the gate is open.
+  Godot.onEvent('gate_awake', () => {
+    const awake = $('awake');
+    awake.hidden = false;
+    awake.classList.remove('show');
+    void awake.offsetWidth;
+    awake.classList.add('show');
+    document.body.classList.add('gate-open');
+    setTimeout(() => { awake.hidden = true; }, 2800);
+  });
+
+  // Entering the gate: a warm full-screen breath before the results arrive.
+  Godot.onEvent('victory', () => {
+    const flash = $('flash');
+    flash.classList.remove('show');
+    void flash.offsetWidth;
+    flash.classList.add('show');
+    document.body.classList.remove('gate-open');
+  });
+
   // ---------- Godot -> HTML ----------
   const vignette = $('vignette');
   const pips = [...$('hp').children];
@@ -195,6 +226,7 @@
     // Overlays.
     if (s.dead !== wasDead) { $('ko').hidden = !s.dead; wasDead = s.dead; }
     $('pause').hidden = !s.paused || s.finished;
+    document.body.classList.toggle('gate-open', s.gate_open && !s.finished);
 
     // Objective toast: once per page load, when the run begins.
     if (!toastShown && !s.paused && !s.finished) {
@@ -211,13 +243,29 @@
 
   Godot.on('results', (r) => {
     $('results-kicker').textContent = r.level_name.toUpperCase();
-    $('r-time').textContent = r.time;
-    $('r-glims').textContent = `${r.shards}/${r.shards_total}`;
-    $('r-hits').textContent = r.hits;
+    $('r-verdict').textContent = r.verdict || '';
     $('r-best').textContent = r.new_best ? `New best time — ${r.best}` : `Best: ${r.best}`;
     $('r-best').classList.toggle('newbest', r.new_best);
     $('btn-next').textContent = `Next: ${r.next_name}`;
     $('results').hidden = false;
     $('pause').hidden = true;
+    countUp($('r-time'), r.time_sec || 0, (v) => fmtTime(v));
+    countUp($('r-glims'), r.shards || 0, (v) => `${Math.round(v)}/${r.shards_total}`);
+    countUp($('r-hits'), r.hits || 0, (v) => `${Math.round(v)}`);
   });
+
+  // Brief count-up animation for the results numbers (stops after 0.7 s; rAF only while running).
+  function countUp(el, to, format) {
+    const t0 = performance.now();
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / 700);
+      el.textContent = format(to * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  function fmtTime(seconds) {
+    return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}.${Math.floor((seconds % 1) * 10)}`;
+  }
 })();

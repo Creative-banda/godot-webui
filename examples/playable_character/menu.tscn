@@ -40,7 +40,7 @@ position = Vector2(960, 160)
 texture = ExtResource("5")
 
 [node name="FarRidge" type="Sprite2D" parent="Backdrop" unique_id=1177626085]
-position = Vector2(-260, 300)
+position = Vector2(-276, 336)
 scale = Vector2(0.75, 0.75)
 texture = ExtResource("3")
 centered = false
