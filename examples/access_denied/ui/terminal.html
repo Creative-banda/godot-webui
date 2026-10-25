@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>ACCESS DENIED — Terminal</title>
+  <link rel="stylesheet" href="ad.css">
+  <style>
+    body {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      background: radial-gradient(ellipse at 50% -10%, #0d1822, var(--bg) 60%);
+      padding: max(12px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+      gap: 10px;
+    }
+    /* Scanline texture, static */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(87, 215, 255, 0.02) 3px 4px);
+    }
+    #shell, #closebar {
+      width: 100%;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+    #shell {
+      border: 1.5px solid var(--line);
+      border-radius: 10px;
+      background: rgba(13, 19, 26, 0.88);
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      overflow: hidden;
+      animation: rise 0.25s ease both;
+    }
+    #shellhead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      border-bottom: 1.5px solid var(--line);
+    }
+    #device { font-family: var(--mono); font-size: 12.5px; color: var(--cyan); letter-spacing: 0.14em; }
+    #devstatus { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+    #appnav { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 16px; border-bottom: 1.5px solid var(--line); }
+    #appnav .btn { padding: 7px 14px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; }
+    #appnav .btn.active { background: var(--cyan-dim); border-color: rgba(87, 215, 255, 0.5); color: var(--cyan); }
+    #app { padding: 18px 22px; overflow-y: auto; width: 100%; max-width: 1080px; margin: 0 auto; }
+    #app h3 { margin: 0 0 4px; font-family: var(--mono); font-size: 15px; letter-spacing: 0.12em; color: var(--cyan); }
+    #app .desc { font-size: 13px; color: var(--dim); margin: 0 0 16px; line-height: 1.5; }
+
+    /* TRACE graph */
+    /* TRACE graph: keeps its aspect ratio but never scales below readable labels — narrow
+       viewports scroll it horizontally instead of shrinking text. */
+    #graphwrap {
+      overflow-x: auto;
+      border: 1.5px solid var(--line);
+      border-radius: 8px;
+      background: rgba(87, 215, 255, 0.03);
+      -webkit-overflow-scrolling: touch;
+    }
+    #graph {
+      display: block;
+      width: 100%;
+      min-width: 680px;
+      height: clamp(240px, 38vh, 340px);
+      touch-action: pan-x;
+    }
+    .gnode { cursor: default; }
+    .gnode rect { fill: var(--surface2); stroke: var(--line); }
+    .gnode.selected rect { stroke: var(--cyan); fill: var(--cyan-dim); }
+    .gnode.inroute rect { stroke: var(--amber); }
+    .gnode text { fill: var(--ink); font-family: var(--mono); font-size: 12px; }
+    .glink { stroke: rgba(120, 190, 220, 0.3); stroke-width: 2; }
+    .glink.inroute { stroke: var(--amber); stroke-width: 3; }
+    #route { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; min-height: 30px; align-items: center; }
+    .rchip {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1.5px solid rgba(255, 184, 77, 0.5);
+      color: var(--amber);
+    }
+    .rchip .idx { opacity: 0.6; margin-right: 6px; }
+    .arrow { color: var(--dim); font-family: var(--mono); }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    #feedback {
+      margin-top: 14px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.55;
+      min-height: 40px;
+      border-radius: 8px;
+      padding: 10px 14px;
+      border: 1.5px solid var(--line);
+      color: var(--dim);
+    }
+    #feedback.ok { color: var(--green); border-color: rgba(77, 227, 162, 0.4); background: rgba(77, 227, 162, 0.06); }
+    #feedback.bad { color: var(--red); border-color: rgba(255, 92, 106, 0.4); background: rgba(255, 92, 106, 0.05); }
+
+    /* OVERRIDE stages */
+    .stage {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border: 1.5px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface2);
+      margin-bottom: 10px;
+    }
+    .stage .num { font-family: var(--mono); color: var(--cyan); font-size: 15px; width: 26px; }
+    .stage .slabel { flex: 1; font-weight: 700; font-size: 14.5px; }
+    .stage .mover { display: flex; gap: 6px; }
+    .stage .mover .btn { padding: 5px 12px; font-family: var(--mono); }
+
+    /* GRID */
+    .sysrow {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      border: 1.5px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface2);
+      margin-bottom: 10px;
+    }
+    .sysrow .slabel { flex: 1; }
+    .sysrow .slabel b { display: block; font-size: 14.5px; }
+    .sysrow .slabel small { color: var(--dim); font-size: 12px; }
+    .sysrow .alloc { font-family: var(--mono); font-size: 17px; color: var(--cyan); width: 64px; text-align: center; }
+    .sysrow.essential .alloc { color: var(--amber); }
+    .stepper { display: flex; gap: 6px; }
+    .stepper .btn { padding: 4px 14px; font-family: var(--mono); }
+    #capbar {
+      height: 14px;
+      border-radius: 7px;
+      background: rgba(120, 190, 220, 0.12);
+      overflow: hidden;
+      margin: 8px 0 16px;
+    }
+    #capfill {
+      height: 100%;
+      width: 0;
+      background: var(--cyan);
+      transition: width 0.2s ease;
+    }
+    #captext { font-family: var(--mono); font-size: 12.5px; color: var(--dim); margin-bottom: 10px; }
+
+    /* records */
+    .rec { border-left: 2px solid var(--line); padding: 2px 0 2px 14px; margin: 12px 0; }
+    .rec .rtitle { font-family: var(--mono); font-size: 12px; color: var(--amber); letter-spacing: 0.08em; }
+    .rec .rtext { font-size: 13.5px; line-height: 1.55; margin-top: 4px; color: var(--ink); }
+    .rec.locked .rtitle { color: var(--dim); }
+    .rec.locked .rtext { color: var(--dim); font-family: var(--mono); font-size: 12px; }
+
+    .solved-tag {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--green);
+      border: 1.5px solid rgba(77, 227, 162, 0.4);
+      border-radius: 5px;
+      padding: 3px 8px;
+      margin-left: 8px;
+    }
+    #closebar { display: flex; justify-content: flex-end; padding: 0 4px 4px; }
+    /* Narrow viewports: comfortable touch targets without shrinking type. */
+    @media (max-width: 720px) {
+      #app { padding: 14px 14px; }
+      .stage { flex-wrap: wrap; }
+      .stage .slabel { flex-basis: 100%; order: 3; }
+      .sysrow { flex-wrap: wrap; }
+      .sysrow .slabel { flex-basis: calc(100% - 150px); }
+    }
+    @media (max-height: 480px) {
+      #app { padding: 12px 22px; }
+      #graph { height: clamp(200px, 52vh, 300px); }
+    }
+  </style>
+</head>
+<body class="loading">
+  <div id="shell">
+    <div id="shellhead">
+      <div id="device">AD-SEC TERMINAL // K-7 FACILITY OS</div>
+      <div id="devstatus"><span class="led on"></span>LINK ACTIVE</div>
+    </div>
+    <div id="appnav">
+      <button class="btn" data-app="trace">TRACE</button>
+      <button class="btn" data-app="override">OVERRIDE</button>
+      <button class="btn" data-app="grid">GRID</button>
+      <button class="btn" data-app="records">RECORDS</button>
+    </div>
+    <div id="app"></div>
+  </div>
+  <div id="closebar"><button class="btn" id="btn-close">CLOSE TERMINAL (ESC)</button></div>
+  <div id="loader" aria-hidden="true"><span>BOOTING TERMINAL…</span></div>
+  <script src="terminal.js"></script>
+</body>
+</html>

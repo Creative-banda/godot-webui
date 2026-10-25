@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>ACCESS DENIED — Restored</title>
+  <link rel="stylesheet" href="ad.css">
+  <style>
+    body {
+      display: grid;
+      place-items: center;
+      background: radial-gradient(ellipse at 50% 30%, #0d1c26, var(--bg) 65%);
+    }
+    #wrap {
+      width: min(640px, calc(100% - 36px));
+      animation: rise 0.5s ease both;
+    }
+    .cap { color: var(--green); }
+    h1 {
+      margin: 6px 0 4px;
+      font-family: var(--mono);
+      font-size: clamp(26px, 40px, 40px);
+      letter-spacing: 0.1em;
+      color: var(--ink);
+    }
+    #record {
+      margin: 20px 0;
+      padding: 18px 20px;
+      border-left: 3px solid var(--cyan);
+      background: var(--surface);
+      border-radius: 0 8px 8px 0;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.75;
+      color: var(--ink);
+    }
+    #record .rt { color: var(--amber); letter-spacing: 0.1em; }
+    #stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 28px;
+      margin: 18px 0 24px;
+      font-family: var(--mono);
+    }
+    #stats b { display: block; font-size: 24px; color: var(--cyan); }
+    #stats small { color: var(--dim); letter-spacing: 0.14em; font-size: 10.5px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    @media (max-height: 480px) {
+      #record { margin: 10px 0; max-height: 34vh; overflow-y: auto; }
+      #stats { margin: 10px 0 14px; }
+    }
+  </style>
+</head>
+<body class="loading">
+  <div id="wrap">
+    <div class="cap">CENTRAL CONTROL — FINAL SYSTEM RECORD</div>
+    <h1>ACCESS GRANTED</h1>
+    <div id="record">
+      <span class="rt">SYS.LOG 04:57 // RULE R-77 (AUTOMATED RECOVERY OVERRIDE)</span><br><br>
+      The lockdown was never sabotage. A stale automated recovery rule — written for a
+      decommissioned reactor test — kept re-arming the facility security every time power was
+      restored, then logged the fault as "unauthorized recovery". The station locked itself out,
+      and filed the evidence as a breach report. The maintenance crew spent three shifts
+      demonstrating the loop. Nobody read the logs — until now.
+    </div>
+    <div id="stats">
+      <div><b id="s-time">0:00</b><small>RUN TIME</small></div>
+      <div><b id="s-clues">0</b><small>RECORDS RECOVERED</small></div>
+      <div><b id="s-status">ONLINE</b><small>FACILITY POWER</small></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="btn-replay">REPLAY</button>
+      <button class="btn" id="btn-menu">MAIN MENU</button>
+    </div>
+  </div>
+  <div id="loader" aria-hidden="true"><span>DECRYPTING…</span></div>
+  <script src="complete.js"></script>
+</body>
+</html>

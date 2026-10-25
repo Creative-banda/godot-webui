@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>ACCESS DENIED</title>
+  <link rel="stylesheet" href="ad.css">
+  <style>
+    body {
+      display: grid;
+      place-items: center;
+    }
+    #wrap {
+      width: min(680px, calc(100% - 40px));
+      animation: rise 0.5s ease both;
+    }
+    #mark {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 6px;
+    }
+    #mark .chipbox {
+      width: 44px;
+      height: 44px;
+      border: 2px solid var(--cyan);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-family: var(--mono);
+      color: var(--cyan);
+      font-size: 18px;
+      font-weight: 700;
+      flex: none;
+    }
+    h1 {
+      margin: 0;
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: clamp(28px, 42px, 44px);
+      letter-spacing: 0.08em;
+      color: var(--ink);
+    }
+    h1 span { color: var(--red); }
+    #sub {
+      font-family: var(--mono);
+      color: var(--dim);
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      margin: 4px 0 26px;
+    }
+    #actions { display: grid; gap: 10px; max-width: 340px; }
+    #howto {
+      margin-top: 22px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--dim);
+      line-height: 1.9;
+      border-left: 2px solid var(--line);
+      padding-left: 14px;
+    }
+    #howto b { color: var(--cyan); font-weight: 600; }
+    #settings {
+      margin-top: 20px;
+      display: none;
+      gap: 12px;
+      max-width: 340px;
+    }
+    #settings.open { display: grid; }
+    .srow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--dim);
+    }
+    input[type="range"] { width: clamp(140px, 24vw, 180px); accent-color: var(--cyan); }
+    #foot {
+      margin-top: 26px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: rgba(125, 147, 160, 0.5);
+      letter-spacing: 0.2em;
+    }
+    /* Short viewports (landscape phones): tighten vertical rhythm, keep sizes readable. */
+    @media (max-height: 480px) {
+      #sub { margin-bottom: 14px; }
+      #howto { margin-top: 12px; line-height: 1.6; }
+      #foot { margin-top: 12px; }
+    }
+  </style>
+</head>
+<body class="loading">
+  <div id="wrap">
+    <div id="mark">
+      <div class="chipbox">⚠</div>
+      <div>
+        <h1>ACCESS <span>DENIED</span></h1>
+        <div id="sub">RESEARCH STATION K-7 · SECURITY LOCKDOWN</div>
+      </div>
+    </div>
+    <div id="actions">
+      <button class="btn primary" id="btn-start">BEGIN INVESTIGATION</button>
+      <button class="btn" id="btn-settings">SETTINGS</button>
+      <button class="btn danger" id="btn-quit">EXIT</button>
+    </div>
+    <div id="settings">
+      <div class="srow"><span>Mouse sensitivity</span><input type="range" id="set-sens" min="0.3" max="3" step="0.1" value="1"></div>
+      <div class="srow"><span>Master volume</span><input type="range" id="set-vol" min="0" max="1" step="0.05" value="0.8"></div>
+    </div>
+    <div id="howto">
+      <b>WASD</b> move · <b>MOUSE</b> look · <b>E</b> interact · <b>ESC</b> pause<br>
+      The station is in lockdown. Find out why. Restore what matters.
+    </div>
+    <div id="foot">K-7 FACILITY OS v3.1.4 — UNAUTHORIZED ACCESS WILL BE PURSUED</div>
+  </div>
+  <div id="loader" aria-hidden="true"><span>CONNECTING…</span></div>
+  <script src="menu.js"></script>
+</body>
+</html>

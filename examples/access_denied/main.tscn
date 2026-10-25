@@ -1,0 +1,496 @@
+[gd_scene format=3 uid="uid://dthn8qylq23k3"]
+
+[ext_resource type="Script" uid="uid://bixqkctngvhbl" path="res://examples/access_denied/game.gd" id="1"]
+[ext_resource type="Script" uid="uid://b02axkqkku54m" path="res://examples/access_denied/player.gd" id="2"]
+[ext_resource type="Script" uid="uid://fue003o0ybmf" path="res://examples/access_denied/interactable.gd" id="3"]
+[ext_resource type="PackedScene" path="res://examples/access_denied/door.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://examples/access_denied/terminal.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://examples/access_denied/note.tscn" id="6"]
+
+[sub_resource type="Environment" id="env"]
+background_mode = 1
+background_color = Color(0.016, 0.024, 0.043, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.55, 0.65, 0.85, 1)
+ambient_light_energy = 0.35
+fog_enabled = true
+fog_light_color = Color(0.05, 0.09, 0.14, 1)
+fog_density = 0.022
+
+[sub_resource type="BoxMesh" id="unit_box"]
+
+[sub_resource type="StandardMaterial3D" id="mat_floor"]
+albedo_color = Color(0.118, 0.137, 0.165, 1)
+metallic = 0.15
+roughness = 0.7
+
+[sub_resource type="BoxShape3D" id="unit_shape"]
+
+[sub_resource type="StandardMaterial3D" id="mat_ceiling"]
+albedo_color = Color(0.09, 0.105, 0.13, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="mat_wall"]
+albedo_color = Color(0.216, 0.243, 0.29, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="mat_metal"]
+albedo_color = Color(0.28, 0.32, 0.38, 1)
+metallic = 0.55
+roughness = 0.45
+
+[sub_resource type="StandardMaterial3D" id="mat_screen"]
+albedo_color = Color(0.04, 0.07, 0.09, 1)
+emission_enabled = true
+emission = Color(0.12, 0.5, 0.62, 1)
+emission_energy_multiplier = 0.9
+
+[sub_resource type="CapsuleShape3D" id="player_shape"]
+radius = 0.32
+height = 1.7
+
+[sub_resource type="CapsuleMesh" id="player_mesh"]
+radius = 0.32
+height = 1.7
+
+[node name="Game" type="Node3D" unique_id=1770649008]
+script = ExtResource("1")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=2008489402]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=465886089]
+transform = Transform3D(0.8, 0.39772522, -0.44923788, 0, 0.74872977, 0.66287535, 0.6, -0.5303003, 0.5989838, 40, 12, 0)
+light_color = Color(0.75, 0.85, 1, 1)
+light_energy = 0.12
+
+[node name="Facility" type="Node3D" parent="." unique_id=313826807]
+
+[node name="Shell" type="Node3D" parent="Facility" unique_id=1150180537]
+
+[node name="Floor" type="StaticBody3D" parent="Facility/Shell" unique_id=1071589351]
+transform = Transform3D(99, 0, 0, 0, 0.5, 0, 0, 0, 14, 43, -0.25, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/Floor" unique_id=333935269]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_floor")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/Floor" unique_id=893600226]
+shape = SubResource("unit_shape")
+
+[node name="Ceiling" type="StaticBody3D" parent="Facility/Shell" unique_id=819241259]
+transform = Transform3D(99, 0, 0, 0, 0.5, 0, 0, 0, 14, 43, 4.25, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/Ceiling" unique_id=109571674]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_ceiling")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/Ceiling" unique_id=1715943739]
+shape = SubResource("unit_shape")
+
+[node name="WallN" type="StaticBody3D" parent="Facility/Shell" unique_id=1731219705]
+transform = Transform3D(99, 0, 0, 0, 4.5, 0, 0, 0, 0.4, 43, 2, -6.7)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/WallN" unique_id=210723385]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/WallN" unique_id=38635221]
+shape = SubResource("unit_shape")
+
+[node name="WallS" type="StaticBody3D" parent="Facility/Shell" unique_id=484195468]
+transform = Transform3D(99, 0, 0, 0, 4.5, 0, 0, 0, 0.4, 43, 2, 6.7)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/WallS" unique_id=1283276705]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/WallS" unique_id=1121978032]
+shape = SubResource("unit_shape")
+
+[node name="CapW" type="StaticBody3D" parent="Facility/Shell" unique_id=1503185146]
+transform = Transform3D(0.4, 0, 0, 0, 4.5, 0, 0, 0, 14, -6.2, 2, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/CapW" unique_id=648803767]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/CapW" unique_id=401113731]
+shape = SubResource("unit_shape")
+
+[node name="CapE" type="StaticBody3D" parent="Facility/Shell" unique_id=841875527]
+transform = Transform3D(0.4, 0, 0, 0, 4.5, 0, 0, 0, 14, 92.2, 2, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/CapE" unique_id=1554435842]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/CapE" unique_id=231254199]
+shape = SubResource("unit_shape")
+
+[node name="Partitions" type="Node3D" parent="Facility/Shell" unique_id=1624758647]
+
+[node name="Part1N" type="StaticBody3D" parent="Facility/Shell/Partitions" unique_id=1493938964]
+transform = Transform3D(0.35, 0, 0, 0, 4.5, 0, 0, 0, 5.4, 15.5, 2, -4.05)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/Partitions/Part1N" unique_id=1968472489]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/Partitions/Part1N" unique_id=193119498]
+shape = SubResource("unit_shape")
+
+[node name="Part1S" type="StaticBody3D" parent="Facility/Shell/Partitions" unique_id=1128739694]
+transform = Transform3D(0.35, 0, 0, 0, 4.5, 0, 0, 0, 5.4, 15.5, 2, 4.05)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/Partitions/Part1S" unique_id=1448023733]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/Partitions/Part1S" unique_id=779743187]
+shape = SubResource("unit_shape")
+
+[node name="Part1Top" type="StaticBody3D" parent="Facility/Shell/Partitions" unique_id=461517829]
+transform = Transform3D(0.35, 0, 0, 0, 1.6, 0, 0, 0, 3, 15.5, 3.7, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/Partitions/Part1Top" unique_id=85541119]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/Partitions/Part1Top" unique_id=127511847]
+shape = SubResource("unit_shape")
+
+[node name="Part2N" type="StaticBody3D" parent="Facility/Shell/Partitions" unique_id=842340213]
+transform = Transform3D(0.35, 0, 0, 0, 4.5, 0, 0, 0, 5.4, 34.5, 2, -4.05)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/Partitions/Part2N" unique_id=1308389585]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/Partitions/Part2N" unique_id=588716591]
+shape = SubResource("unit_shape")
+
+[node name="Part2S" type="StaticBody3D" parent="Facility/Shell/Partitions" unique_id=117522118]
+transform = Transform3D(0.35, 0, 0, 0, 4.5, 0, 0, 0, 5.4, 34.5, 2, 4.05)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/Partitions/Part2S" unique_id=1944388114]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/Partitions/Part2S" unique_id=757863802]
+shape = SubResource("unit_shape")
+
+[node name="Part2Top" type="StaticBody3D" parent="Facility/Shell/Partitions" unique_id=992068666]
+transform = Transform3D(0.35, 0, 0, 0, 1.6, 0, 0, 0, 3, 34.5, 3.7, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/Partitions/Part2Top" unique_id=2057595230]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/Partitions/Part2Top" unique_id=308409578]
+shape = SubResource("unit_shape")
+
+[node name="Part3N" type="StaticBody3D" parent="Facility/Shell/Partitions" unique_id=531080516]
+transform = Transform3D(0.35, 0, 0, 0, 4.5, 0, 0, 0, 5.4, 53.5, 2, -4.05)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/Partitions/Part3N" unique_id=778150524]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/Partitions/Part3N" unique_id=1752179259]
+shape = SubResource("unit_shape")
+
+[node name="Part3S" type="StaticBody3D" parent="Facility/Shell/Partitions" unique_id=912501661]
+transform = Transform3D(0.35, 0, 0, 0, 4.5, 0, 0, 0, 5.4, 53.5, 2, 4.05)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/Partitions/Part3S" unique_id=939680361]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/Partitions/Part3S" unique_id=1483240858]
+shape = SubResource("unit_shape")
+
+[node name="Part3Top" type="StaticBody3D" parent="Facility/Shell/Partitions" unique_id=1820450437]
+transform = Transform3D(0.35, 0, 0, 0, 1.6, 0, 0, 0, 3, 53.5, 3.7, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/Partitions/Part3Top" unique_id=735495551]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/Partitions/Part3Top" unique_id=1669595666]
+shape = SubResource("unit_shape")
+
+[node name="Part4N" type="StaticBody3D" parent="Facility/Shell/Partitions" unique_id=1003618459]
+transform = Transform3D(0.35, 0, 0, 0, 4.5, 0, 0, 0, 5.4, 72.5, 2, -4.05)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/Partitions/Part4N" unique_id=1614754244]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/Partitions/Part4N" unique_id=833539337]
+shape = SubResource("unit_shape")
+
+[node name="Part4S" type="StaticBody3D" parent="Facility/Shell/Partitions" unique_id=520764016]
+transform = Transform3D(0.35, 0, 0, 0, 4.5, 0, 0, 0, 5.4, 72.5, 2, 4.05)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/Partitions/Part4S" unique_id=1855289721]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/Partitions/Part4S" unique_id=939029872]
+shape = SubResource("unit_shape")
+
+[node name="Part4Top" type="StaticBody3D" parent="Facility/Shell/Partitions" unique_id=1773509654]
+transform = Transform3D(0.35, 0, 0, 0, 1.6, 0, 0, 0, 3, 72.5, 3.7, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Facility/Shell/Partitions/Part4Top" unique_id=123896833]
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Shell/Partitions/Part4Top" unique_id=274431367]
+shape = SubResource("unit_shape")
+
+[node name="Doors" type="Node3D" parent="Facility" unique_id=1410416241]
+
+[node name="DoorA" parent="Facility/Doors" unique_id=2130374446 instance=ExtResource("4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.5, 0, 0)
+title = "CHECKPOINT BARRIER"
+
+[node name="DoorB" parent="Facility/Doors" unique_id=219728126 instance=ExtResource("4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34.5, 0, 0)
+title = "SECURITY OPS"
+
+[node name="DoorC" parent="Facility/Doors" unique_id=1419726065 instance=ExtResource("4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53.5, 0, 0)
+title = "POWER ROOM"
+
+[node name="DoorD" parent="Facility/Doors" unique_id=860379147 instance=ExtResource("4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72.5, 0, 0)
+title = "CENTRAL CONTROL"
+
+[node name="Lights" type="Node3D" parent="Facility" unique_id=1537010782]
+
+[node name="L1" type="OmniLight3D" parent="Facility/Lights" unique_id=1914714216]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 3.4, 0)
+light_color = Color(0.75, 0.85, 1, 1)
+light_energy = 0.7
+omni_range = 13.0
+
+[node name="L2" type="OmniLight3D" parent="Facility/Lights" unique_id=616069358]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 3.4, 0)
+light_color = Color(0.75, 0.85, 1, 1)
+light_energy = 0.7
+omni_range = 13.0
+
+[node name="L3" type="OmniLight3D" parent="Facility/Lights" unique_id=826366363]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 3.4, 0)
+light_color = Color(0.75, 0.85, 1, 1)
+light_energy = 0.7
+omni_range = 13.0
+
+[node name="L4" type="OmniLight3D" parent="Facility/Lights" unique_id=1641408979]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 3.4, 0)
+light_color = Color(1, 0.85, 0.6, 1)
+light_energy = 0.7
+omni_range = 13.0
+
+[node name="L5" type="OmniLight3D" parent="Facility/Lights" unique_id=1901426231]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 83, 3.4, 0)
+light_color = Color(0.75, 0.85, 1, 1)
+light_energy = 0.5
+omni_range = 13.0
+
+[node name="Props" type="Node3D" parent="Facility" unique_id=1731043746]
+
+[node name="TerminalTrace" parent="Facility/Props" unique_id=1806370309 instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0, -5.6)
+id = "trace"
+title = "CHECKPOINT SECURITY"
+
+[node name="TerminalOverride" parent="Facility/Props" unique_id=705366077 instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 47, 0, -5.6)
+id = "override"
+title = "PROCEDURE CONTROL"
+
+[node name="TerminalGrid" parent="Facility/Props" unique_id=435963279 instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66, 0, -5.6)
+id = "grid"
+title = "POWER ROUTING"
+
+[node name="ConsoleFinal" type="StaticBody3D" parent="Facility/Props" unique_id=1602229691]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 0, -4.6)
+script = ExtResource("3")
+kind = "console"
+id = "final"
+title = "CENTRAL CONSOLE"
+
+[node name="Desk" type="MeshInstance3D" parent="Facility/Props/ConsoleFinal" unique_id=1680463563]
+transform = Transform3D(2.6, 0, 0, 0, 1.1, 0, 0, 0, 0.9, 0, 0.55, 0)
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_metal")
+
+[node name="Screen" type="MeshInstance3D" parent="Facility/Props/ConsoleFinal" unique_id=1948185025]
+transform = Transform3D(2.4, 0, 0, 0, 1.3, 0, 0, 0, 0.08, 0, 1.8, 0)
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_screen")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Props/ConsoleFinal" unique_id=1892116200]
+transform = Transform3D(2.6, 0, 0, 0, 1.6, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("unit_shape")
+
+[node name="Label3D" type="Label3D" parent="Facility/Props/ConsoleFinal" unique_id=1127951647]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.75, 0)
+pixel_size = 0.003
+billboard = 1
+modulate = Color(0.6, 0.85, 1, 1)
+text = "CENTRAL CONSOLE"
+outline_size = 8
+
+[node name="Breaker" type="StaticBody3D" parent="Facility/Props" unique_id=2005727307]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.5, 1.4, -6.35)
+script = ExtResource("3")
+kind = "breaker"
+id = "breaker"
+title = "CHECKPOINT BREAKER"
+
+[node name="Box" type="MeshInstance3D" parent="Facility/Props/Breaker" unique_id=186311874]
+transform = Transform3D(1, 0, 0, 0, 1.1, 0, 0, 0, 0.35, 0, 0, 0)
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_metal")
+
+[node name="Handle" type="MeshInstance3D" parent="Facility/Props/Breaker" unique_id=1588094332]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0.24)
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_screen")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Props/Breaker" unique_id=1227624349]
+transform = Transform3D(1, 0, 0, 0, 1.2, 0, 0, 0, 0.5, 0, 0, 0)
+shape = SubResource("unit_shape")
+
+[node name="NoteVerify" parent="Facility/Props" unique_id=1908440023 instance=ExtResource("6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, -4.9)
+id = "log_verify"
+title = "LOG · VERIFY-01"
+
+[node name="NoteRelay" parent="Facility/Props" unique_id=106461167 instance=ExtResource("6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23.5, 0, 3.4)
+id = "log_relay"
+title = "LOG · RELAY-09"
+
+[node name="NoteRoute" parent="Facility/Props" unique_id=583783428 instance=ExtResource("6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.5, 0, -4.9)
+id = "log_route"
+title = "NETWORK NOTE"
+
+[node name="NoteSop" parent="Facility/Props" unique_id=103733192 instance=ExtResource("6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39, 0, 3.4)
+id = "log_order1"
+title = "SECURITY SOP 4.1"
+
+[node name="NoteIncident" parent="Facility/Props" unique_id=1322101989 instance=ExtResource("6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.5, 0, -4.9)
+id = "log_order2"
+title = "INCIDENT 04:12"
+
+[node name="NoteGen" parent="Facility/Props" unique_id=1518276734 instance=ExtResource("6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58, 0, 3.4)
+id = "log_power"
+title = "GENERATOR SPEC"
+
+[node name="NoteAux" parent="Facility/Props" unique_id=509707007 instance=ExtResource("6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 61.5, 0, -4.9)
+id = "log_aux"
+title = "POWER ADVISORY"
+
+[node name="Generator" type="StaticBody3D" parent="Facility/Props" unique_id=311163922]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 63, 0, 3.8)
+
+[node name="Drum" type="MeshInstance3D" parent="Facility/Props/Generator" unique_id=1881686196]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_metal")
+
+[node name="Shape" type="CollisionShape3D" parent="Facility/Props/Generator" unique_id=1819010456]
+transform = Transform3D(1.6, 0, 0, 0, 2.2, 0, 0, 0, 1.6, 0, 1.1, 0)
+shape = SubResource("unit_shape")
+
+[node name="Crate1" type="MeshInstance3D" parent="Facility/Props" unique_id=1989897983]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, 4.4)
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_metal")
+
+[node name="Crate2" type="MeshInstance3D" parent="Facility/Props" unique_id=1654551569]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1.5, 4.4)
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_metal")
+
+[node name="Crate3" type="MeshInstance3D" parent="Facility/Props" unique_id=776857485]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 0.5, 4.6)
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_metal")
+
+[node name="Crate4" type="MeshInstance3D" parent="Facility/Props" unique_id=1241812113]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 76, 0.5, 4.5)
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_metal")
+
+[node name="OpsScreen" type="MeshInstance3D" parent="Facility/Props" unique_id=582889718]
+transform = Transform3D(4.2, 0, 0, 0, 2, 0, 0, 0, 0.1, 44, 2.4, -6.4)
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_screen")
+
+[node name="ControlScreen" type="MeshInstance3D" parent="Facility/Props" unique_id=1436790947]
+transform = Transform3D(6, 0, 0, 0, 2.6, 0, 0, 0, 0.1, 84, 2.6, -6.45)
+mesh = SubResource("unit_box")
+surface_material_override/0 = SubResource("mat_screen")
+
+[node name="Signs" type="Node3D" parent="Facility" unique_id=1023558858]
+
+[node name="SignCheckpoint" type="Label3D" parent="Facility/Signs" unique_id=1151115206]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 3.2, -6.45)
+pixel_size = 0.006
+modulate = Color(0.55, 0.8, 1, 1)
+text = "ENTRANCE CHECKPOINT"
+outline_size = 8
+
+[node name="SignMaintenance" type="Label3D" parent="Facility/Signs" unique_id=1543836484]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 3.2, -6.45)
+pixel_size = 0.006
+modulate = Color(0.55, 0.8, 1, 1)
+text = "MAINTENANCE OFFICE"
+outline_size = 8
+
+[node name="SignSecurity" type="Label3D" parent="Facility/Signs" unique_id=379835221]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 3.2, -6.45)
+pixel_size = 0.006
+modulate = Color(0.55, 0.8, 1, 1)
+text = "SECURITY OPERATIONS"
+outline_size = 8
+
+[node name="SignPower" type="Label3D" parent="Facility/Signs" unique_id=1263495947]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 3.2, -6.45)
+pixel_size = 0.006
+modulate = Color(1, 0.8, 0.5, 1)
+text = "POWER DISTRIBUTION"
+outline_size = 8
+
+[node name="SignControl" type="Label3D" parent="Facility/Signs" unique_id=681997150]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 83, 3.2, -6.45)
+pixel_size = 0.006
+modulate = Color(0.55, 0.8, 1, 1)
+text = "CENTRAL CONTROL"
+outline_size = 8
+
+[node name="Player" type="CharacterBody3D" parent="." unique_id=1259928582]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 3, 1.15, 2.5)
+script = ExtResource("2")
+
+[node name="Shape" type="CollisionShape3D" parent="Player" unique_id=244668511]
+shape = SubResource("player_shape")
+
+[node name="Mesh" type="MeshInstance3D" parent="Player" unique_id=1031615281]
+visible = false
+mesh = SubResource("player_mesh")
+
+[node name="Camera3D" type="Camera3D" parent="Player" unique_id=2563282]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
