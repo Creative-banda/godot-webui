@@ -1,6 +1,6 @@
 # Responsive pages: phones, tablets and any window size
 
-A WebUI page is drawn at whatever size the Android WebView has, and that size varies: small and large phones, notches and cutouts, portrait and landscape, tablets, foldables (which change size when folded), split-screen and freeform windows. During development the desktop preview adds any window size. **Design for a range, not one device.** Android is still the only supported runtime; "wide window" below means large tablets, foldables unfolded, split-screen and the development preview, not a desktop release.
+A WebUI page is drawn at whatever size the Android WebView has, and that size varies: small and large phones, notches and cutouts, portrait and landscape, tablets, foldables (which change size when folded), split-screen and freeform windows. During development the desktop preview adds any window size — including maximized windows on 2K and 4K monitors. **Design for a range, not one device**, and keep the interface readable and comfortably sized across that entire range (see the resolution-independence rules in `ui-authoring.md` for the desktop/high-DPI specifics). Android is still the only supported runtime; "wide window" below means large tablets, foldables unfolded, split-screen, the development preview and fullscreen desktop monitors, not a desktop release.
 
 An agent will not do this on its own: left alone it designs for the phone in its head. State it, check it, report it.
 
@@ -48,8 +48,20 @@ Resize the page (the desktop preview window, or the dock's preview) to at least 
 | Tablet, portrait | 800 x 1280 |
 | Tablet, landscape | 1280 x 800 |
 | Wide window / unfolded foldable / development window | 1920 x 1080 |
+| Desktop fullscreen, QHD | 2560 x 1440 |
+| Desktop fullscreen, 4K | 3840 x 2160 |
 
 Only test portrait if the game supports it. In the final report say which sizes you checked and how (preview window, headless screenshots, reading the CSS), that none was a real device, and anything you could not check. Do not claim orientation changes, foldable resizing or safe-area behavior work on a device: they are not verified there.
+
+## Desktop windows, high-resolution displays and device pixel ratio
+
+The desktop preview (and any desktop hosting of the page) can be fullscreen on a 2K or 4K monitor. Three things change there, and none of them is handled by phone-oriented breakpoints alone:
+
+- **The CSS viewport keeps growing.** A 4K monitor at 150 % OS scaling is a ~2560-px CSS viewport; at 100 % it is 3840 px. Anything sized in raw `vw`/`vh` scales with it: a phone-proportioned layout becomes giant, or (authored large) shrinks to unreadable on small phones. Keep type and controls at comfortable CSS-pixel sizes (or double-bounded `clamp()`), and give document-like screens a capped, centered content width so extra space becomes margins and breathing room — see the resolution-independence section in `ui-authoring.md` for the patterns.
+- **Device pixel ratio is not your business in CSS.** The browser maps physical pixels to CSS pixels via DPR and OS scaling; do not write `device-pixel-ratio` media queries or fixed physical-pixel sizes, and never assume `1 CSS px = 1 physical px`. Provide raster images at a resolution that holds on the largest supported size.
+- **Full-height containers and long lines.** A maximized window makes `100vh` layouts and uncapped text lines unusable: cap content width (~70–90 ch for prose) and use `inset: 0` fixed containers rather than viewport units for height.
+
+At the review stage, confirm the page at a ≥2560-px size: nothing proportionally tiny or huge, content centered and capped, diagrams still legible (labels ≥ ~11 CSS px — scroll or restack a drawing instead of shrinking it), controls still ≥44 CSS px.
 
 ## Interaction with the visual editor
 
@@ -64,5 +76,7 @@ Only test portrait if the game supports it. In the final report say which sizes 
 - Touch targets are at least 44 CSS px at every size.
 - Text is readable at the smallest size (about 14 px) and capped at the largest.
 - A tablet/wide window does not stretch menus into unreadable rows (content is capped and centered).
+- Nothing becomes proportionally tiny or huge between a 360-px phone and a 3840-px fullscreen window: control sizes stay comfortable (CSS-pixel or double-bounded clamp), content is capped and centered on desktop sizes.
+- Diagrams and scaled drawings keep labels legible (≥ ~11 CSS px) at every size — `min-width` plus scroll instead of shrinking, capped growth instead of inflating.
 - Breakpoints use height and orientation where it matters, and live in the `.css` file.
-- The report names the sizes checked and says none was a real device.
+- The report names the sizes checked (including a ≥2560-px-wide window) and says none was a real device.
