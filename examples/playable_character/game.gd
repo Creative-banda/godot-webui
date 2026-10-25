@@ -42,7 +42,9 @@ func _ready() -> void:
 	player.gravity_scale = DemoApp.LEVELS[app.level].gravity
 	player.damage_scale = app.damage_scale()
 	player.died.connect(_on_player_died)
-	player.jumped.connect(func() -> void: app.sfx("jump"))
+	player.jumped.connect(_on_player_jumped)
+	player.stepped.connect(func(at: Vector2) -> void: _dust(at + Vector2(0, -2), 3, 0.5))
+	player.skidded.connect(func(at: Vector2) -> void: _dust(at + Vector2(0, -2), 4, 0.8))
 	player.landed.connect(_on_player_landed)
 	player.flared.connect(func(_from: Vector2) -> void: _attempt_flare())
 
@@ -74,6 +76,7 @@ func show_hud() -> void:
 	var ui := app.ui
 	ui.on("move_changed", _on_move_changed)
 	ui.on("jump", func(_p: Dictionary) -> void: player.request_jump())
+	ui.on("jump_released", func(_p: Dictionary) -> void: player.release_jump())
 	ui.on("attack_pressed", func(_p: Dictionary) -> void:
 		player.attacking = true
 		_attempt_flare())
@@ -200,26 +203,33 @@ func _on_player_died() -> void:
 	_push_state()
 
 
-func _on_player_landed() -> void:
-	app.sfx("land", _rng.randf_range(0.9, 1.1), -6.0)
-	_dust(player.global_position + Vector2(0, 28))
+func _on_player_jumped() -> void:
+	app.sfx("jump")
+	_dust(player.global_position + Vector2(0, -2), 6, 0.9)
+
+
+func _on_player_landed(impact: float) -> void:
+	app.sfx("land", _rng.randf_range(0.9, 1.1), lerpf(-9.0, -2.0, impact))
+	_dust(player.global_position + Vector2(0, -2), 6 + int(impact * 10.0), 0.7 + impact)
+	if impact > 0.55:
+		_shake = maxf(_shake, 4.0 * impact)  # a heavy landing nudges the camera
 
 
 ## Transient landing dust (one-shot particles).
-func _dust(at: Vector2) -> void:
+func _dust(at: Vector2, count := 8, strength := 1.0) -> void:
 	var dust := CPUParticles2D.new()
 	dust.one_shot = true
 	dust.emitting = true
-	dust.amount = 8
+	dust.amount = count
 	dust.lifetime = 0.4
 	dust.explosiveness = 1.0
-	dust.spread = 70.0
+	dust.spread = 80.0
 	dust.direction = Vector2.UP
-	dust.initial_velocity_min = 30.0
-	dust.initial_velocity_max = 80.0
+	dust.initial_velocity_min = 30.0 * strength
+	dust.initial_velocity_max = 80.0 * strength
 	dust.gravity = Vector2(0, 240)
-	dust.scale_amount_min = 1.5
-	dust.scale_amount_max = 3.0
+	dust.scale_amount_min = 1.5 * strength
+	dust.scale_amount_max = 3.0 * strength
 	dust.color = Color(0.5, 0.55, 0.75, 0.45)
 	dust.position = at
 	add_child(dust)

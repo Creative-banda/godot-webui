@@ -1,0 +1,14 @@
+{
+  "states": {
+    "screen": { "name": "play", "counting": false },
+    "settings": { "sensitivity": 1.0, "fov": 78, "invert_y": false, "auto_sprint": true, "head_bob": true, "speed_lines": true, "show_fps": false },
+    "profile": { "best_time": 187.42, "best_medal": "silver", "best_shards": 19, "shard_total": 25, "plays": 7, "finishes": 3, "medal_times": [150, 210, 300] },
+    "hud": {
+      "time": 73.24, "speed": 34, "sprint": true, "air": false, "shards": 9, "shard_total": 25, "deaths": 2,
+      "section": 3, "section_name": "CARGO RUN", "wings": true, "fps": 60,
+      "markers": [{ "kind": "checkpoint", "label": "SKYLINE TOWERS", "x": 0.62, "y": 0.36, "behind": false, "dist": 48 }]
+    },
+    "results": { "time": 164.2, "shards": 21, "shards_total": 25, "deaths": 3, "medal": "silver", "new_best": true, "best_time": 164.2, "perfect": false, "medal_times": [150, 210, 300] }
+  },
+  "events": []
+}

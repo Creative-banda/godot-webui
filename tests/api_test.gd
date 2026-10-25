@@ -15,6 +15,7 @@ func check(cond: bool, label: String) -> void:
 ## Backend stand-in that records what GodotWebUI asks of it.
 class FakeBackend extends WebUIBackend:
 	var sent: Array = []        # [name, json]
+	var ui_references: Array = []
 	var touch_modes: Array = []
 	var loaded: Array = []
 	var destroyed := false
@@ -34,6 +35,9 @@ class FakeBackend extends WebUIBackend:
 	func set_touch_mode(mode: String) -> void:
 		touch_modes.append(mode)
 
+	func set_ui_scale_reference(css_pixels: float) -> void:
+		ui_references.append(css_pixels)
+
 	func destroy() -> void:
 		destroyed = true
 
@@ -43,6 +47,7 @@ func _initialize() -> void:
 	await _test_touch_modes()
 	await _test_guard_and_recovery()
 	await _test_back_button()
+	_test_ui_scale()
 	_test_export_plugin()
 	await _test_minimal_example()
 	quit(failures)
@@ -177,6 +182,30 @@ func _test_guard_and_recovery() -> void:
 	rec.shutdown()
 	rec.queue_free()
 	GodotWebUI._backend_factory = Callable()
+
+
+func _test_ui_scale() -> void:
+	var made := _fake_ui()
+	var ui: GodotWebUI = made[0]
+	var fake: FakeBackend = made[1]
+	check(is_equal_approx(ui.ui_reference_size, 720.0), "UI scale reference defaults to 720")
+	ui.ui_reference_size = 540.0
+	check(fake.ui_references == [540.0], "changing ui_reference_size reaches the backend")
+	ui.ui_reference_size = -5.0
+	check(is_zero_approx(ui.ui_reference_size) and fake.ui_references.back() == 0.0, "a negative reference becomes 0 (off)")
+	ui.shutdown()
+
+	# start() hands the reference to the backend through its options
+	var started := GodotWebUI.new()
+	root.add_child(started)
+	var backend := FakeBackend.new()
+	GodotWebUI._backend_factory = func() -> WebUIBackend: return backend
+	started.ui_reference_size = 600.0
+	started.start("res://examples/minimal_hud/ui")
+	check(float(backend.options.get("ui_reference", -1.0)) == 600.0, "start() passes ui_reference to the backend options")
+	started.shutdown()
+	GodotWebUI._backend_factory = Callable()
+	started.queue_free()
 
 
 func _test_back_button() -> void:

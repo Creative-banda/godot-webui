@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://cnaxfu1crlu8t"]
+
+[ext_resource type="Script" uid="uid://fe6wvh8t13ar" path="res://examples/skybound/scripts/sb_player.gd" id="1_3213t"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_mpnyt"]
+radius = 0.4
+height = 1.8
+
+[node name="Player" type="CharacterBody3D" unique_id=108630479]
+floor_max_angle = 0.8
+floor_snap_length = 0.4
+script = ExtResource("1_3213t")
+
+[node name="Shape" type="CollisionShape3D" parent="." unique_id=2080418818]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_mpnyt")
+
+[node name="Head" type="Node3D" parent="." unique_id=1041342774]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, 0)
+
+[node name="Camera" type="Camera3D" parent="Head" unique_id=680360553]
+current = true
+fov = 78.0

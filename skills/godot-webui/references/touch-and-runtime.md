@@ -27,6 +27,10 @@ Limits (from the implementation):
 - Region updates lag layout changes by up to about 100 ms; scrolling and viewport changes re-report on the next frame. Fast animations of controls can briefly mismatch.
 - Not verified on a device: pass-through into a game that reads touches itself (the demo game has none), a finger on the game together with a finger on the HUD (two simultaneous fingers cannot be injected over adb), and behavior on unusual devices. Verified on one device: REGIONS pass-through with swipe-look into the game, region alignment across menu/3D transitions.
 
+## UI scale and touch regions
+
+`ui_reference_size` lays the page out at a scale above the device density on big screens. The native view maps page-reported touch regions with the same factor (physical px per CSS px = density x scale), so regions stay exact; checked on a phone with an emulated large display (taps inside and just outside a region). A rotation or window resize recomputes the scale; a density change is handled too.
+
 ## Back button
 
 By default Godot quits the app on Android Back, from any page. Set `handle_back_button = true` on `GodotWebUI` to take it over: the press is sent to the page as the reserved one-shot event `webui.back`; the page's `Godot.onBack(fn)` handlers (newest first) answer, and a handler that returns `true` consumes it. If none does, or the page does not answer within 0.3 s, the `back_requested` signal fires and the game decides. Before the page is ready, or while the overlay is hidden, `back_requested` fires at once. Turning the property off or `shutdown()` restores `SceneTree.quit_on_go_back`. The addon never decides what Back means. Verified on a device (the demo takes Back over; at the main menu it declines and Godot quits).

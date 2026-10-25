@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Skybound</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/menu.css">
+  <link rel="stylesheet" href="css/hud.css">
+  <link rel="stylesheet" href="css/panels.css">
+</head>
+<body data-screen="menu">
+  <!-- window.Godot is injected by the addon: no <script src> for it. -->
+  <svg class="sprite" width="0" height="0" aria-hidden="true">
+    <defs>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5c0-1.1 1.2-1.8 2.2-1.2l10.2 6.6c.9.6.9 1.9 0 2.5L9.2 19.0C8.2 19.6 7 18.9 7 17.8z" fill="currentColor"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4.2" height="16" rx="1.4" fill="currentColor"/><rect x="13.8" y="4" width="4.2" height="16" rx="1.4" fill="currentColor"/></symbol>
+      <symbol id="i-gear" viewBox="0 0 24 24"><path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8zm8.2 4.4-1.9-.5c-.1-.5-.3-.9-.5-1.4l1-1.7a.9.9 0 0 0-.1-1.1l-1.2-1.2a.9.9 0 0 0-1.1-.1l-1.7 1c-.4-.3-.9-.4-1.4-.6L12.8 5a.9.9 0 0 0-.9-.7h-1.8a.9.9 0 0 0-.9.7l-.5 1.9c-.5.2-.9.3-1.4.6l-1.7-1a.9.9 0 0 0-1.1.1L3.3 7.8a.9.9 0 0 0-.1 1.1l1 1.7c-.3.5-.4.9-.5 1.4l-1.9.5a.9.9 0 0 0-.7.9v1.8c0 .4.3.8.7.9l1.9.5c.1.5.3.9.5 1.4l-1 1.7a.9.9 0 0 0 .1 1.1l1.2 1.2c.3.3.8.4 1.1.1l1.7-1c.4.3.9.4 1.4.6l.5 1.9c.1.4.5.7.9.7h1.8c.4 0 .8-.3.9-.7l.5-1.9c.5-.2.9-.3 1.4-.6l1.7 1c.4.2.8.2 1.1-.1l1.2-1.2c.3-.3.4-.8.1-1.1l-1-1.7c.3-.5.4-.9.5-1.4l1.9-.5c.4-.1.7-.5.7-.9v-1.8c0-.4-.3-.8-.7-.9z" fill="currentColor" fill-rule="evenodd" opacity=".95"/></symbol>
+      <symbol id="i-shard" viewBox="0 0 24 24"><path d="M12 2.5 19 12l-7 9.5L5 12z" fill="currentColor"/><path d="M12 2.5 5 12h14z" fill="#fff" opacity=".35"/></symbol>
+      <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 3v18M6 4.5h11l-2.4 3.7L17 12H6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-skull" viewBox="0 0 24 24"><path d="M12 3a8 8 0 0 0-8 8c0 2.6 1.2 4.4 3 5.5V20h10v-3.5c1.8-1.1 3-2.9 3-5.5a8 8 0 0 0-8-8z" fill="currentColor"/><circle cx="9" cy="11.5" r="1.9" fill="#0b1226"/><circle cx="15" cy="11.5" r="1.9" fill="#0b1226"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 7v5.2l3.2 2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+      <symbol id="i-jump" viewBox="0 0 24 24"><path d="M12 3.5 5 12h4.4v8.5h5.2V12H19z" fill="currentColor"/></symbol>
+      <symbol id="i-medal" viewBox="0 0 24 24"><path d="M8 2.5h3l1 5.2-3.6.5zM16 2.5h-3l-1 5.2 3.6.5z" fill="currentColor" opacity=".55"/><circle cx="12" cy="15" r="6.5" fill="currentColor"/><path d="m12 11.2 1.1 2.3 2.5.3-1.8 1.7.5 2.5-2.3-1.2-2.3 1.2.5-2.5-1.8-1.7 2.5-.3z" fill="#fff" opacity=".85"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="m14.5 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8.5M6.9 6.6a7.5 7.5 0 1 0 10.2 0" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+      <symbol id="i-retry" viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.2-5.1M5 4.5v4.2h4.2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-wing" viewBox="0 0 24 24"><path d="M3 15c3.5 1 6.2-.2 8-3.5L12 9l1 2.5c1.8 3.3 4.5 4.5 8 3.5-2.8-1-4-3.2-4.4-6.1C14.600 8.600 13.300 7.600 12 5.500 10.700 7.600 9.400 8.600 7.400 8.900 7 11.800 5.800 14 3 15z" fill="currentColor"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M12 4 5 17h14z" fill="currentColor"/></symbol>
+    </defs>
+  </svg>
+
+  <!-- Camera look: swipes anywhere on the open screen (under every control). -->
+  <div id="look-zone" data-webui-touch hidden></div>
+
+  <!-- ============================== MENU ============================== -->
+  <section id="menu" class="layer" data-webui-touch>
+    <header id="brand">
+      <svg id="logo" viewBox="0 0 64 64" aria-hidden="true">
+        <defs><linearGradient id="g-logo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7be0ff"/><stop offset="1" stop-color="#9d6bff"/></linearGradient></defs>
+        <path d="M6 44 24 12l10 18 8-12 16 26z" fill="url(#g-logo)"/>
+        <path d="M6 44h52l-6 8H12z" fill="#ffd166" opacity=".9"/>
+      </svg>
+      <div>
+        <h1 id="title">SKYBOUND</h1>
+        <p id="tagline">Parkour above the clouds</p>
+      </div>
+    </header>
+
+    <div id="menu-main">
+      <button id="btn-play" class="cta">
+        <svg><use href="#i-play"/></svg>
+        <span class="cta-text"><b>Start run</b><small id="best-line">No finish yet. Reach the beacon.</small></span>
+      </button>
+      <div class="row">
+        <button id="btn-howto" class="ghost"><svg><use href="#i-flag"/></svg>How to play</button>
+        <button id="btn-settings" class="ghost"><svg><use href="#i-gear"/></svg>Settings</button>
+        <button id="btn-quit" class="ghost"><svg><use href="#i-power"/></svg>Quit</button>
+      </div>
+    </div>
+
+    <aside id="profile" class="glass">
+      <h2>Your record</h2>
+      <ul id="medals">
+        <li class="medal gold" id="medal-gold"><svg><use href="#i-medal"/></svg><b>Gold</b><small id="medal-gold-time">2:30</small></li>
+        <li class="medal silver" id="medal-silver"><svg><use href="#i-medal"/></svg><b>Silver</b><small id="medal-silver-time">3:30</small></li>
+        <li class="medal bronze" id="medal-bronze"><svg><use href="#i-medal"/></svg><b>Bronze</b><small id="medal-bronze-time">5:00</small></li>
+      </ul>
+      <dl class="stats">
+        <div><dt>Best time</dt><dd id="stat-best">--</dd></div>
+        <div><dt>Most shards</dt><dd id="stat-shards">0/0</dd></div>
+        <div><dt>Runs</dt><dd id="stat-runs">0</dd></div>
+      </dl>
+    </aside>
+    <p id="menu-hint">Built with Godot WebUI: every panel here is HTML, CSS and JavaScript over a real 3D game.</p>
+  </section>
+
+  <!-- ============================== HUD ============================== -->
+  <section id="hud" class="layer" hidden>
+    <div id="speedlines"></div>
+    <div id="flash"></div>
+
+    <div id="hud-time" class="glass">
+      <svg><use href="#i-clock"/></svg>
+      <b id="timer">0:00.00</b>
+      <span id="section-chip"><i id="section-n">1/5</i><em id="section-name">LAUNCH PAD</em></span>
+    </div>
+
+    <div id="hud-stats">
+      <div class="chip glass" id="chip-shards"><svg><use href="#i-shard"/></svg><b id="shard-count">0</b><small id="shard-total">/ 25</small></div>
+      <div class="chip glass" id="chip-deaths"><svg><use href="#i-skull"/></svg><b id="death-count">0</b></div>
+      <div class="chip glass hidden-until-wings" id="chip-wings" hidden><svg><use href="#i-wing"/></svg><small>Double jump</small></div>
+      <button id="btn-pause" class="round-btn glass" data-webui-touch aria-label="Pause"><svg><use href="#i-pause"/></svg></button>
+    </div>
+
+    <div id="crosshair"><i></i><i></i><i></i><i></i></div>
+    <div id="markers"></div>
+
+    <div id="speedo" class="glass">
+      <svg viewBox="0 0 100 60" aria-hidden="true">
+        <path class="arc-bg" d="M10 54a40 40 0 0 1 80 0"/>
+        <path class="arc-fill" id="arc" d="M10 54a40 40 0 0 1 80 0"/>
+      </svg>
+      <b id="speed-num">0</b><small>km/h</small>
+      <em id="sprint-tag">SPRINT</em>
+    </div>
+
+    <div id="banner"><small id="banner-kicker">SECTION 1 OF 5</small><b id="banner-name">LAUNCH PAD</b></div>
+    <div id="toasts"></div>
+    <div id="countdown" hidden><b id="count-num">3</b></div>
+    <p id="keys-hint">WASD move &middot; SHIFT sprint &middot; SPACE jump &middot; drag to look &middot; ESC pause &middot; R checkpoint</p>
+    <div id="fps-chip" class="chip glass" hidden><small>FPS</small><b id="fps-num">60</b></div>
+
+    <div id="stick-zone" data-webui-touch><div id="stick"><div id="knob"></div></div></div>
+    <button id="btn-jump" class="jump-btn" data-webui-touch aria-label="Jump"><svg><use href="#i-jump"/></svg><span>JUMP</span></button>
+  </section>
+
+  <!-- ============================== PAUSE ============================== -->
+  <section id="pause" class="layer scrim" hidden data-webui-touch>
+    <div class="card glass">
+      <small class="kicker">PAUSED</small>
+      <h2>Take a breath</h2>
+      <p id="pause-line">Section 1/5 &middot; 0 shards &middot; 0 falls</p>
+      <button id="btn-resume" class="cta"><svg><use href="#i-play"/></svg><span class="cta-text"><b>Resume</b><small>Pick up where you left off</small></span></button>
+      <div class="row">
+        <button id="btn-retry" class="ghost"><svg><use href="#i-flag"/></svg>Checkpoint</button>
+        <button id="btn-restart" class="ghost"><svg><use href="#i-retry"/></svg>Restart</button>
+        <button id="btn-pause-settings" class="ghost"><svg><use href="#i-gear"/></svg>Settings</button>
+        <button id="btn-pause-menu" class="ghost"><svg><use href="#i-power"/></svg>Menu</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== RESULTS ============================== -->
+  <section id="results" class="layer scrim" hidden data-webui-touch>
+    <div class="card glass wide">
+      <small class="kicker" id="res-kicker">RUN COMPLETE</small>
+      <div id="res-medal" class="none"><svg><use href="#i-medal"/></svg><b id="res-medal-name">No medal</b></div>
+      <h2 id="res-time">0:00.00</h2>
+      <p id="res-best-line">Gold at 2:30</p>
+      <span id="res-badge" hidden>NEW BEST</span>
+      <dl class="stats">
+        <div><dt>Shards</dt><dd id="res-shards">0/0</dd></div>
+        <div><dt>Falls</dt><dd id="res-deaths">0</dd></div>
+        <div><dt>Best</dt><dd id="res-best">--</dd></div>
+      </dl>
+      <p id="res-perfect" hidden>Perfect run: every shard, no falls.</p>
+      <div class="row">
+        <button id="btn-res-retry" class="cta"><svg><use href="#i-retry"/></svg><span class="cta-text"><b>Run it again</b><small>Beat your time</small></span></button>
+        <button id="btn-res-menu" class="ghost"><svg><use href="#i-back"/></svg>Menu</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== SETTINGS ============================== -->
+  <section id="settings" class="layer scrim" hidden data-webui-touch>
+    <div class="card glass">
+      <header class="card-head">
+        <button id="btn-settings-back" class="round-btn glass" aria-label="Back"><svg><use href="#i-back"/></svg></button>
+        <h2>Settings</h2>
+      </header>
+      <div class="setting">
+        <label for="set-sensitivity">Look sensitivity <b id="out-sensitivity">1.0x</b></label>
+        <input id="set-sensitivity" type="range" min="0.2" max="3" step="0.1" value="1">
+      </div>
+      <div class="setting">
+        <label for="set-fov">Field of view <b id="out-fov">78</b></label>
+        <input id="set-fov" type="range" min="65" max="100" step="1" value="78">
+      </div>
+      <ul class="toggles">
+        <li><span>Invert look Y</span><button id="tg-invert_y" class="toggle" aria-pressed="false">Off</button></li>
+        <li><span>Auto sprint</span><button id="tg-auto_sprint" class="toggle" aria-pressed="true">On</button></li>
+        <li><span>Head bob</span><button id="tg-head_bob" class="toggle" aria-pressed="true">On</button></li>
+        <li><span>Speed lines</span><button id="tg-speed_lines" class="toggle" aria-pressed="true">On</button></li>
+        <li><span>Show FPS</span><button id="tg-show_fps" class="toggle" aria-pressed="false">Off</button></li>
+      </ul>
+      <p class="hint">Godot owns these values: the page asks, validates nothing, and shows what Godot confirms.</p>
+    </div>
+  </section>
+
+  <!-- ============================== HOW TO PLAY ============================== -->
+  <section id="howto" class="layer scrim" hidden data-webui-touch>
+    <div class="card glass wide">
+      <header class="card-head">
+        <button id="btn-howto-back" class="round-btn glass" aria-label="Back"><svg><use href="#i-back"/></svg></button>
+        <h2>How to play</h2>
+      </header>
+      <p class="lead">Run, leap and climb five sections to the beacon. Collect light shards on the way, beat the medal times.</p>
+      <div class="cols">
+        <div>
+          <h3>Keyboard</h3>
+          <ul class="keys">
+            <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Move</span></li>
+            <li><kbd>Shift</kbd><span>Sprint</span></li>
+            <li><kbd>Space</kbd><span>Jump (hold for height)</span></li>
+            <li><kbd>Drag</kbd><span>Look around</span></li>
+            <li><kbd>R</kbd><span>Back to checkpoint</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Touch</h3>
+          <ul class="keys">
+            <li><kbd>Stick</kbd><span>Move; push fully to sprint</span></li>
+            <li><kbd>Jump</kbd><span>Hold for height</span></li>
+            <li><kbd>Swipe</kbd><span>Look anywhere else</span></li>
+            <li><kbd>Back</kbd><span>Pause</span></li>
+          </ul>
+        </div>
+      </div>
+      <ul class="tips">
+        <li>Crumbling platforms fall a moment after you land. Keep moving.</li>
+        <li>Pink pads throw you into the sky.</li>
+        <li>The Wing Orb in section 3 unlocks a second jump in mid-air.</li>
+      </ul>
+    </div>
+  </section>
+
+  <script src="js/core.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/hud.js"></script>
+  <script src="js/screens.js"></script>
+</body>
+</html>

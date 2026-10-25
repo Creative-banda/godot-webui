@@ -15,6 +15,9 @@
  *                                     fn() returns true if the page used it (closed a panel, went to the previous
  *                                     screen); otherwise Godot gets GodotWebUI.back_requested. The newest handler
  *                                     is asked first. Returns an unregister function.
+ *   Godot.uiScale                     UI scale factor (>= 1) the host applied: the layout viewport is the screen divided by it,
+ *                                     so CSS px, vw and media queries already include it. Also the CSS variable --ui-scale.
+ *   Godot.pixelRatio                  physical pixels per CSS px (size canvases with it). 'uiscalechange' fires on window.
  *   Godot.touchRegions(selector?)     elements matching selector (default '[data-webui-touch]') receive touches;
  *                                     the rest of the screen passes through to the game (touch mode "regions").
  *   Godot.editText(options)           opens the keyboard-aware text editor (see below); returns {close()}.
@@ -46,6 +49,13 @@
   var last = Object.create(null);
   var guards = [];
   var backHandlers = [];
+  // The UI scale (see GodotWebUI.ui_reference_size): the host lays the page out at this many times the device density,
+  // like the stretch of Godot's own UI. Android sets window.__godotUiScale before this script runs.
+  var uiScale = (typeof window.__godotUiScale === 'number' && window.__godotUiScale > 0) ? window.__godotUiScale : 1;
+  function applyUiScale() {
+    try { document.documentElement.style.setProperty('--ui-scale', String(uiScale)); } catch (e) { /* ignore */ }
+  }
+  applyUiScale();
   var warnedMissing = false;
 
   // Android exposes window.GodotNative. The desktop development preview (WRY/WebView2) only has
@@ -142,6 +152,13 @@
       };
     },
 
+    /** Scale the host applied to the layout viewport (1 on phones; larger on big screens). */
+    get uiScale() { return uiScale; },
+
+    /** Physical pixels per CSS pixel. Android keeps devicePixelRatio at the device density and applies the scale on top;
+     *  the desktop preview applies it as page zoom, which devicePixelRatio already includes. */
+    get pixelRatio() { return (window.devicePixelRatio || 1) * (Godot.preview ? 1 : uiScale); },
+
     onBack: function (fn) {
       if (typeof fn !== 'function') { console.error('[Godot] onBack() needs a function.'); return function () {}; }
       backHandlers.push(fn);
@@ -175,6 +192,14 @@
       ((isEvent ? eventListeners : listeners)[name] || []).slice().forEach(function (fn) {
         try { fn(value); } catch (e) { console.error('[Godot] handler for "' + name + '" threw:', e); }
       });
+    },
+
+    __uiScale: function (value) {
+      if (typeof value !== 'number' || !(value > 0) || value === uiScale) return;
+      uiScale = value;
+      applyUiScale();
+      window.dispatchEvent(new CustomEvent('uiscalechange', { detail: { scale: value } }));
+      queueRegions();
     },
 
     __lifecycle: function (state) {
@@ -436,8 +461,20 @@
     });
   }
 
+  // Desktop preview only: the host needs the window size in physical pixels and the OS scale to pick the page zoom
+  // (on Android the native view does it). devicePixelRatio * innerWidth is the same at any zoom level.
+  var viewportTimer = 0;
+  function reportViewport() {
+    if (viewportTimer || !Godot.preview) return;
+    viewportTimer = setTimeout(function () {
+      viewportTimer = 0;
+      send({ t: 'viewport', w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 });
+    }, 50);
+  }
+
   function start() {
     window.addEventListener('resize', queueRegions);
+    window.addEventListener('resize', reportViewport);
     window.addEventListener('scroll', queueRegions, { capture: true, passive: true });
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', queueRegions);
@@ -445,6 +482,7 @@
     flush();
     send({ t: 'ready' });
     computeRegions();
+    reportViewport();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();

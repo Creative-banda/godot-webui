@@ -113,6 +113,7 @@ class FakeWebView extends Control:
 	var props := {}
 	var evals: Array = []
 	var loaded: Array = []
+	var zooms: Array = []
 
 	func _set(property: StringName, value: Variant) -> bool:
 		props[property] = value
@@ -126,6 +127,9 @@ class FakeWebView extends Control:
 
 	func reload() -> void:
 		loaded.append("reload")
+
+	func zoom(factor: float) -> void:
+		zooms.append(factor)
 
 
 func _test_desktop_preview() -> void:
@@ -167,6 +171,36 @@ func _test_desktop_preview() -> void:
 	check(messages == ['{"t":"ready"}', '{"t":"event","name":"jump","payload":{}}'], "ipc messages forwarded, touch regions dropped")
 	fake.ipc_message.emit(" ".repeat(70000))
 	check("message_too_large" in errors, "oversized ipc message rejected")
+
+	# UI scale in the preview: the page reports its size, the backend answers with a page zoom
+	check(fake.props.get("zoom_hotkeys") == false, "the preview disables the user's zoom hotkeys")
+	check(is_equal_approx(WebUIBackendDesktop.ui_scale_for(1080.0, 720.0), 1.5), "ui scale: 1080 px high at reference 720 is x1.5")
+	check(is_equal_approx(WebUIBackendDesktop.ui_scale_for(392.0, 720.0), 1.0), "ui scale: a phone (392 dp high) is never scaled")
+	check(is_equal_approx(WebUIBackendDesktop.ui_scale_for(9000.0, 720.0), WebUIBackendDesktop.MAX_UI_SCALE), "ui scale is capped")
+	check(is_equal_approx(WebUIBackendDesktop.ui_scale_for(2160.0, 0.0), 1.0), "ui scale: reference 0 turns it off")
+	messages.clear()
+	fake.ipc_message.emit('{"t":"viewport","w":1920,"h":1080,"dpr":1}')
+	await process_frame
+	check(fake.zooms == [1.5] and messages.is_empty(), "a 1080p window gets page zoom 1.5 and the report is not forwarded")
+	check(fake.evals.back() == "window.Godot&&window.Godot.__uiScale(1.5)", "the page is told the scale")
+	fake.zooms.clear()
+	fake.ipc_message.emit('{"t":"viewport","w":1280,"h":720,"dpr":1.5}')  # the same window after zooming: nothing to do
+	await process_frame
+	check(fake.zooms.is_empty(), "the zoomed report does not change the zoom again")
+	backend._zoom = 1.0
+	fake.ipc_message.emit('{"t":"viewport","w":1920,"h":1080,"dpr":2.0}')  # a 4K window at 200% OS scaling is 1080 CSS px high at 1x
+	await process_frame
+	check(is_equal_approx(fake.zooms.back(), 1.5), "OS display scaling is taken into account (4K at 200% -> 1.5, not 3)")
+	fake.zooms.clear()
+	fake.ipc_message.emit('{"t":"viewport","w":"x","h":720,"dpr":1}')
+	fake.ipc_message.emit('{"t":"viewport","w":0,"h":720,"dpr":1}')
+	await process_frame
+	check(fake.zooms.is_empty(), "invalid viewport reports are ignored")
+	backend.set_ui_scale_reference(0.0)
+	fake.ipc_message.emit('{"t":"viewport","w":1280,"h":720,"dpr":1.5}')
+	await process_frame
+	check(is_equal_approx(fake.zooms.back(), 1.0), "reference 0 returns the preview to 1x")
+	backend.set_ui_scale_reference(720.0)
 
 	var plain := WebUIBackendDesktop.new()
 	plain._script = "S"

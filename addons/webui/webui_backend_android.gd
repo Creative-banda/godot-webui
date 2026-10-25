@@ -27,6 +27,7 @@ func create(ui_dir: String, bridge_script: String, _host: Node = null) -> bool:
 	_plugin.connect("error", func(code: String, text: String) -> void: error.emit(code, text), CONNECT_DEFERRED)
 	_plugin.connect("page_loaded", func(url: String) -> void: page_loaded.emit(url), CONNECT_DEFERRED)
 	_plugin.connect("console", func(level: String, text: String) -> void: console.emit(level, text), CONNECT_DEFERRED)
+	set_ui_scale_reference(float(options.get("ui_reference", 720.0)))
 	_plugin.create(ProjectSettings.globalize_path(STAGE_DIR), bridge_script)
 	return true
 
@@ -49,6 +50,11 @@ func set_visible(visible: bool) -> void:
 func set_touch_mode(mode: String) -> void:
 	if _plugin:
 		_plugin.setTouchMode(mode)
+
+
+func set_ui_scale_reference(css_pixels: float) -> void:
+	if _plugin and _plugin.has_method("setUiReference"):  # an older plugin binary has no UI scale: pages stay at 1x
+		_plugin.setUiReference(css_pixels)
 
 
 func destroy() -> void:

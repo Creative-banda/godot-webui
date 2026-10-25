@@ -48,20 +48,19 @@ Resize the page (the desktop preview window, or the dock's preview) to at least 
 | Tablet, portrait | 800 x 1280 |
 | Tablet, landscape | 1280 x 800 |
 | Wide window / unfolded foldable / development window | 1920 x 1080 |
-| Desktop fullscreen, QHD | 2560 x 1440 |
-| Desktop fullscreen, 4K | 3840 x 2160 |
+| Desktop fullscreen, QHD | 2560 x 1440 (the host scales this to about 1280 x 720 of layout space) |
+| Desktop fullscreen, 4K | 3840 x 2160 (same: about 1280 x 720 of layout space) |
 
 Only test portrait if the game supports it. In the final report say which sizes you checked and how (preview window, headless screenshots, reading the CSS), that none was a real device, and anything you could not check. Do not claim orientation changes, foldable resizing or safe-area behavior work on a device: they are not verified there.
 
-## Desktop windows, high-resolution displays and device pixel ratio
+## Resolution independence: big screens and the UI scale
 
-The desktop preview (and any desktop hosting of the page) can be fullscreen on a 2K or 4K monitor. Three things change there, and none of them is handled by phone-oriented breakpoints alone:
+The host scales big screens so the layout viewport stays about 720 CSS px high (`GodotWebUI.ui_reference_size`, Godot's stretch idea): a 1080p, 1440p or 4K screen gives your CSS roughly a 1280 x 720 viewport, a phone stays at its own size. Full explanation, the table of scales and the rules are in `ui-authoring.md` ("Resolution independence"). What this means for responsive work:
 
-- **The CSS viewport keeps growing.** A 4K monitor at 150 % OS scaling is a ~2560-px CSS viewport; at 100 % it is 3840 px. Anything sized in raw `vw`/`vh` scales with it: a phone-proportioned layout becomes giant, or (authored large) shrinks to unreadable on small phones. Keep type and controls at comfortable CSS-pixel sizes (or double-bounded `clamp()`), and give document-like screens a capped, centered content width so extra space becomes margins and breathing room — see the resolution-independence section in `ui-authoring.md` for the patterns.
-- **Device pixel ratio is not your business in CSS.** The browser maps physical pixels to CSS pixels via DPR and OS scaling; do not write `device-pixel-ratio` media queries or fixed physical-pixel sizes, and never assume `1 CSS px = 1 physical px`. Provide raster images at a resolution that holds on the largest supported size.
-- **Full-height containers and long lines.** A maximized window makes `100vh` layouts and uncapped text lines unusable: cap content width (~70–90 ch for prose) and use `inset: 0` fixed containers rather than viewport units for height.
-
-At the review stage, confirm the page at a ≥2560-px size: nothing proportionally tiny or huge, content centered and capped, diagrams still legible (labels ≥ ~11 CSS px — scroll or restack a drawing instead of shrinking it), controls still ≥44 CSS px.
+- **Design for 360 x 640 up to about 1280 x 720 and beyond in width.** Ordinary px sizes are right (text 14-24 px, targets 44 px and up); the extra room on larger screens is for layout (columns, margins, capped content), not for larger controls. This replaces the older advice to keep everything fixed in CSS px and cap it for 4K: with the host scale a fixed-px UI stays comfortable instead of tiny.
+- **Do not fight the scale.** No root `zoom` or `transform: scale()`, no `devicePixelRatio` sizing, no `html { font-size: 2vw }`. Use `Godot.pixelRatio` for canvases.
+- **Breakpoints see the scaled viewport**, so `min-width: 1100px` means "wide layout space", not "monitor with many pixels".
+- **Long lines and full-height containers.** A wide layout space still needs capped text lines (about 70-90 ch) and `position: fixed; inset: 0` containers rather than `100vh` assumptions.
 
 ## Interaction with the visual editor
 
@@ -74,9 +73,9 @@ At the review stage, confirm the page at a ≥2560-px size: nothing proportional
 - No fixed widths/heights that assume one screen; sizes come from `--u`, `clamp()`, `%`, `vmin`, flex or grid.
 - Every edge-anchored element uses a safe-area inset.
 - Touch targets are at least 44 CSS px at every size.
-- Text is readable at the smallest size (about 14 px) and capped at the largest.
+- Text is readable at the smallest size (about 14 px); no `vw`-based type.
 - A tablet/wide window does not stretch menus into unreadable rows (content is capped and centered).
-- Nothing becomes proportionally tiny or huge between a 360-px phone and a 3840-px fullscreen window: control sizes stay comfortable (CSS-pixel or double-bounded clamp), content is capped and centered on desktop sizes.
+- The page does not scale itself (no root `zoom`/`transform: scale`, no `devicePixelRatio` layout maths): between a 360-px phone and a 3840-px fullscreen window the host's UI scale keeps controls comfortable, and the layout only gains room (columns, margins, capped centered content).
 - Diagrams and scaled drawings keep labels legible (≥ ~11 CSS px) at every size — `min-width` plus scroll instead of shrinking, capped growth instead of inflating.
 - Breakpoints use height and orientation where it matters, and live in the `.css` file.
 - The report names the sizes checked (including a ≥2560-px-wide window) and says none was a real device.

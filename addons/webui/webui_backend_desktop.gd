@@ -24,6 +24,7 @@ const POLL_SECONDS := 0.5
 const EXTENSION_FILE := "WRY.gdextension"
 const ENV_VAR := "GODOT_WEBUI_WRY"
 const GLOBAL_SUBDIR := "godot_webui/godot_wry"
+const MAX_UI_SCALE := 4.0  # same cap as the Android plugin
 
 ## Tests inject a stand-in for the godot_wry node here. Returns a Control with the WebView API.
 var view_factory := Callable()
@@ -38,6 +39,8 @@ var _page := ""
 var _mtimes := {}
 var _hold_reload := false
 var _modal_note_shown := false
+var _ui_reference := 720.0
+var _zoom := 1.0  # page zoom applied to the webview = the UI scale
 
 
 func get_backend_name() -> String:
@@ -110,6 +113,7 @@ func create(ui_dir: String, bridge_script: String, host: Node = null) -> bool:
 			return false
 	_host = host
 	_ui_dir = ui_dir
+	_ui_reference = float(options.get("ui_reference", 720.0))
 	_script = bridge_script
 	_extra_scripts.clear()
 	for extra_path: String in options.get("inject_scripts", PackedStringArray()):
@@ -126,12 +130,15 @@ func create(ui_dir: String, bridge_script: String, host: Node = null) -> bool:
 	view.set("full_window_size", true)
 	view.set("transparent", true)
 	view.set("devtools", bool(options.get("devtools", true)))
+	view.set("zoom_hotkeys", false)  # the preview zoom is the UI scale, not the user's
 	view.set("forward_input_events", true)  # keyboard/mouse also reach the game
 	view.set("url", "")
 	view.set("html", "<!doctype html><html><body style='background:transparent'></body></html>")
 	view.set("data_directory", "user://webui_preview_data")
 	view.connect("ipc_message", _on_ipc_message)
-	view.connect("page_load_finished", func(url: String) -> void: page_loaded.emit(url))
+	view.connect("page_load_finished", func(url: String) -> void:
+		_publish_ui_scale()  # a new document starts at 1x
+		page_loaded.emit(url))
 	host.add_child(view)
 	_view = view
 
@@ -175,6 +182,12 @@ func set_touch_mode(mode: String) -> void:
 		print("[WebUI preview] Touch pass-through ('regions') is not emulated on desktop: clicks reach both the page and the game.")
 
 
+func set_ui_scale_reference(css_pixels: float) -> void:
+	_ui_reference = css_pixels
+	if _view:
+		_view.call_deferred("eval", "window.dispatchEvent(new Event('resize'))")  # the page answers with its size
+
+
 func destroy() -> void:
 	if _timer:
 		_timer.stop()
@@ -192,10 +205,51 @@ func _on_ipc_message(raw: String) -> void:
 	# Android consumes touch-region reports natively; the preview has nothing to do with them.
 	if raw.begins_with("{\"t\":\"regions\""):
 		return
+	if raw.begins_with("{\"t\":\"viewport\""):
+		_on_viewport(raw)
+		return
 	if raw.length() > WebUIBridge.MAX_MESSAGE_CHARS:
 		error.emit("message_too_large", "Ignored page message of %d chars (max %d)." % [raw.length(), WebUIBridge.MAX_MESSAGE_CHARS])
 		return
 	message.emit(raw)
+
+
+## The page reports its size; the preview answers with the page zoom that gives the same layout space as on
+## Android (see ui_scale_for). devicePixelRatio * innerWidth is the window in physical pixels at any zoom, and
+## devicePixelRatio / zoom is the OS scale, so the answer does not depend on the zoom already applied.
+func _on_viewport(raw: String) -> void:
+	var data: Variant = JSON.parse_string(raw)
+	if typeof(data) != TYPE_DICTIONARY:
+		return
+	var w: Variant = data.get("w")
+	var h: Variant = data.get("h")
+	var dpr: Variant = data.get("dpr")
+	if typeof(w) not in [TYPE_INT, TYPE_FLOAT] or typeof(h) not in [TYPE_INT, TYPE_FLOAT] or typeof(dpr) not in [TYPE_INT, TYPE_FLOAT]:
+		return
+	if w <= 0 or h <= 0 or dpr <= 0:
+		return
+	var os_scale: float = float(dpr) / _zoom
+	var short_css: float = minf(float(w), float(h)) * float(dpr) / os_scale
+	var wanted := ui_scale_for(short_css, _ui_reference)
+	if absf(wanted - _zoom) < 0.02:
+		return
+	_zoom = wanted
+	_publish_ui_scale()
+
+
+## Same rule as the Android plugin: below the reference nothing changes; above it the page scales in proportion.
+static func ui_scale_for(short_side_css: float, reference: float) -> float:
+	if reference <= 0.0:
+		return 1.0
+	return clampf(short_side_css / reference, 1.0, MAX_UI_SCALE)
+
+
+func _publish_ui_scale() -> void:
+	if _view == null:
+		return
+	# Deferred: this runs inside the extension's own callbacks (see the re-entrancy note at the top of this file).
+	_view.call_deferred("zoom", _zoom)
+	_view.call_deferred("eval", "window.Godot&&window.Godot.__uiScale(%s)" % str(_zoom))
 
 
 ## JSON.stringify yields a valid JS string literal except for the raw U+2028/2029 separators.

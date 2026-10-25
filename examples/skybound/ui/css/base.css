@@ -1,0 +1,244 @@
+/* Skybound: design tokens, resets and the shared building blocks (glass panels, buttons, toggles, ranges).
+   Everything that moves animates transform or opacity only; panels use gradients, never blur. */
+
+:root {
+  --ink: #f5f7ff;
+  --dim: rgba(224, 230, 255, 0.74);
+  --faint: rgba(224, 230, 255, 0.46);
+  --glass: linear-gradient(160deg, rgba(26, 36, 78, 0.84), rgba(10, 14, 38, 0.9));
+  --edge: rgba(255, 255, 255, 0.16);
+  --cyan: #7be0ff;
+  --blue: #38b6ff;
+  --mint: #06d6a0;
+  --gold: #ffd166;
+  --pink: #ff6b9d;
+  --violet: #9d6bff;
+  --silver: #d3dcee;
+  --bronze: #e0995e;
+  --danger: #ff5d6c;
+  --radius: 16px;
+  --gap: clamp(12px, 2.6vmin, 28px);
+  --safe-top: max(var(--gap), env(safe-area-inset-top));
+  --safe-right: max(var(--gap), env(safe-area-inset-right));
+  --safe-bottom: max(var(--gap), env(safe-area-inset-bottom));
+  --safe-left: max(var(--gap), env(safe-area-inset-left));
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --font: "Segoe UI", system-ui, -apple-system, "Roboto", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 16px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+h3,
+p,
+dl,
+dd,
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+ul {
+  list-style: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+svg {
+  fill: currentColor;
+}
+
+.sprite {
+  position: absolute;
+}
+
+.layer {
+  position: fixed;
+  inset: 0;
+}
+
+.scrim {
+  display: grid;
+  place-items: center;
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  background: radial-gradient(ellipse at 50% 45%, rgba(8, 12, 34, 0.5), rgba(4, 6, 20, 0.86));
+  animation: fade-in 0.22s ease both;
+}
+
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 28px rgba(2, 4, 16, 0.45);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+/* ---------- buttons ---------- */
+.cta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 20px;
+  border-radius: 18px;
+  text-align: left;
+  color: #07122b;
+  background: linear-gradient(115deg, var(--cyan), var(--blue) 55%, var(--violet));
+  box-shadow: 0 4px 0 #1d6fa8, 0 12px 26px rgba(40, 140, 255, 0.28);
+  transition: transform 0.12s var(--ease);
+}
+
+.cta:active {
+  transform: translateY(3px) scale(0.985);
+}
+
+.cta svg {
+  width: 30px;
+  height: 30px;
+  flex: none;
+}
+
+.cta-text {
+  display: grid;
+  gap: 1px;
+}
+
+.cta-text b {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.cta-text small {
+  font-size: 12.5px;
+  font-weight: 600;
+  opacity: 0.78;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+.ghost {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  background: rgba(14, 20, 50, 0.7);
+  border: 1px solid var(--edge);
+  transition: transform 0.12s var(--ease);
+}
+
+.ghost:active {
+  transform: scale(0.96);
+}
+
+.ghost svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--cyan);
+}
+
+.round-btn {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+}
+
+.round-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.round-btn:active {
+  transform: scale(0.92);
+}
+
+/* ---------- toggles and ranges (settings) ---------- */
+.toggle {
+  min-width: 64px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--edge);
+}
+
+.toggle[aria-pressed="true"] {
+  color: #07122b;
+  background: linear-gradient(115deg, var(--mint), var(--cyan));
+  border-color: transparent;
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  accent-color: var(--blue);
+  touch-action: pan-x;
+}
+
+.kicker {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  color: var(--cyan);
+}

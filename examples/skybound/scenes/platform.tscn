@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://jh1wija0kawc"]
+
+[ext_resource type="Script" uid="uid://dlu4ux41rfmwg" path="res://examples/skybound/scripts/sb_platform.gd" id="1_md6bk"]
+
+[node name="Platform" type="StaticBody3D" unique_id=1840184388]
+script = ExtResource("1_md6bk")

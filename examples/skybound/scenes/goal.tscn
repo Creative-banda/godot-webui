@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bobuvapb7t64o"]
+
+[ext_resource type="Script" uid="uid://sbd46xupb4y7" path="res://examples/skybound/scripts/sb_goal.gd" id="1_sc81r"]
+
+[node name="Goal" type="Area3D" unique_id=665343656]
+script = ExtResource("1_sc81r")

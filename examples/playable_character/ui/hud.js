@@ -85,7 +85,7 @@
     Godot.guard(up);
   }
 
-  holdButton($('btn-jump'), () => Godot.emit('jump'));
+  holdButton($('btn-jump'), () => Godot.emit('jump'), () => Godot.emit('jump_released'));  // hold = full jump, tap = hop
   holdButton($('btn-flare'), () => Godot.emit('flare'));
   holdButton($('btn-pause'), () => Godot.emit('pause_toggle'));
   holdButton($('btn-resume'), () => Godot.emit('pause_toggle'));
@@ -129,6 +129,7 @@
     }
   });
   window.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') Godot.emit('jump_released');
     if (KEYMAP[e.code]) {
       held.delete(KEYMAP[e.code]);  // both keys of a pair (A + ArrowLeft) may be held
       sendMoveFromKeys();
@@ -183,6 +184,7 @@
   let prevShards = null;
   let lastTimeSec = -1;
   let toastShown = false;
+  let wasFinished = false;
 
   Godot.on('settings', (s) => {
     reveal();
@@ -225,6 +227,15 @@
 
     // Overlays.
     if (s.dead !== wasDead) { $('ko').hidden = !s.dead; wasDead = s.dead; }
+    // The results card follows Godot's `finished` flag: Restart reuses this page (nothing reloads), so a card
+    // left over from the last run must go as soon as the new run reports finished = false.
+    $('results').hidden = !s.finished;
+    if (wasFinished && !s.finished) {
+      toastShown = false;  // a new run: show the objective toast again
+      lastTimeSec = -1;
+      prevShards = null;
+    }
+    wasFinished = s.finished;
     $('pause').hidden = !s.paused || s.finished;
     document.body.classList.toggle('gate-open', s.gate_open && !s.finished);
 

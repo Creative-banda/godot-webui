@@ -200,6 +200,7 @@ func take_hit() -> void:
 | `on(name, callable)`, `off(name, callable)`, `clear_handlers()` | Register handlers for page events; the handler receives the payload `Dictionary`. Names starting with `webui.` are reserved. |
 | `set_state(name, payload)`, `emit_event(name, payload = {})` | Godot → page, see above. `send()` is the deprecated alias of `set_state`. |
 | `show_ui()`, `hide_ui()` | Toggle visibility. |
+| `ui_reference_size` (`@export`, default `720`) | Resolution-independent UI, like Godot's `canvas_items` stretch: when the shorter screen side (CSS px) is above this, the page is scaled up in proportion (at most 4x) so a 1080p, 1440p or 4K screen gets a ~720-px-high layout space with comfortable text and controls; phones are untouched. `0` disables it. Pages can read `Godot.uiScale` / `Godot.pixelRatio`. |
 | `handle_back_button` (`@export`, bool, default `false`) | Take over the Android Back button. While on, Back is offered to the page first (`Godot.onBack(fn)`; return `true` to consume it) and, if the page declines or does not answer within 0.3 s, reported through `back_requested`. While on, `SceneTree.quit_on_go_back` is switched off and restored when you turn it off or `shutdown()`. Off: Back quits the app as before. Not verified on a device. |
 | `touch_mode`, `set_touch_mode(mode)` | `GodotWebUI.TouchMode.AUTO` (default), `MODAL`, `REGIONS`; see below. |
 | `shutdown()` | Destroy the WebView (also done on `_exit_tree`). Safe to call repeatedly. |
@@ -214,6 +215,7 @@ func take_hit() -> void:
 | `Godot.onState(name, fn)`, `Godot.onEvent(name, fn)`, `Godot.on(name, fn)`, `Godot.off(name, fn)` | Receive state / events from Godot; `on` is `onState`. A state handler is called at once with the latest value if one already arrived. |
 | `Godot.guard(releaseFn)` | Runs `releaseFn` on window blur, page hide and native app pause. Returns an unregister function. |
 | `Godot.onBack(fn)` | Android Back (needs `handle_back_button`). `fn()` returns `true` if the page used it (closed a panel, previous screen), otherwise Godot gets `back_requested`. The newest handler is asked first. Returns an unregister function. |
+| `Godot.uiScale`, `Godot.pixelRatio` | The UI scale the host applied (also CSS variable `--ui-scale`; window event `uiscalechange`) and physical pixels per CSS pixel for sizing canvases. |
 | `Godot.touchRegions(selector?)` | Opt in to pass-through for everything outside the matching elements (default selector `[data-webui-touch]`). |
 | `Godot.editText(options)` / `Godot.editText.attach(el, options)` | Keyboard-aware text editor: a card pinned above the Android keyboard with a real focused input (title, placeholder, value, `text`/`password`/`numeric`/`multiline` modes, maxLength, confirm/cancel callbacks). `attach` wires it to an existing field or button. See `skills/godot-webui/references/api.md`. |
 | `Godot.available`, `Godot.preview` | Native bridge present; running in the desktop preview. |
@@ -249,6 +251,8 @@ What the demo shows:
 - An HTML HUD with a joystick, jump, attack (press and release), a Godot-driven health bar, and a "Hurt me" button that asks Godot to apply damage. A hazard in the level damages the player from the game side, and a pause card pauses the game in Godot.
 
 A smaller example, `examples/minimal_hud/` (scene `minimal.tscn`, UI in `ui/`), shows the recommended workflow in about 100 lines: an HTML button sends `attack`, Godot validates it and decides the damage, `set_state("hud", ...)` updates the page, and `emit_event("hit", ...)` plays a one-shot animation. Open the scene and press F6.
+
+A first-person parkour showcase, `examples/skybound/` (open `main.tscn`, F6), shows what the page can do over a 3D game: menu, HUD with a speed gauge and 3D markers projected from world positions, pause, settings, results with medals, touch controls and Android Back. Its README lists the controls, the messages and how the course is built; `tests/skybound_test.gd` runs a bot over every jump.
 
 A 3D example, `examples/third_person_3d/` (scene `main3d.tscn`), has a third-person character, a joystick and jump button drawn by the page, and camera look by swiping anywhere on the screen (a full-screen look zone in the page sends `look_drag` to Godot, because on Android a second finger cannot reach Godot while another finger holds a page control, see `skills/godot-webui/references/touch-and-runtime.md`). The page shows a swipe/FPS telemetry panel and camera settings (sensitivity, invert) that Godot validates. It is the **3D Arena** button on the demo main menu (its page `hud3d.html` lives in the demo `ui/` folder because one overlay serves one folder); you can also open `main3d.tscn` and press F6 (WASD, Space and mouse drag work in the preview). Two-finger use (stick plus swipe) is not yet confirmed on a device.
 
@@ -302,6 +306,7 @@ native/android/                Gradle project: Java source of the native plugin
 examples/playable_character/   Demo scenes, scripts and HTML UI (ui/)
 examples/minimal_hud/          Smallest realistic example: button to action, state to UI, events
 examples/third_person_3d/      3D character, HTML joystick/jump, camera swipe look
+examples/skybound/             First-person parkour showcase: full UI, markers, medals, touch
 templates/hud/                 Starter HTML page
 tests/headless_test.gd         Headless test: bridge, demo flow, desktop preview backend
 tests/api_test.gd              Headless test: state/events, touch modes, guard, recovery, UI folder detection, minimal example

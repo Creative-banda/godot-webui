@@ -105,6 +105,7 @@ The **WebUIScreen** node uses the same preview backend to make the picture of a 
 | Lifecycle | Pause/resume, `suspended`, renderer-death recovery | None |
 | Security | Network and navigation blocked, CSP, origin-restricted bridge | Not equivalent: external requests are not blocked. A page that works here can still be blocked on Android |
 | Safe-area insets, density, performance | Real device | Not representative |
+| UI scale (`ui_reference_size`) | `WebView.setInitialScale` re-lays the page out; live on size and density changes | Page zoom (`WebView.zoom`) chosen from the window size and OS scale; the page first loads at 1x and is zoomed about 100 ms later. The user's zoom hotkeys are disabled |
 | Console forwarding | `console_message` signal and Godot output | Inspector only |
 | Window | Full screen | Covers the whole game window; the Godot window cannot be clicked directly beneath it |
 

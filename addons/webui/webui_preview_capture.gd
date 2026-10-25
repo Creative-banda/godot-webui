@@ -40,6 +40,7 @@ func _ready() -> void:
 	_ui = GodotWebUI.new()
 	_ui.desktop_preview_hot_reload = false
 	_ui.desktop_preview_devtools = false
+	_ui.ui_reference_size = 0.0  # the picture is made at the editor's own size: the page must lay out at 1 CSS px = 1 px here
 	_ui.desktop_preview_inject_scripts = PackedStringArray([CAPTURE_SCRIPT])
 	add_child(_ui)
 	_ui.error.connect(_on_ui_error)

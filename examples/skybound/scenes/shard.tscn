@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dph8qeal2qr8"]
+
+[ext_resource type="Script" uid="uid://o72urfma7bv3" path="res://examples/skybound/scripts/sb_shard.gd" id="1_aum6y"]
+
+[node name="Shard" type="Area3D" unique_id=1423679428]
+script = ExtResource("1_aum6y")

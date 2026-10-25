@@ -1,0 +1,202 @@
+/* Main menu: the 3D course turns slowly behind it, so the layer only adds a soft vignette. */
+
+#menu {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "brand brand"
+    ". profile"
+    "main hint";
+  align-items: end;
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  background:
+    linear-gradient(180deg, rgba(5, 8, 28, 0.55), rgba(5, 8, 28, 0) 34%),
+    linear-gradient(0deg, rgba(5, 8, 28, 0.7), rgba(5, 8, 28, 0) 46%);
+  animation: fade-in 0.4s ease both;
+}
+
+#brand {
+  grid-area: brand;
+  display: flex;
+  align-items: center;
+  align-self: start;
+  gap: 14px;
+}
+
+#logo {
+  width: clamp(44px, 9vmin, 64px);
+  height: clamp(44px, 9vmin, 64px);
+  flex: none;
+}
+
+#title {
+  font-size: clamp(30px, 7.4vmin, 56px);
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  background: linear-gradient(100deg, #ffffff, var(--cyan) 55%, var(--violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+#tagline {
+  margin-top: 4px;
+  font-size: clamp(12px, 2.4vmin, 16px);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+#menu-main {
+  grid-area: main;
+  display: grid;
+  gap: 10px;
+  width: min(420px, 100%);
+  animation: rise-in 0.5s var(--ease) 0.1s both;
+}
+
+#profile {
+  grid-area: profile;
+  align-self: center;
+  padding: 14px 16px;
+  animation: rise-in 0.5s var(--ease) 0.2s both;
+}
+
+#profile h2 {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+#medals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+
+.medal {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  padding: 8px 4px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  opacity: 0.55;
+}
+
+.medal svg {
+  width: 26px;
+  height: 26px;
+}
+
+.medal b {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.medal small {
+  font-size: 11.5px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.medal.gold svg {
+  color: var(--gold);
+}
+
+.medal.silver svg {
+  color: var(--silver);
+}
+
+.medal.bronze svg {
+  color: var(--bronze);
+}
+
+.medal.earned {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+
+.stats dt {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.stats dd {
+  margin-top: 2px;
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+#menu-hint {
+  grid-area: hint;
+  align-self: end;
+  justify-self: end;
+  max-width: 300px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  text-align: right;
+  color: var(--faint);
+}
+
+@media (max-height: 460px) {
+  #menu {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 260px);
+  }
+
+  #profile {
+    padding: 10px 12px;
+  }
+
+  #medals {
+    margin: 8px 0;
+  }
+
+  .medal svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  #menu-hint {
+    display: none;
+  }
+
+  .cta {
+    min-height: 54px;
+  }
+}
+
+@media (max-aspect-ratio: 1/1) {
+  #menu {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "brand"
+      "profile"
+      "main"
+      "hint";
+  }
+
+  #menu-hint {
+    justify-self: start;
+    text-align: left;
+  }
+}

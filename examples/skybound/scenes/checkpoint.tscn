@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dxmha0f7lrigw"]
+
+[ext_resource type="Script" uid="uid://b30qpwathje02" path="res://examples/skybound/scripts/sb_checkpoint.gd" id="1_i1fnw"]
+
+[node name="Checkpoint" type="Area3D" unique_id=1204557919]
+script = ExtResource("1_i1fnw")

@@ -43,5 +43,10 @@ func set_touch_mode(_mode: String) -> void:
 	pass
 
 
+## UI scale reference in CSS pixels (GodotWebUI.ui_reference_size); 0 turns scaling off. Backends that cannot scale ignore it.
+func set_ui_scale_reference(_css_pixels: float) -> void:
+	pass
+
+
 func destroy() -> void:
 	pass

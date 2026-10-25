@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +20,7 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
+import androidx.webkit.ScriptHandler;
 import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewCompat;
@@ -55,7 +57,16 @@ public class WebUIPlugin extends GodotPlugin {
     private static final String JS_OBJECT = "GodotNative";
     private static final int MAX_MESSAGE_CHARS = 64 * 1024;
 
+    /** The UI scale never exceeds this, whatever the screen (a 4K TV at density 1.0 needs about 3). */
+    private static final float MAX_UI_SCALE = 4f;
+
     private OverlayWebView webView;
+    private String bridgeScript = "";
+    private ScriptHandler startScript;
+    private volatile float uiReference = 720f;
+    private float uiScale = 1f;
+    private int uiPercent = 0;
+    private float uiDensity = 0f;
 
     public WebUIPlugin(Godot godot) {
         super(godot);
@@ -103,6 +114,18 @@ public class WebUIPlugin extends GodotPlugin {
             }
             webView.loadUrl(ORIGIN + UI_PREFIX + relativePath);
         });
+    }
+
+    /**
+     * UI scale reference in CSS pixels (the project's design size, like Godot's stretch base). The shorter side of the
+     * screen, in dp, is compared with it: at or below it the page is laid out at the device density (phones are
+     * unchanged); above it everything is scaled up in proportion, so a 4K screen gets the same layout space as a
+     * 720 dp-high one instead of a tiny interface. 0 turns it off.
+     */
+    @UsedByGodot
+    public void setUiReference(float cssPixels) {
+        uiReference = cssPixels;
+        runOnUiThread(this::updateUiScale);
     }
 
     /** Delivers a named message to window.Godot.__receive in the page. */
@@ -283,7 +306,10 @@ public class WebUIPlugin extends GodotPlugin {
         });
 
         Set<String> origins = Collections.singleton(ORIGIN);
-        WebViewCompat.addDocumentStartJavaScript(view, script, origins);
+        bridgeScript = script;
+        webView = view;
+        view.setOnSizeChange(this::updateUiScale);
+        updateUiScale();  // before the first page loads: sets the initial scale and the start script
         WebViewCompat.addWebMessageListener(view, JS_OBJECT, origins,
                 (v, message, sourceOrigin, isMainFrame, reply) -> {
                     if (isMainFrame) {
@@ -291,12 +317,57 @@ public class WebUIPlugin extends GodotPlugin {
                     }
                 });
 
-        webView = view;
         activity.addContentView(view, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         // Lets a finger on the game and a finger on the HUD be routed independently.
         if (view.getParent() instanceof ViewGroup) {
             ((ViewGroup) view.getParent()).setMotionEventSplittingEnabled(true);
+        }
+    }
+
+    /**
+     * Works out the UI scale from the overlay size and applies it. WebView.setInitialScale(p) lays the page out at
+     * p/100 physical pixels per CSS pixel, with real re-layout (innerWidth, media queries and vw change) and sharp
+     * rendering; the default is the device density. The page learns the factor through Godot.uiScale.
+     */
+    private void updateUiScale() {
+        OverlayWebView view = webView;
+        Activity activity = getActivity();
+        if (view == null || activity == null) {
+            return;
+        }
+        DisplayMetrics dm = activity.getResources().getDisplayMetrics();
+        int w = view.getWidth() > 0 ? view.getWidth() : dm.widthPixels;
+        int h = view.getHeight() > 0 ? view.getHeight() : dm.heightPixels;
+        float scale = 1f;
+        if (uiReference > 0f) {
+            float shortCss = Math.min(w, h) / dm.density;
+            scale = Math.max(1f, Math.min(MAX_UI_SCALE, shortCss / uiReference));
+        }
+        int percent = scale > 1.005f ? Math.round(dm.density * scale * 100f) : 0;
+        Log.i(TAG, "ui scale: view " + w + "x" + h + " px, density " + dm.density + ", reference " + uiReference + " -> x" + scale + " (initial scale " + percent + "%)");
+        boolean first = startScript == null;
+        // The WebView stores the initial scale relative to the density it was given at that moment, so a density change
+        // needs the call repeated even when the percentage is the same.
+        if (!first && percent == uiPercent && dm.density == uiDensity) {
+            return;
+        }
+        int previousPercent = uiPercent;
+        uiPercent = percent;
+        uiDensity = dm.density;
+        uiScale = percent > 0 ? percent / (dm.density * 100f) : 1f;
+        if (!first && percent > 0 && percent == previousPercent) {
+            view.setInitialScale(percent + 1);  // same number, new density: make the WebView see a change and lay out again
+        }
+        view.setInitialScale(percent);
+        view.setPxPerCss(percent > 0 ? percent / 100f : 0f);
+        if (startScript != null) {
+            startScript.remove();
+        }
+        startScript = WebViewCompat.addDocumentStartJavaScript(view,
+                "window.__godotUiScale=" + uiScale + ";" + bridgeScript, Collections.singleton(ORIGIN));
+        if (!first) {
+            view.evaluateJavascript("window.Godot&&window.Godot.__uiScale(" + uiScale + ")", null);
         }
     }
 
@@ -334,6 +405,7 @@ public class WebUIPlugin extends GodotPlugin {
             return;
         }
         webView = null;
+        startScript = null;
         ViewGroup parent = (ViewGroup) view.getParent();
         if (parent != null) {
             parent.removeView(view);

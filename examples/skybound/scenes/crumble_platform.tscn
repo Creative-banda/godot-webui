@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bfkkv0h2ci6mw"]
+
+[ext_resource type="Script" uid="uid://h2y4625xtynq" path="res://examples/skybound/scripts/sb_crumble_platform.gd" id="1_mponu"]
+
+[node name="CrumblePlatform" type="StaticBody3D" unique_id=1097633030]
+script = ExtResource("1_mponu")

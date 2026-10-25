@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c52yjjg3tnfnm"]
+
+[ext_resource type="Script" uid="uid://cbqx6xlum73h1" path="res://examples/skybound/scripts/sb_moving_platform.gd" id="1_xa3o2"]
+
+[node name="MovingPlatform" type="AnimatableBody3D" unique_id=1663804663]
+script = ExtResource("1_xa3o2")

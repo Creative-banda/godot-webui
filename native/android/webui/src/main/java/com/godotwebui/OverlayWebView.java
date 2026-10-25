@@ -1,6 +1,7 @@
 package com.godotwebui;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.view.MotionEvent;
 import android.webkit.WebView;
 
@@ -21,6 +22,9 @@ final class OverlayWebView extends WebView {
     private volatile float[] regions = new float[0];
     /** Pointer ids whose gestures this view has taken over (one entry per concurrent finger). */
     private final boolean[] captured = new boolean[32];
+    /** Physical pixels per CSS pixel. The page can be laid out larger than the device density (UI scale). */
+    private volatile float pxPerCss = 0f;
+    private Runnable onSizeChange;
 
     OverlayWebView(Context context) {
         super(context);
@@ -33,12 +37,37 @@ final class OverlayWebView extends WebView {
         }
     }
 
+    void setPxPerCss(float value) {
+        pxPerCss = value;
+    }
+
+    void setOnSizeChange(Runnable callback) {
+        onSizeChange = callback;
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (onSizeChange != null) {
+            onSizeChange.run();
+        }
+    }
+
+    /** A density or font-scale change keeps the pixel size but changes the dp size, so the UI scale needs redoing. */
+    @Override
+    protected void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (onSizeChange != null) {
+            post(onSizeChange);  // after the new resources are in place
+        }
+    }
+
     void setRegions(float[] cssRects) {
         regions = cssRects;
     }
 
     private boolean hitsRegion(float xPx, float yPx) {
-        float density = getResources().getDisplayMetrics().density;
+        float density = pxPerCss > 0f ? pxPerCss : getResources().getDisplayMetrics().density;
         float x = xPx / density;
         float y = yPx / density;
         float[] r = regions;

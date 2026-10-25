@@ -51,7 +51,7 @@ Transparent `html`/`body` is what lets the game show through. A full-screen opaq
 
 ## Layout for games
 
-- Be responsive (SKILL.md rule 8, details and patterns in `responsive.md`): anchor to edges with `position: fixed` plus `max(16px, env(safe-area-inset-left))`-style offsets; use `clamp()` for sizes; use `%`/`vw`/`vh`/`vmin`/flex/grid for containers; add `@media` breakpoints for height, orientation and wider screens. The page runs on small and large phones, tablets, foldables and split-screen windows, in portrait or landscape: do not design for one device.
+- Be responsive (SKILL.md rule 8, details and patterns in `responsive.md`): anchor to edges with `position: fixed` plus `max(16px, env(safe-area-inset-left))`-style offsets; use `clamp()` for sizes; use `%`/`vw`/`vh`/`vmin`/flex/grid for containers; add `@media` breakpoints for height, orientation and wider screens. The host scales big screens to a ~720-px-high layout space (see "Resolution independence" below): author in ordinary CSS px for that space. The page runs on small and large phones, tablets, foldables and split-screen windows, in portrait or landscape: do not design for one device.
 - Touch targets at least about 44 CSS px; leave room for thumbs at the bottom corners.
 - Use CSS transitions/animations freely, but keep them cheap on low-end phones (transform and opacity over layout properties, no huge blurs). Performance on low-end devices has not been measured.
 - `backdrop-filter` cannot blur the game behind the overlay: the WebView is a separate Android surface. Fake glass with gradients and borders.
@@ -60,21 +60,34 @@ Transparent `html`/`body` is what lets the game show through. A full-screen opaq
 
 ## Resolution independence: phones to fullscreen 4K
 
-WebUI pages must stay readable and usable from a small phone up to a fullscreen 2K/4K desktop window (SKILL.md rule 8) — menus, HUDs, dialogs, forms, terminal shells, puzzle diagrams, journals, completion screens: every screen. Two facts drive the rules:
+The host scales every page the way Godot scales its own UI with `canvas_items` stretch, so you author for one comfortable layout space and the screen size only changes how much of it you get (SKILL.md rule 8). Menus, HUDs, dialogs, forms, terminals, diagrams, journals: every screen.
 
-- **Physical resolution ≠ CSS viewport.** Browsers and the Android WebView map the screen to CSS pixels through device pixel ratio and OS display scaling. A 4K monitor at 150 % scaling is a ~2560-px-wide *CSS* viewport; an Android WebView already reports CSS pixels for its density. Never write CSS against physical pixels, never assume the CSS viewport equals the screen's pixel count, and do not use `device-pixel-ratio` media queries.
-- **Viewport-proportional sizing breaks at the extremes.** Type and controls sized in raw `vw`/`vh` grow a phone layout into giant text on a 4K display (2.2vw ≈ 84 px at 3840 px) or, authored on a large display, shrink to nothing on a phone. The user gets more *space* at larger sizes — not proportionally bigger (or smaller) everything.
+**Why this is done by the host, not by CSS.** A CSS pixel is a device-independent pixel: the Android WebView reports physical pixels divided by the display density, the desktop preview divides by the OS scale. A phone is about 390-450 CSS px on its short side, but a 1080p monitor is 1080, a 4K monitor at 100 % is 2160, and a large Android display or TV is similar. A page authored with phone-sized controls (14 px text, 48 px buttons) therefore looks tiny on those screens, and no media query or `clamp()` fixes it without scaling things, which every page would have to reimplement. So `GodotWebUI.ui_reference_size` (default 720, like the usual stretch base height) does it once: when the shorter side of the screen, in CSS px, is above the reference, the layout viewport is divided by `short side / reference` (at most 4x). Android uses `WebView.setInitialScale` (a real re-layout, rendered sharp), the desktop preview uses page zoom. Phones are below the reference and are not touched.
 
-Practical rules:
+| Screen (short side in CSS px) | Scale | Layout viewport your CSS sees |
+|---|---|---|
+| Phone landscape, 392 | 1.0 | 875 x 392 (unchanged) |
+| Tablet 800 | 1.1 | about 1280 x 720 |
+| 1080p monitor, 1080 | 1.5 | 1280 x 720 |
+| 1440p monitor, 1440 | 2.0 | 1280 x 720 |
+| 4K at 100 %, 2160 | 3.0 | 1280 x 720 |
+| 4K at 150 %, 1440 | 2.0 | 1280 x 720 |
 
-1. **Controls in CSS pixels or double-bounded `clamp()`.** Text lands around 13–22 px, buttons and inputs 40–48 px tall, touch targets ≥44 CSS px, at every viewport size. A viewport-driven scaling token is acceptable only when clamped at both ends (`--u: clamp(8px, 1.4vmin, 16px)`); never raw `vw` for font sizes or hit targets.
-2. **Content capped and centered.** Document-like screens (menus, terminals, dialogs, journals, results) take `width: min(100%, <cap>)` centered with `margin: 0 auto` — e.g. 40rem for a dialog, ~1440px for a dense terminal shell. On a 4K display they gain margins, not stretched rows. Cap inner text columns too (~70–90 ch). Spatial HUD elements stay edge-anchored instead.
-3. **Extra space is used, not filled.** Larger viewports get more padding, wider margins or extra columns (`grid-template-columns: repeat(auto-fit, minmax(160px, 1fr))`) — never proportionally larger type.
-4. **Diagrams keep their labels.** An SVG drawing with a `viewBox` scales its text with it: give it a `min-width` inside a horizontally scrollable wrapper on narrow viewports instead of shrinking labels below ~11 CSS px, and cap its growth on wide ones. Check that click targets inside a scaled diagram stay ≥44 CSS px at the *worst* viewport, not the average one.
-5. **Breakpoints for the extremes**, in the page's `.css` file: compact rules for short landscape phones (`max-height: 480px`), stacked/wrapped layouts for narrow widths (`max-width: 720px`), and optional multi-column arrangements for wide windows (`min-width: 1100px`).
-6. **Every screen, every time.** Apply the above when creating *or modifying* any WebUI screen; a page that is correct at 1280×720 but tiny at 2560×1440 (or scrolls its diagram into unreadability at 390×740) is not done.
+`innerWidth`, `vw`/`vh`/`vmin`, `@media` queries and `getBoundingClientRect()` all describe this scaled viewport. Wider or taller than 16:9 gives more room on that axis, not bigger things.
 
-Verify by resizing the desktop preview (or the game window) to at least a ≥2560-px-wide size and a phone-width size and checking the review checklist in `responsive.md`.
+Rules:
+
+1. **Author for the layout space, in ordinary CSS px.** Text 14-24 px, buttons and inputs 44-56 px, touch targets at least 44 px, a design space up to about 1280 x 720 (and down to a 360 x 640 phone). Do not size controls by `vw`/`vh` for type or hit targets; `clamp()` and `vmin` tokens are fine because the viewport is already normalised, but do not set upper limits so small that a 720-px-high layout looks sparse.
+2. **Use extra space for layout, not for bigger controls.** Wider or taller viewports get more columns, wider margins, and capped content: document-like screens take `width: min(100%, 40rem)` (a dense terminal ~1440 px) centered; spatial HUD pieces stay anchored to the edges with safe-area insets.
+3. **Do not scale the page yourself.** No `zoom`, no `transform: scale()` on the root, no `html { font-size: <vw> }`, no `devicePixelRatio` arithmetic for layout, no `device-pixel-ratio` media queries: they fight the host. Read `Godot.uiScale` (also the CSS variable `--ui-scale`) only when you must, and listen to the `uiscalechange` window event if you cache sizes.
+4. **Canvases size by `Godot.pixelRatio`** (physical pixels per CSS pixel; on Android `devicePixelRatio` stays at the device density and does not include the scale): `canvas.width = cssWidth * Math.min(Godot.pixelRatio, 2)`.
+5. **Diagrams keep their labels.** An SVG with a `viewBox` scales its text with it: give it a `min-width` inside a horizontally scrollable wrapper on narrow viewports instead of shrinking labels below about 11 CSS px.
+6. **Breakpoints for the extremes**, in the page's `.css` file: compact rules for short landscape phones (`max-height: 480px`), stacked layouts for narrow widths (`max-width: 720px`), optional multi-column arrangements for wide ones (`min-width: 1100px`). They are evaluated against the scaled viewport, so a 4K monitor takes the same branches as a 1280-wide window.
+7. **Every screen, every time.** Check the page at a phone, a tablet and a large size (below) whenever you create or modify a screen.
+
+Opting out: `ui_reference_size = 0` restores 1 CSS px = 1 dp on every screen (the pre-scale behaviour). Change the reference when the game's design space is not about 720 high (a smaller reference scales up earlier). Both are properties of the `GodotWebUI` node and can be set at run time.
+
+How to check without devices: in the desktop preview, resize the game window to 1280x720, 1920x1080 and 2560x1440 and confirm the layout looks the same size each time with only the room around it changing (`Godot.uiScale` is logged by a probe page, or read it in the devtools console). On a connected Android phone, `adb shell wm size 2160x3840` plus `adb shell wm density 320` emulates a large display; reset with `adb shell wm size reset` and `adb shell wm density reset` (the page follows live). None of this replaces a real tablet or TV.
 
 ## Separation of concerns
 

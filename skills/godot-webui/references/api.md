@@ -29,6 +29,7 @@ ui.start("res://ui")            # loads res://ui/index.html
 | `show_ui()` / `hide_ui()` | Show or hide the overlay. |
 | `touch_mode` (`@export`), `set_touch_mode(mode)` | `GodotWebUI.TouchMode.AUTO` (default), `MODAL`, `REGIONS`. See `touch-and-runtime.md`. |
 | `handle_back_button` (`@export`, bool, default `false`) | Take over the Android Back button. While on, Back is offered to the page first (`Godot.onBack(fn)`; return `true` to consume it) and, if the page declines or does not answer within 0.3 s, reported through `back_requested`. While on, `SceneTree.quit_on_go_back` is switched off and restored when you turn it off or `shutdown()`. Off: Back quits the app as before. Not verified on a device. |
+| `ui_reference_size` (`@export`, float, default `720`) | UI scale reference in CSS px (like Godot's stretch base height). When the shorter screen side is larger, the page is laid out at `short / reference` times the device density (at most 4x), so big screens get a ~720-px-high layout space and comfortable controls; phones are untouched. `0` turns it off. Android: `WebView.setInitialScale`; desktop preview: page zoom. Verified on one phone and an emulated large display, not on tablets or TVs. |
 | `shutdown()` | Destroys the overlay and releases native resources. Idempotent; also runs when the node leaves the tree. Handlers stay registered. |
 | `is_ready: bool` | True once the page's handshake arrived. Stays true across reloads (each load sends a new handshake). |
 | `desktop_preview_hot_reload`, `desktop_preview_devtools` (`@export`, bool) | Desktop preview only; ignored on Android. |
@@ -60,6 +61,7 @@ Injected before any page script. Do not include `godot.js` yourself.
 | `Godot.off(name, fn)` | Unsubscribes a handler registered with `on`, `onState` or `onEvent`. |
 | `Godot.guard(releaseFn) -> unregister` | Calls `releaseFn(reason)` on window blur, `pagehide`, hidden visibility and native app pause (`reason` is `'blur'`, `'pagehide'`, `'hidden'` or `'pause'`). Use it to release held input. |
 | `Godot.onBack(fn) -> unregister` | Android Back (with `handle_back_button`): `fn()` returns `true` to consume it (close a modal, previous screen), anything else declines and Godot gets `back_requested`. Newest handler first. |
+| `Godot.uiScale`, `Godot.pixelRatio` | The scale the host applied (>= 1; also CSS variable `--ui-scale`, window event `uiscalechange`) and physical pixels per CSS pixel (size canvases with it). |
 | `Godot.touchRegions(selector?)` | Opts this page in to touch pass-through: elements matching `selector` (default `[data-webui-touch]`) receive touches, the rest of the screen reaches the game. Also tells Godot (so `AUTO` switches to pass-through). Call once. |
 | `Godot.editText(options) -> {close(confirmed?)}` | Opens the keyboard-aware text editor (see below). |
 | `Godot.editText.attach(el, options)` | Wires an element (input, textarea or button) to open the editor with its current value; confirming writes the value back (`.value` for fields, `.textContent` otherwise) before calling `options.onConfirm`. The element is made read-only so it never opens the IME itself. |

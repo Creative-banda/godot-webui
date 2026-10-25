@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://5hj7x5s8cspi"]
+
+[ext_resource type="Script" uid="uid://bl0c0jj6u55gd" path="res://examples/skybound/scripts/sb_bounce_pad.gd" id="1_swoek"]
+
+[node name="BouncePad" type="Area3D" unique_id=666817409]
+script = ExtResource("1_swoek")

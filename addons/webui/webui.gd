@@ -63,6 +63,18 @@ const RECOVERY_WINDOW_MSEC := 60000
 		handle_back_button = value
 		_apply_back_setting()
 
+## UI scale reference, in CSS pixels. The page is laid out like Godot lays out its own UI with canvas_items stretch:
+## when the shorter side of the screen is at most this (in device-independent pixels: every phone, most tablets),
+## nothing changes; above it the whole page is scaled in proportion, so a 1440p or 4K screen gets the same layout
+## space as a 720-pixel-high one and text and controls stay comfortable, with the extra width and height used by
+## the layout. Default 720 (Godot's usual stretch base height). 0 turns it off (1 CSS px = 1 dp, as before).
+## The page can read the factor with Godot.uiScale.
+@export var ui_reference_size := 720.0:
+	set(value):
+		ui_reference_size = maxf(value, 0.0)
+		if _started and _backend:
+			_backend.set_ui_scale_reference(ui_reference_size)
+
 var is_ready := false  ## true once the page's handshake arrived; stays true across reloads (each reload sends a new handshake and page_ready)
 
 ## Only one overlay can exist at a time (the native plugin owns a single WebView).
@@ -107,6 +119,7 @@ func start(ui_dir: String, page: String = "index.html") -> bool:
 		"hot_reload": desktop_preview_hot_reload,
 		"devtools": desktop_preview_devtools,
 		"inject_scripts": desktop_preview_inject_scripts,
+		"ui_reference": ui_reference_size,
 	}
 	_backend.message.connect(_on_raw_message)
 	_backend.error.connect(_on_backend_error)

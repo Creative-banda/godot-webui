@@ -1,0 +1,620 @@
+/* In-run HUD. The layer ignores pointers; only the buttons and the stick take them, so a swipe anywhere
+   else reaches the look zone underneath. Motion is transform and opacity only. */
+
+#look-zone {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+#hud {
+  pointer-events: none;
+  z-index: 1;
+}
+
+#hud [data-webui-touch] {
+  pointer-events: auto;
+}
+
+/* ---------- time and section ---------- */
+#hud-time {
+  position: absolute;
+  top: var(--safe-top);
+  left: var(--safe-left);
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 4px;
+  padding: 8px 14px 9px;
+}
+
+#hud-time > svg {
+  width: 20px;
+  height: 20px;
+  color: var(--cyan);
+}
+
+#timer {
+  font-size: clamp(22px, 5.2vmin, 32px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+#section-chip {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+#section-chip i {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-style: normal;
+  color: #07122b;
+  background: linear-gradient(115deg, var(--mint), var(--cyan));
+}
+
+#section-chip em {
+  font-style: normal;
+  color: var(--dim);
+}
+
+/* ---------- counters and pause ---------- */
+#hud-stats {
+  position: absolute;
+  top: var(--safe-top);
+  right: var(--safe-right);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+}
+
+.chip svg {
+  width: 18px;
+  height: 18px;
+}
+
+.chip b {
+  font-size: 17px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip small {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--dim);
+}
+
+#chip-shards svg {
+  color: var(--cyan);
+}
+
+#chip-deaths svg {
+  color: var(--pink);
+}
+
+#chip-wings svg {
+  color: var(--gold);
+}
+
+.chip.pop {
+  animation: chip-pop 0.34s var(--ease);
+}
+
+@keyframes chip-pop {
+  40% {
+    transform: scale(1.18);
+  }
+}
+
+/* ---------- crosshair ---------- */
+#crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+}
+
+#crosshair i {
+  position: absolute;
+  width: 3px;
+  height: 9px;
+  margin: -4.5px 0 0 -1.5px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 0 1px rgba(8, 12, 34, 0.5);
+  transition: transform 0.18s var(--ease), opacity 0.18s;
+}
+
+#crosshair i:nth-child(1) {
+  transform: translateY(-13px);
+}
+
+#crosshair i:nth-child(2) {
+  transform: translateY(13px);
+}
+
+#crosshair i:nth-child(3) {
+  transform: translateX(-13px) rotate(90deg);
+}
+
+#crosshair i:nth-child(4) {
+  transform: translateX(13px) rotate(90deg);
+}
+
+#crosshair.sprint i:nth-child(1) {
+  transform: translateY(-22px);
+}
+
+#crosshair.sprint i:nth-child(2) {
+  transform: translateY(22px);
+}
+
+#crosshair.sprint i:nth-child(3) {
+  transform: translateX(-22px) rotate(90deg);
+}
+
+#crosshair.sprint i:nth-child(4) {
+  transform: translateX(22px) rotate(90deg);
+}
+
+#crosshair.air i {
+  opacity: 0.45;
+}
+
+/* ---------- 3D markers (positions come from Godot) ---------- */
+#markers {
+  position: absolute;
+  inset: 0;
+}
+
+.marker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+
+.marker .pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  transform: translate(-50%, -50%);
+}
+
+.marker .gem {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: var(--mark, var(--cyan));
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  transform: rotate(45deg);
+  box-shadow: 0 0 12px var(--mark, var(--cyan));
+}
+
+.marker b {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+  text-shadow: 0 1px 4px rgba(4, 6, 20, 0.9);
+}
+
+.marker small {
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 4px rgba(4, 6, 20, 0.9);
+}
+
+.marker.goal {
+  --mark: var(--gold);
+}
+
+.marker.edge .gem {
+  border-radius: 50% 50% 50% 0;
+}
+
+.marker.edge b {
+  display: none;
+}
+
+/* ---------- speed gauge ---------- */
+#speedo {
+  position: absolute;
+  left: 50%;
+  bottom: var(--safe-bottom);
+  display: grid;
+  justify-items: center;
+  width: 150px;
+  padding: 6px 12px 8px;
+  transform: translateX(-50%);
+}
+
+#speedo svg {
+  width: 112px;
+  height: 66px;
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 7;
+}
+
+.arc-bg {
+  stroke: rgba(255, 255, 255, 0.12);
+}
+
+.arc-fill {
+  stroke: var(--cyan);
+  stroke-dasharray: 126;
+  stroke-dashoffset: 126;
+}
+
+#speedo.fast .arc-fill {
+  stroke: var(--gold);
+}
+
+#speed-num {
+  margin-top: -30px;
+  font-size: 26px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+#speedo small {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+}
+
+#sprint-tag {
+  position: absolute;
+  top: -10px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: #07122b;
+  background: linear-gradient(115deg, var(--gold), var(--pink));
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s, transform 0.15s var(--ease);
+}
+
+#speedo.sprinting #sprint-tag {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- section banner, toasts, countdown ---------- */
+#banner {
+  position: absolute;
+  left: 50%;
+  top: 20%;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  text-align: center;
+  opacity: 0;
+  transform: translateX(-50%);
+}
+
+#banner small {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.4em;
+  color: var(--cyan);
+}
+
+#banner b {
+  font-size: clamp(30px, 8vmin, 56px);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-shadow: 0 4px 20px rgba(4, 6, 20, 0.7);
+}
+
+#banner.show {
+  animation: banner 2.6s var(--ease) both;
+}
+
+@keyframes banner {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(14px) scale(0.94);
+  }
+  14%,
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px) scale(1.04);
+  }
+}
+
+#toasts {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  display: grid;
+  gap: 8px;
+  width: min(86vw, 360px);
+  transform: translateX(-50%);
+}
+
+.toast {
+  position: relative;
+  padding: 9px 14px 9px 18px;
+  overflow: hidden;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  animation: toast 2.8s var(--ease) both;
+}
+
+.toast::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: var(--cyan);
+}
+
+.toast.power::before {
+  background: var(--gold);
+}
+
+.toast.checkpoint::before {
+  background: var(--mint);
+}
+
+.toast small {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dim);
+}
+
+@keyframes toast {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+  10%,
+  80% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+#countdown {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+#count-num {
+  font-size: clamp(90px, 26vmin, 190px);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 6px 34px rgba(56, 182, 255, 0.7);
+}
+
+#count-num.pop {
+  animation: count-pop 0.8s var(--ease) both;
+}
+
+@keyframes count-pop {
+  0% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+#keys-hint {
+  position: absolute;
+  left: var(--safe-left);
+  bottom: var(--safe-bottom);
+  max-width: min(300px, 30vw);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  color: var(--dim);
+  text-shadow: 0 1px 6px rgba(4, 6, 20, 0.9);
+}
+
+body.touch #keys-hint {
+  display: none;
+}
+
+#fps-chip {
+  position: absolute;
+  left: 50%;
+  top: var(--safe-top);
+  min-height: 30px;
+  transform: translateX(-50%);
+}
+
+/* ---------- full-screen effects ---------- */
+#speedlines {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background:
+    repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 255, 255, 0) 0 4deg, rgba(210, 240, 255, 0.5) 4deg 4.7deg),
+    radial-gradient(ellipse at center, rgba(120, 200, 255, 0) 40%, rgba(120, 200, 255, 0.25) 100%);
+  -webkit-mask-image: radial-gradient(ellipse at center, transparent 42%, #000 86%);
+  mask-image: radial-gradient(ellipse at center, transparent 42%, #000 86%);
+  will-change: opacity;
+}
+
+#flash {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: #fff;
+}
+
+#flash.red {
+  background: radial-gradient(ellipse at center, rgba(255, 93, 108, 0.1), rgba(255, 60, 80, 0.75));
+}
+
+#flash.gold {
+  background: radial-gradient(ellipse at center, rgba(255, 220, 140, 0.4), rgba(255, 209, 102, 0.9));
+}
+
+#flash.show {
+  animation: flash 0.7s ease-out both;
+}
+
+@keyframes flash {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---------- touch controls ---------- */
+body:not(.touch) #stick-zone,
+body:not(.touch) #btn-jump {
+  display: none;
+}
+
+#stick-zone {
+  position: absolute;
+  left: var(--safe-left);
+  bottom: var(--safe-bottom);
+  display: grid;
+  place-items: center;
+  width: calc(clamp(112px, 26vmin, 170px) + 32px);
+  height: calc(clamp(112px, 26vmin, 170px) + 32px);
+}
+
+#stick {
+  position: relative;
+  width: clamp(112px, 26vmin, 170px);
+  height: clamp(112px, 26vmin, 170px);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 182, 255, 0.3), rgba(10, 14, 38, 0.6) 70%);
+  border: 3px solid var(--edge);
+  pointer-events: none;
+}
+
+#stick.drag {
+  border-color: var(--cyan);
+}
+
+#knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46%;
+  height: 46%;
+  margin: -23% 0 0 -23%;
+  border-radius: 50%;
+  background: linear-gradient(160deg, #ffffff, #9ccfff);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  will-change: transform;
+}
+
+.jump-btn {
+  position: absolute;
+  right: var(--safe-right);
+  bottom: var(--safe-bottom);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 1px;
+  width: clamp(80px, 20vmin, 112px);
+  height: clamp(80px, 20vmin, 112px);
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #07122b;
+  background: linear-gradient(160deg, var(--mint), #05a07a);
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 22px rgba(2, 4, 16, 0.45);
+  transition: transform 0.1s var(--ease);
+}
+
+.jump-btn svg {
+  width: 30px;
+  height: 30px;
+}
+
+.jump-btn.down {
+  transform: scale(0.92);
+}
+
+@media (max-height: 460px) {
+  #hud-time {
+    padding: 6px 12px 7px;
+  }
+
+  #speedo {
+    width: 124px;
+  }
+
+  #speedo svg {
+    width: 90px;
+    height: 54px;
+  }
+
+  #speed-num {
+    margin-top: -24px;
+    font-size: 21px;
+  }
+
+  #banner {
+    top: 14%;
+  }
+
+  #toasts {
+    top: 30%;
+  }
+}

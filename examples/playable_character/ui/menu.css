@@ -352,7 +352,7 @@ body:not(.loading) #panel {
   border: 1.5px solid var(--line);
 }
 
-.screen .row {
+.rows .row {
   margin: 0;
   padding-top: 0;
   border-top: none;
