@@ -93,6 +93,10 @@ Limits: only external `.css` files are edited (rules from `<style>` blocks or `s
 
 The **WebUIScreen** node uses the same preview backend to make the picture of a page that it shows in the 2D scene editor: see [webui-screen.md](webui-screen.md).
 
+## World-space pages in the preview (snapshots)
+
+`GodotWebUI.create_surface()` and the `WebUISurface3D` node work in the preview too, but **differently from Android**: a hidden godot_wry webview lays the page out at its surface size and `web/capture.js` (the visual editor's page-to-picture code) turns it into a PNG a few times a second (`surface_preview_fps`, default 4, shared by all surfaces). So they are pictures, not a live browser: CSS animations are drawn at rest, `:hover` is not drawn, video and iframes are missing, taps are synthetic DOM events. `surface.is_preview` is true and the node shows a "DESKTOP PREVIEW" label. Use it to build and wire a page without exporting, then check the look and smoothness on a device. Details: [world-space.md](world-space.md).
+
 ## Differences from Android (read before trusting what you see)
 
 | Area | Android | Desktop preview |

@@ -79,6 +79,11 @@ func surface_read_frame(_surface_id: String) -> PackedByteArray:
 	return PackedByteArray()
 
 
+## True when surfaces are slow snapshots of the page (desktop development preview) rather than the real web view.
+func surface_is_preview() -> bool:
+	return false
+
+
 func surface_stats(_surface_id: String) -> String:
 	return "{}"
 

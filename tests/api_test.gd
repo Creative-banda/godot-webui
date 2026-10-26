@@ -22,6 +22,14 @@ class FakeBackend extends WebUIBackend:
 	var surfaces_ok := true
 	var surface_log: Array = []   # [kind, ...]
 	var frame_bytes := PackedByteArray()
+	var preview := false
+	var visibles: Array = []
+
+	func set_visible(visible: bool) -> void:
+		visibles.append(visible)
+
+	func surface_is_preview() -> bool:
+		return preview
 
 	func supports_surfaces() -> bool:
 		return surfaces_ok
@@ -74,6 +82,7 @@ func _initialize() -> void:
 	await _test_state_and_events()
 	await _test_touch_modes()
 	_test_surfaces()
+	await _test_reveal()
 	await _test_guard_and_recovery()
 	await _test_back_button()
 	_test_ui_scale()
@@ -139,11 +148,60 @@ func _test_state_and_events() -> void:
 	ui.queue_free()
 
 
+func _test_reveal() -> void:
+	await process_frame  # the root window is not in the tree yet during _initialize
+	GodotWebUI._backend_factory = func() -> WebUIBackend: return FakeBackend.new()
+	var ui := GodotWebUI.new()
+	root.add_child(ui)
+	var revealed := [0]
+	ui.revealed.connect(func() -> void: revealed[0] += 1)
+	ui.start("res://examples/minimal_hud/ui", "index.html")
+	var fake: FakeBackend = ui._backend
+	check(fake.visibles == [false], "the overlay starts hidden while the scene is loading")
+	await process_frame
+	check(revealed[0] == 0, "and stays hidden for the first frames")
+	for i in 3:
+		await process_frame
+	check(revealed[0] == 0 and fake.visibles == [false], "and until the page is ready")
+	ui._on_raw_message('{"t":"ready"}')
+	for i in 3:
+		await process_frame
+	check(revealed[0] == 1 and fake.visibles.back() == true, "it is shown once frames were drawn and the page is ready")
+	ui.hide_ui()
+	check(fake.visibles.back() == false, "hide_ui still hides it")
+	ui.show_ui()
+	check(fake.visibles.back() == true, "show_ui shows it again")
+	ui.shutdown()
+
+	var early := GodotWebUI.new()
+	root.add_child(early)
+	early.start("res://examples/minimal_hud/ui", "index.html")
+	var early_fake: FakeBackend = early._backend
+	early.hide_ui()
+	early.reveal_now()
+	check(early_fake.visibles.back() == false, "reveal_now() respects hide_ui()")
+	early.show_ui()
+	check(early_fake.visibles.back() == true, "and show_ui() then shows it at once")
+	early.shutdown()
+
+	var instant := GodotWebUI.new()
+	instant.reveal_when_scene_ready = false
+	root.add_child(instant)
+	instant.start("res://examples/minimal_hud/ui", "index.html")
+	check(instant._backend.visibles == [true], "reveal_when_scene_ready = false shows it immediately, as before")
+	instant.shutdown()
+	GodotWebUI._backend_factory = Callable()
+
+
 func _test_surfaces() -> void:
 	var made := _fake_ui()
 	var ui: GodotWebUI = made[0]
 	var fake: FakeBackend = made[1]
+	fake.preview = true
 	var surface := ui.create_surface("terminal.html", Vector2i(64, 40), 12)
+	check(surface.is_preview and ui.surface_count() == 1, "a preview backend flags its surfaces; surface_count counts them")
+	var gone := [0]
+	surface.destroyed.connect(func() -> void: gone[0] += 1)
 	check(surface.available and fake.surface_log[0] == ["create", surface.id, "terminal.html", Vector2i(64, 40), 12], "create_surface reaches the backend")
 	surface.set_state("run", {"t": 1})
 	check(fake.surface_log.size() == 1, "surface state is held until the page is ready")
@@ -168,13 +226,17 @@ func _test_surfaces() -> void:
 	fake.frame_bytes = PackedByteArray([1, 2, 3])
 	ui._on_surface_frame(surface.id, 2)
 	check(surface.frames == 1, "a wrong-sized frame is ignored")
+	var short_lived := ui.create_surface("again.html", Vector2i(64, 64))
+	check(ui.surface_count() == 2, "a second surface is counted")
+	short_lived.destroy()
+	check(ui.surface_count() == 1 and not short_lived.available, "destroy() removes a surface from the overlay")
 	fake.surfaces_ok = false
 	var plain := ui.create_surface("x.html")
 	plain.set_state("a", {})
 	plain.tap(Vector2.ZERO)
 	check(not plain.available and plain.stats().is_empty(), "without backend support a surface is an inert placeholder")
 	ui.shutdown()
-	check(not surface.available and fake.destroyed, "shutdown retires surfaces with the overlay")
+	check(not surface.available and fake.destroyed and gone[0] == 1 and ui.surface_count() == 0, "shutdown retires surfaces with the overlay and tells them")
 
 
 func _test_touch_modes() -> void:

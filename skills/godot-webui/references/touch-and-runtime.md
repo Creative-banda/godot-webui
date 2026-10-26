@@ -82,4 +82,5 @@ From the native configuration (`WebUIPlugin.java`, `LocalContentHandler.java`):
 | Logic of state/events, touch modes, duplicate guard, recovery, UI folder detection | Headless tests with fake backends; not on the real bridge |
 | REGIONS pass-through (swipe-look into the game), `set_state`/`emit_event` on the real bridge, repeated scene transitions, overlay shutdown/restart, soft keyboard (focus, typing, IME dismissal), background/resume with intact page state, region updates on scroll/viewport change (mechanism) | Verified on one Android device (vivo V2312, Android 15, debug build) |
 | `AUTO` touch mode, overlay guard, recovery, a game-layer finger together with a HUD finger (two-finger use cannot be automated over adb), orientation change (demo exports lock landscape), release builds and minification, low-end performance | Implemented, **not verified on a device** |
-| iOS, desktop as a runtime, gamepad navigation, several overlays, world-space UI | Not supported |
+| iOS, desktop as a runtime, gamepad navigation, several overlays | Not supported |
+| World-space UI (`WebUISurface3D`, `create_surface`) | Experimental: Android WebView surfaces (one phone tested); desktop only as a slow snapshot preview. See `docs/world-space.md` |

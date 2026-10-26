@@ -96,6 +96,7 @@ func _initialize() -> void:
 	await physics_frames(3)
 	check(app._scene.name == "Menu" and not paused, "back_to_menu returns to menu")
 	await _test_desktop_preview()
+	await _test_desktop_surfaces()
 	quit(failures)
 
 
@@ -130,6 +131,108 @@ class FakeWebView extends Control:
 
 	func zoom(factor: float) -> void:
 		zooms.append(factor)
+
+
+## A stand-in webview that answers a capture request with a real PNG of the requested size, like capture.js would.
+class FakeCaptureView extends FakeWebView:
+	func eval(js: String) -> void:
+		evals.append(js)
+		var run := RegEx.create_from_string("__webuiCapture\\.run\\((\\d+),(\\d+)\\)").search(js)
+		if run:
+			var image := Image.create_empty(int(run.get_string(1)), int(run.get_string(2)), false, Image.FORMAT_RGBA8)
+			image.fill(Color(0.2, 0.4, 0.6))
+			var base64 := Marshalls.raw_to_base64(image.save_png_to_buffer())
+			var chunk_size := 2000
+			var count := 0
+			for i in range(0, base64.length(), chunk_size):
+				ipc_message.emit(JSON.stringify({"t": "event", "name": "webui_capture", "payload": {"t": "chunk", "n": count, "data": base64.substr(i, chunk_size)}}))
+				count += 1
+			ipc_message.emit(JSON.stringify({"t": "event", "name": "webui_capture", "payload": {"t": "done", "chunks": count}}))
+
+
+func _test_desktop_surfaces() -> void:
+	var host := Node.new()
+	root.add_child(host)
+	var views: Array = []
+	var errors: Array = []
+	var backend := WebUIBackendDesktop.new()
+	backend.view_factory = func() -> Control:
+		var view := FakeCaptureView.new()
+		views.append(view)
+		return view
+	backend.options = {"hot_reload": false, "surface_preview_fps": 10}
+	backend.error.connect(func(code: String, _t: String) -> void: errors.append(code))
+	var frames: Array = []
+	var forwarded: Array = []
+	backend.surface_frame.connect(func(surface_id: String, frame: int) -> void: frames.append([surface_id, frame]))
+	backend.surface_message.connect(func(surface_id: String, raw: String) -> void: forwarded.append([surface_id, raw]))
+	check(not backend.supports_surfaces(), "no surfaces before the overlay exists")
+	var script := FileAccess.get_file_as_string("res://addons/webui/web/godot.js")
+	check(backend.create("res://examples/skybound/ui", script, host), "preview backend starts")
+	check(backend.supports_surfaces() and backend.surface_is_preview(), "surfaces are supported and flagged as a preview")
+
+	check(backend.create_surface("a", "terminal.html", Vector2i(128, 80), 10), "a surface is accepted")
+	check(views.size() == 1, "its webview waits until the overlay page has loaded")
+	views[0].page_load_finished.emit("http://res..webui_preview/ui/index.html")
+	await process_frame
+	backend._surface_timer.stop()  # the test drives the scheduler itself
+	check(views.size() == 2 and views[1].get_parent() == host, "then the surface gets its own webview")
+	check(views[1].props.get("full_window_size") == false and views[1].props.get("forward_input_events") == false and views[1].props.get("visible") == false and views[1].props.get("size") == Vector2(128, 80), "the surface view is hidden, page-sized and takes no input")
+
+	backend.create_surface("b", "terminal.html", Vector2i(64, 64), 10)
+	check(views.size() == 3, "a surface created after the overlay loaded opens at once")
+	check(not backend.create_surface("a", "terminal.html", Vector2i(128, 80), 10) and "surface_bad_id" in errors, "a duplicate id is refused")
+	check(not backend.create_surface("c", "nope.html", Vector2i(128, 80), 10) and "bad_path" in errors, "a page that is not in the UI folder is refused")
+	check(not backend.create_surface("c", "terminal.html", Vector2i(10, 10), 10) and "surface_bad_size" in errors, "a bad size is refused")
+
+	# page loads: the helper scripts are injected, then it can be captured
+	views[1].page_load_finished.emit("http://res..webui_preview/ui/terminal.html")
+	views[2].page_load_finished.emit("http://res..webui_preview/ui/terminal.html")
+	await process_frame
+	check(views[1].evals.any(func(js: String) -> bool: return js.contains("window.__godotSurface=\"a\"") and js.contains("__webuiSurfaceTap")), "the page gets its surface id, the capture and the tap scripts")
+
+	backend._surface_tick()
+	var capturing := 0
+	for view: FakeCaptureView in [views[1], views[2]]:
+		if view.evals.any(func(js: String) -> bool: return js.contains("__webuiCapture.run(")):
+			capturing += 1
+	await process_frame
+	check(capturing == 1, "only one capture is in flight across surfaces")
+	check(frames.size() == 1 and backend.surface_read_frame(frames[0][0]).size() == 128 * 80 * 4 or frames.size() == 1 and backend.surface_read_frame(frames[0][0]).size() == 64 * 64 * 4, "the picture arrives as RGBA bytes of the surface size")
+	check(JSON.parse_string(backend.surface_stats(frames[0][0])).frames == 1, "stats count the frame")
+	var first_id: String = frames[0][0]
+	backend.surface_set_active("a", false)
+	backend.surface_set_active("b", false)
+	backend._surface_tick()
+	await process_frame
+	check(frames.size() == 1, "inactive surfaces are not captured")
+	backend.surface_set_active(first_id, true)
+	backend.surface_tap(first_id, 12.4, 30.6)
+	var tapped := false
+	for view: FakeCaptureView in [views[1], views[2]]:
+		tapped = tapped or view.evals.any(func(js: String) -> bool: return js.contains("__webuiSurfaceTap(12,31)"))
+	check(tapped, "a tap becomes a synthetic tap in the page at the rounded pixel")
+
+	views[1].ipc_message.emit('{"t":"ready"}')
+	views[1].ipc_message.emit('{"t":"viewport","w":100,"h":100,"dpr":1}')
+	await process_frame
+	check(forwarded == [["a", '{"t":"ready"}']], "page messages are forwarded with the surface id; viewport reports are dropped")
+
+	# cap and cleanup
+	for i in range(6):
+		backend.create_surface("x%d" % i, "terminal.html", Vector2i(64, 64), 10)
+	check(not backend.create_surface("too_many", "terminal.html", Vector2i(64, 64), 10) and "surface_limit" in errors, "at most 8 surfaces")
+	backend.destroy_surface("b")
+	await process_frame
+	check(not is_instance_valid(views[2]) or views[2].is_queued_for_deletion(), "destroying a surface frees its webview")
+	backend.destroy()
+	await process_frame
+	var left := 0
+	for view in views:
+		if is_instance_valid(view) and not view.is_queued_for_deletion():
+			left += 1
+	check(left == 0, "destroy() frees the overlay view and every surface view")
+	host.queue_free()
 
 
 func _test_desktop_preview() -> void:

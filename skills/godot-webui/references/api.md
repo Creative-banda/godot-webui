@@ -48,13 +48,23 @@ Payload rules for `set_state` / `emit_event`: a `Dictionary` that `JSON.stringif
 | `back_requested` | Android Back was pressed and the page did not use it (only with `handle_back_button`). Decide what Back does: pause, previous scene, `get_tree().quit()`. |
 | `recovered` | The overlay was re-created after the WebView renderer died (best effort). State from `set_state` is restored; events are not. |
 
-### World-space pages (experimental, Android only)
+### World-space pages (experimental)
 
-`create_surface(page, size := Vector2i(640, 400), fps := 10) -> GodotWebUISurface` draws a page of the same UI folder onto a
-texture (put `surface.texture` on a material). Call it after `start()`. The surface has `on`, `off`, `set_state`,
-`emit_event`, `tap(pixel)`, `tap_uv(uv)`, `set_active(bool)`, `stats()`, `destroy()`, signals `page_ready`, `event_received`,
-`frame_updated`, and `available` (false off Android: everything is a no-op). Input is taps only (use a raycast, map the hit
-to page pixels). Redraw rate is low (10 Hz default). Details, measurements and limits: `docs/world-space.md`.
+Show a page of the UI folder on a surface in the 3D world. Preferred: the **`WebUISurface3D`** node (a `StaticBody3D`):
+set `page`, `page_size`, `world_width`; start the overlay first and the node attaches by itself. `on()`, `set_state()`,
+`emit_event()` work before it is attached. `aim(camera)` / `use(camera)` cast the camera's centre ray at the screen and
+tap the page at the hit pixel; signals `page_ready`, `page_event`, `aimed_changed`, `attached`, `detached`. It sends the
+page the state `cursor` `{aimed, x, y}`. Lower level: `GodotWebUI.create_surface(page, size := Vector2i(640, 400), fps := 10)
+-> GodotWebUISurface` (`texture`, `on`, `off`, `set_state`, `emit_event`, `tap(pixel)`, `tap_uv(uv)`, `set_active`, `stats`,
+`destroy`, `is_preview`, `available`; signals `page_ready`, `event_received`, `frame_updated`, `destroyed`).
+
+Platforms: Android draws the real page with a second WebView (about 10 Hz). The editor-run desktop preview shows
+**snapshots** of the page a few times a second (`GodotWebUI.surface_preview_fps`, `is_preview` true, animations drawn at
+rest, no `:hover`, synthetic taps) so you can lay out and wire a page without exporting; never present it as real-time
+browser rendering. Elsewhere `available` is false and every call is a no-op. Taps only (no drag/scroll/text); pages need an
+opaque background; at most 8 surfaces. Details, measurements and limits: `docs/world-space.md`.
+
+`reveal_when_scene_ready` (default true): the overlay stays hidden until the game has drawn `reveal_delay_frames` frames and the page is ready, then `revealed` is emitted. Use `reveal_now()` to show it earlier; `hide_ui()` still hides it.
 
 ## JavaScript: `window.Godot`
 

@@ -25,6 +25,8 @@ const EXTENSION_FILE := "WRY.gdextension"
 const ENV_VAR := "GODOT_WEBUI_WRY"
 const GLOBAL_SUBDIR := "godot_webui/godot_wry"
 const MAX_UI_SCALE := 4.0  # same cap as the Android plugin
+const MAX_SURFACES := 8  # same cap as the Android plugin
+const SURFACE_TICK_SECONDS := 0.05
 
 ## Tests inject a stand-in for the godot_wry node here. Returns a Control with the WebView API.
 var view_factory := Callable()
@@ -41,6 +43,10 @@ var _hold_reload := false
 var _modal_note_shown := false
 var _ui_reference := 720.0
 var _zoom := 1.0  # page zoom applied to the webview = the UI scale
+var _surfaces := {}  # surface id -> WebUISurfacePreview
+var _surface_timer: Timer
+var _overlay_loaded := false  # the overlay's page finished loading: only then may more webviews be created
+var _waiting_surfaces: Array = []  # surfaces created before that, opened afterwards
 
 
 func get_backend_name() -> String:
@@ -138,6 +144,9 @@ func create(ui_dir: String, bridge_script: String, host: Node = null) -> bool:
 	view.connect("ipc_message", _on_ipc_message)
 	view.connect("page_load_finished", func(url: String) -> void:
 		_publish_ui_scale()  # a new document starts at 1x
+		if not url.begins_with("about:") and not _overlay_loaded:
+			_overlay_loaded = true
+			_open_waiting_surfaces.call_deferred()
 		page_loaded.emit(url))
 	host.add_child(view)
 	_view = view
@@ -189,6 +198,12 @@ func set_ui_scale_reference(css_pixels: float) -> void:
 
 
 func destroy() -> void:
+	_waiting_surfaces.clear()
+	for surface_id: String in _surfaces.keys():
+		destroy_surface(surface_id)
+	if _surface_timer:
+		_surface_timer.queue_free()
+		_surface_timer = null
 	if _timer:
 		_timer.stop()
 		_timer.queue_free()
@@ -350,6 +365,7 @@ func sync_baseline() -> void:
 func reload_now() -> void:
 	if _view and _stage():
 		_mtimes = _scan(_ui_dir)
+		_reload_surfaces()
 		if _page.is_empty():
 			_view.call("reload")
 		else:
@@ -364,7 +380,140 @@ func _poll_sources() -> void:
 		return
 	if _stage() and _view:
 		print("[WebUI preview] UI files changed; reloading.")
+		_reload_surfaces()
 		if _page.is_empty():
 			_view.call("reload")
 		else:
 			_view.call("load_url", STAGE_UI.path_join(_page))
+
+
+# ---------------------------------------------------------------- world-space pages (snapshot preview)
+
+func supports_surfaces() -> bool:
+	return _view != null
+
+
+func surface_is_preview() -> bool:
+	return true
+
+
+func create_surface(surface_id: String, page: String, size: Vector2i, fps: int) -> bool:
+	if _view == null or _host == null or not _host.is_inside_tree():
+		error.emit("surface_no_overlay", "create_surface() needs the overlay to be started first.")
+		return false
+	if page.is_empty() or page.begins_with("/") or page.contains("..") or page.contains(":"):
+		error.emit("bad_path", "Invalid UI path: %s" % page)
+		return false
+	if not FileAccess.file_exists(STAGE_UI.path_join(page)):
+		error.emit("bad_path", "Page '%s' was not found in the UI folder %s." % [page, _ui_dir])
+		return false
+	if _surfaces.has(surface_id):
+		error.emit("surface_bad_id", "Duplicate surface id: %s" % surface_id)
+		return false
+	if _surfaces.size() >= MAX_SURFACES:
+		error.emit("surface_limit", "At most %d world-space pages can exist at once; destroy one first." % MAX_SURFACES)
+		return false
+	if size.x < 64 or size.y < 64 or size.x > 2048 or size.y > 2048:
+		error.emit("surface_bad_size", "Surface size must be 64..2048 pixels, got %dx%d" % [size.x, size.y])
+		return false
+	var preview_fps := clampi(int(options.get("surface_preview_fps", 4)), 1, 10)
+	var surface := WebUISurfacePreview.new(surface_id, page, size, mini(clampi(fps, 1, 30), preview_fps))
+	surface.message.connect(func(raw: String) -> void: surface_message.emit(surface_id, raw))
+	surface.frame_ready.connect(func() -> void: surface_frame.emit(surface_id, surface.frames))
+	surface.failed.connect(func(code: String, text: String) -> void: error.emit(code, text))
+	_surfaces[surface_id] = surface
+	if _overlay_loaded:
+		_open_surface(surface)
+	else:
+		# The extension cannot create a second webview while the first one is still loading (it panics), so the
+		# surface waits for the overlay's page.
+		_waiting_surfaces.append(surface)
+	if _surfaces.size() == 1:
+		print("[WebUI preview] World-space pages are drawn as snapshots (about %d per second, shared between surfaces), not live. Animations are drawn at rest and taps are synthetic events. Android draws the real page." % preview_fps)
+	return true
+
+
+func _open_waiting_surfaces() -> void:
+	var waiting := _waiting_surfaces.duplicate()
+	_waiting_surfaces.clear()
+	for surface: WebUISurfacePreview in waiting:
+		if _surfaces.get(surface.id) == surface:
+			_open_surface(surface)
+
+
+func _open_surface(surface: WebUISurfacePreview) -> void:
+	if _host == null or not _host.is_inside_tree():
+		return
+	var view: Control = view_factory.call() if view_factory.is_valid() else ClassDB.instantiate(DEPENDENCY_CLASS)
+	if not surface.open(_host, view, STAGE_UI.path_join(surface.page)):
+		view.free()
+		return
+	if _surface_timer == null:
+		_surface_timer = Timer.new()
+		_surface_timer.wait_time = SURFACE_TICK_SECONDS
+		_surface_timer.timeout.connect(_surface_tick)
+		_host.add_child(_surface_timer)
+		_surface_timer.start()
+
+
+func destroy_surface(surface_id: String) -> void:
+	var surface: WebUISurfacePreview = _surfaces.get(surface_id)
+	if surface == null:
+		return
+	_surfaces.erase(surface_id)
+	_waiting_surfaces.erase(surface)
+	surface.destroy()
+	if _surfaces.is_empty() and _surface_timer:
+		_surface_timer.queue_free()
+		_surface_timer = null
+
+
+func surface_send(surface_id: String, event_name: String, json_payload: String) -> void:
+	var surface: WebUISurfacePreview = _surfaces.get(surface_id)
+	if surface:
+		surface.send(event_name, json_payload)
+
+
+func surface_tap(surface_id: String, x: float, y: float) -> void:
+	var surface: WebUISurfacePreview = _surfaces.get(surface_id)
+	if surface:
+		surface.tap(x, y)
+
+
+func surface_set_active(surface_id: String, active: bool) -> void:
+	var surface: WebUISurfacePreview = _surfaces.get(surface_id)
+	if surface:
+		surface.active = active
+
+
+func surface_read_frame(surface_id: String) -> PackedByteArray:
+	var surface: WebUISurfacePreview = _surfaces.get(surface_id)
+	return surface.rgba if surface else PackedByteArray()
+
+
+func surface_stats(surface_id: String) -> String:
+	var surface: WebUISurfacePreview = _surfaces.get(surface_id)
+	return JSON.stringify(surface.stats()) if surface else "{}"
+
+
+## One picture at a time across all surfaces: the most overdue active surface goes first, so many surfaces share the
+## budget instead of stacking up work.
+func _surface_tick() -> void:
+	var now := Time.get_ticks_msec()
+	var best: WebUISurfacePreview
+	for surface: WebUISurfacePreview in _surfaces.values():
+		if surface.timed_out(now):
+			surface.capturing = false  # lost: let the next one through
+		if surface.capturing:
+			return
+		if not surface.active or not surface.loaded or now - surface.last_request_msec < surface.interval_msec:
+			continue
+		if best == null or surface.last_request_msec < best.last_request_msec:
+			best = surface
+	if best:
+		best.request_capture()
+
+
+func _reload_surfaces() -> void:
+	for surface: WebUISurfacePreview in _surfaces.values():
+		surface.reload(STAGE_UI.path_join(surface.page))

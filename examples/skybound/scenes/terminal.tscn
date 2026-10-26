@@ -1,6 +1,16 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://examples/skybound/scripts/sb_terminal.gd" id="1_term"]
+[ext_resource type="Script" path="res://addons/webui/webui_surface_3d.gd" id="2_screen"]
 
-[node name="Terminal" type="StaticBody3D"]
+[node name="Terminal" type="Node3D"]
 script = ExtResource("1_term")
+
+[node name="Screen" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0.005)
+script = ExtResource("2_screen")
+page = "terminal.html"
+page_size = Vector2i(640, 400)
+world_width = 2.4
+active_distance = 32.0
+aim_reach = 3.2

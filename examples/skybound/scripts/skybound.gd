@@ -83,8 +83,7 @@ func _ready() -> void:
 	_apply_settings()
 	_enter_menu()
 	ui.start(UI_DIR, "index.html")
-	# A second page, drawn onto the terminal in the world (Android; elsewhere the terminal shows a plain label).
-	terminal.attach(ui)
+	# The terminal's screen (a WebUISurface3D node) finds the overlay by itself and draws terminal.html onto the 3D screen.
 	terminal.action_requested.connect(_on_terminal_action)
 	_dev_arguments.call_deferred()
 
@@ -134,10 +133,11 @@ func _wire_level() -> void:
 ## Optional arguments after `--` (godot ... -- --sb-autostart): used for screenshots and smoke tests.
 ##   --sb-touch      show the touch controls (stick, jump) in the desktop preview
 ##   --sb-sprint     run forward with sprint held;  --sb-about  open the About panel
+##   --sb-terminal   stand in front of the run terminal (its screen is a WebUISurface3D)
 ##   --sb-autostart  start a run by itself;  --sb-run  also run forward and jump;  --sb-pause / --sb-results  end there
 func _dev_arguments() -> void:
 	var args := OS.get_cmdline_user_args()
-	if not ("--sb-autostart" in args or "--sb-run" in args or "--sb-sprint" in args or "--sb-about" in args 			or "--sb-pause" in args or "--sb-results" in args):
+	if not ("--sb-autostart" in args or "--sb-run" in args or "--sb-sprint" in args or "--sb-about" in args 			or "--sb-pause" in args or "--sb-results" in args or "--sb-terminal" in args):
 		return
 	await get_tree().create_timer(2.0).timeout
 	if "--sb-about" in args:
@@ -145,6 +145,10 @@ func _dev_arguments() -> void:
 		return
 	start_run()
 	await get_tree().create_timer(3.6).timeout
+	if "--sb-terminal" in args:
+		player.global_position = terminal.global_position + terminal.global_basis.z * 2.2 + Vector3(0, 0.2, 0)
+		player.camera.look_at(terminal.screen.global_position)
+		return
 	if "--sb-sprint" in args:
 		player.sprint_held = true
 	if "--sb-run" in args or "--sb-sprint" in args:
@@ -378,11 +382,10 @@ func _process(delta: float) -> void:
 		_update_terminal()
 
 
-## The terminal page is redrawn about 10 times a second at most, so its figures and the aim cursor are refreshed at 10 Hz.
+## The terminal page is redrawn about 10 times a second at most, so its figures are refreshed at 10 Hz. The node tells
+## us when the crosshair is on the screen; the HUD shows its USE button then.
 func _update_terminal() -> void:
-	var cam := get_viewport().get_camera_3d()
-	terminal.update_aim(cam)
-	var aimed := terminal.aimed and mode == Mode.PLAYING
+	var aimed := terminal.screen.aimed and mode == Mode.PLAYING
 	if aimed != _aim_sent:
 		_aim_sent = aimed
 		ui.set_state("aim", {"terminal": aimed})

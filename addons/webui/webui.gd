@@ -23,6 +23,8 @@ enum TouchMode {
 
 ## Fired each time the page has loaded and its bridge handshake arrived. Send initial state here.
 signal page_ready
+## The overlay became visible after start() (see reveal_when_scene_ready). Emitted once per start().
+signal revealed
 ## Every validated page event, in addition to handlers registered with on().
 signal event_received(event_name: String, payload: Dictionary)
 ## Native or protocol problems (code is a short identifier, e.g. "blocked_navigation").
@@ -79,6 +81,17 @@ const RECOVERY_WINDOW_MSEC := 60000
 ## Bitmap. Measured on a device; see docs/world-space.md.
 @export_enum("Software:0", "Hardware:1") var surface_capture_mode := 1
 
+## How often world-space pages are redrawn in the DESKTOP development preview (1-10, shared between surfaces). The preview
+## draws snapshots of the page, not live video; Android ignores this and uses `fps` of create_surface().
+@export_range(1, 10) var surface_preview_fps := 4
+
+## Keep the overlay hidden until the game has drawn a few frames and the page is ready, so the page never appears on top of
+## the engine's boot splash or a scene that is still loading. The page keeps loading while hidden. Turn off to show it as
+## soon as start() returns. Use reveal_now() to show it earlier, hide_ui() to keep it hidden on purpose.
+@export var reveal_when_scene_ready := true
+## How many frames the game must have drawn before the overlay is revealed (see reveal_when_scene_ready).
+@export_range(0, 60) var reveal_delay_frames := 3
+
 var is_ready := false  ## true once the page's handshake arrived; stays true across reloads (each reload sends a new handshake and page_ready)
 
 ## Only one overlay can exist at a time (the native plugin owns a single WebView).
@@ -93,6 +106,8 @@ var _pending_events: Array = []  # [name, JSON] in order, held until the page is
 var _state_cache := {}       # name -> JSON of every set_state, used to restore a recovered overlay
 var _started := false
 var _visible := true
+var _revealed := true  # false while waiting for the scene (reveal_when_scene_ready)
+var _reveal_serial := 0
 var _start_msec := 0
 var _ui_dir := ""
 var _page := ""
@@ -127,6 +142,7 @@ func start(ui_dir: String, page: String = "index.html") -> bool:
 		"inject_scripts": desktop_preview_inject_scripts,
 		"ui_reference": ui_reference_size,
 		"surface_mode": surface_capture_mode,
+		"surface_preview_fps": surface_preview_fps,
 	}
 	_backend.message.connect(_on_raw_message)
 	_backend.error.connect(_on_backend_error)
@@ -146,8 +162,11 @@ func start(ui_dir: String, page: String = "index.html") -> bool:
 	_apply_back_setting()
 	_regions_opted_in = false
 	_backend.set_touch_mode(_native_touch_mode())
-	_backend.set_visible(_visible)
+	_revealed = not reveal_when_scene_ready
+	_backend.set_visible(_visible and _revealed)
 	_backend.load_page(page)
+	if not _revealed:
+		_reveal_when_ready()
 	return true
 
 
@@ -236,7 +255,7 @@ func send(state_name: String, payload: Dictionary) -> void:
 func show_ui() -> void:
 	_visible = true
 	if _started:
-		_backend.set_visible(true)
+		_backend.set_visible(_revealed)
 
 
 func hide_ui() -> void:
@@ -245,16 +264,54 @@ func hide_ui() -> void:
 		_backend.set_visible(false)
 
 
+## Ends the wait of reveal_when_scene_ready now (the overlay still obeys hide_ui()).
+func reveal_now() -> void:
+	if _started and not _revealed:
+		_revealed = true
+		_backend.set_visible(_visible)
+		revealed.emit()
+
+
+## Waits for the game to draw `reveal_delay_frames` frames, then for the page's handshake (at most 5 s more), then shows it.
+func _reveal_when_ready() -> void:
+	_reveal_serial += 1
+	var serial := _reveal_serial
+	if not is_inside_tree():
+		reveal_now.call_deferred()
+		return
+	var headless := DisplayServer.get_name() == "headless"
+	for i in range(maxi(reveal_delay_frames, 1)):
+		if headless:
+			await get_tree().process_frame
+		else:
+			await RenderingServer.frame_post_draw
+		if serial != _reveal_serial or not _started or not is_inside_tree():
+			return
+	var deadline := Time.get_ticks_msec() + 5000
+	while not is_ready and Time.get_ticks_msec() < deadline:
+		await get_tree().process_frame
+		if serial != _reveal_serial or not _started or not is_inside_tree():
+			return
+	reveal_now()
+
+
 func set_touch_mode(mode: TouchMode) -> void:
 	touch_mode = mode
 	if _started:
 		_backend.set_touch_mode(_native_touch_mode())
 
 
+## The overlay that is running now, or null. World-space nodes use it to find their GodotWebUI.
+static func active_overlay() -> GodotWebUI:
+	return _active if is_instance_valid(_active) and _active._started else null
+
+
 ## A page drawn onto a surface in the 3D world (a terminal, a wall screen) instead of over the screen: see
-## GodotWebUISurface. `page` is a file of the same UI folder as the overlay; `size` is its layout size in CSS pixels
-## (and the texture size); `fps` is how often it is redrawn (1-30). Needs start() first. On platforms without world-space
-## pages (everything but Android) the returned surface has `available == false` and does nothing.
+## GodotWebUISurface (or the WebUISurface3D node, which wraps this). `page` is a file of the same UI folder as the
+## overlay; `size` is its layout size in CSS pixels (and the texture size, 64..2048); `fps` is how often it is redrawn
+## (1-30). Needs start() first. On Android the page is drawn by a real WebView. In the editor-run desktop preview it is a
+## slow snapshot (`surface.is_preview`, see GodotWebUISurface). Elsewhere the surface has `available == false` and does
+## nothing. At most 8 surfaces can exist at once.
 func create_surface(page: String, size: Vector2i = Vector2i(640, 400), fps := 10) -> GodotWebUISurface:
 	_surface_serial += 1
 	var surface_id := "surface%d" % _surface_serial
@@ -264,21 +321,32 @@ func create_surface(page: String, size: Vector2i = Vector2i(640, 400), fps := 10
 	elif not _started:
 		_report("surface_no_overlay", "create_surface() needs start() first: world-space pages share the overlay's UI folder.")
 	else:
-		_report("surface_unsupported", "World-space pages are only available in Android builds with the current plugin binary (backend '%s')." % get_backend_name())
+		_report("surface_unsupported", "World-space pages are only available on Android and in the editor-run desktop preview (backend '%s')." % get_backend_name())
 	var surface := GodotWebUISurface.new(surface_id, size, _backend, ok)
-	_surfaces[surface_id] = surface
+	if ok:
+		surface.is_preview = _backend.surface_is_preview()
+		_surfaces[surface_id] = surface
+		surface.destroyed.connect(func() -> void: _surfaces.erase(surface_id), CONNECT_ONE_SHOT)
 	return surface
+
+
+## How many world-space pages exist right now.
+func surface_count() -> int:
+	return _surfaces.size()
 
 
 ## Removes the overlay and frees native resources. Safe to call repeatedly.
 func shutdown() -> void:
-	for surface: GodotWebUISurface in _surfaces.values():
-		surface.available = false
-		surface.is_ready = false
+	_reveal_serial += 1
+	var retired: Array = _surfaces.values()
 	_surfaces.clear()
 	if _backend:
-		_backend.destroy()
+		_backend.destroy()  # frees the native side of every surface too
 		_backend = null
+	for surface: GodotWebUISurface in retired:
+		surface.available = false
+		surface.is_ready = false
+		surface.destroyed.emit()
 	if _active == self:
 		_active = null
 	_started = false
@@ -303,7 +371,7 @@ func _notification(what: int) -> void:
 
 ## Offers the Back press to the page; back_requested follows if the page does not use it.
 func _ask_page_back() -> void:
-	if not is_ready or not _visible:
+	if not is_ready or not _visible or not _revealed:
 		back_requested.emit()
 		return
 	_back_serial += 1

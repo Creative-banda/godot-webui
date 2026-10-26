@@ -61,6 +61,7 @@ public class WebUIPlugin extends GodotPlugin {
 
     /** The UI scale never exceeds this, whatever the screen (a 4K TV at density 1.0 needs about 3). */
     private static final float MAX_UI_SCALE = 4f;
+    private static final int MAX_SURFACES = 8;
 
     private OverlayWebView webView;
     private String uiRootDir = "";
@@ -154,6 +155,12 @@ public class WebUIPlugin extends GodotPlugin {
         runOnUiThread(() -> {
             if (webView != null) {
                 webView.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
+                if (visible) {
+                    // A WebView that loaded while invisible has painted nothing: wake the compositor and redraw.
+                    webView.onResume();
+                    webView.requestLayout();
+                    webView.invalidate();
+                }
             }
         });
     }
@@ -243,7 +250,7 @@ public class WebUIPlugin extends GodotPlugin {
     @Override
     public void onMainPause() {
         for (WorldSurface surface : new java.util.ArrayList<>(surfaces.values())) {
-            surface.setActive(false);
+            surface.setPaused(true);
         }
         OverlayWebView view = webView;
         if (view != null) {
@@ -255,7 +262,7 @@ public class WebUIPlugin extends GodotPlugin {
     @Override
     public void onMainResume() {
         for (WorldSurface surface : new java.util.ArrayList<>(surfaces.values())) {
-            surface.setActive(true);
+            surface.setPaused(false);
         }
         OverlayWebView view = webView;
         if (view != null) {
@@ -463,6 +470,10 @@ public class WebUIPlugin extends GodotPlugin {
         }
         if (page == null || page.isEmpty() || page.startsWith("/") || page.contains("..") || page.contains(":")) {
             fail("bad_path", "Invalid UI path: " + page);
+            return;
+        }
+        if (surfaces.size() >= MAX_SURFACES) {
+            fail("surface_limit", "At most " + MAX_SURFACES + " world-space pages can exist at once; destroy one first.");
             return;
         }
         if (width < 64 || height < 64 || width > 2048 || height > 2048) {

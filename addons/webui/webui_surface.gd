@@ -9,7 +9,8 @@ extends RefCounted
 ##   screen.set_state("progress", {"shards": 12})       # Godot -> page, like GodotWebUI.set_state()
 ##   screen.tap_uv(hit_uv)                              # a tap at a point of the surface (from a raycast)
 ##
-## Android only (an off-screen WebView drawn into frames, see WorldSurface.java). Elsewhere `available` is false, the
+## Android: an off-screen WebView drawn into frames (see WorldSurface.java). Desktop: only in the editor-run development
+## preview, as slow snapshots of the page (`is_preview`, see docs/world-space.md). Elsewhere `available` is false, the
 ## texture stays a plain placeholder and every call is a harmless no-op, so game code does not need to branch.
 ## Not verified beyond the one device it was measured on; limits are listed in docs/world-space.md.
 
@@ -19,6 +20,8 @@ signal page_ready
 signal event_received(event_name: String, payload: Dictionary)
 ## A new frame was copied into `texture`.
 signal frame_updated
+## destroy() ran, or the overlay was shut down; the surface does nothing afterwards.
+signal destroyed
 
 const EVENT_PREFIX := "@e:"
 const MAX_PENDING_EVENTS := 64
@@ -28,6 +31,9 @@ var size := Vector2i.ZERO
 ## False where the platform cannot draw web pages into textures (everything except an Android build).
 var available := false
 var is_ready := false
+## True in the desktop development preview: the texture is a snapshot of the page a few times a second (animations at
+## rest, no :hover, synthetic taps), not the real WebView of Android. Do not judge final look or smoothness from it.
+var is_preview := false
 ## The page as a texture: put it on a material. Updated about `fps` times a second while the surface is active.
 var texture: ImageTexture
 ## Frames received so far.
@@ -121,8 +127,11 @@ func stats() -> Dictionary:
 func destroy() -> void:
 	if available:
 		_backend.destroy_surface(id)
+	var was_alive := available or is_ready
 	available = false
 	is_ready = false
+	if was_alive:
+		destroyed.emit()
 
 
 # ---------------------------------------------------------------- called by GodotWebUI

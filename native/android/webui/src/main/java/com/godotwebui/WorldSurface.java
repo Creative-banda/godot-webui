@@ -81,7 +81,9 @@ final class WorldSurface {
     private int frame = 0;
 
     private boolean loaded = false;
-    private boolean active = true;
+    private boolean active = true;        // effective: wanted by Godot and the activity is running
+    private boolean wanted = true;        // set by Godot (setActive)
+    private boolean paused = false;       // the activity is paused
     private boolean destroyed = false;
     private long drawStartNs = 0;
 
@@ -355,10 +357,25 @@ final class WorldSurface {
         event.recycle();
     }
 
-    /** Stops or restarts drawing (a screen nobody can see needs no frames). */
+    /** Godot's wish: stops or restarts drawing (a screen nobody can see needs no frames). Survives pause and resume. */
     void setActive(boolean value) {
-        active = value;
-        if (value) {
+        wanted = value;
+        applyActive();
+    }
+
+    /** The activity's lifecycle: a paused app draws nothing, and on resume only the surfaces Godot still wants draw again. */
+    void setPaused(boolean value) {
+        paused = value;
+        applyActive();
+    }
+
+    private void applyActive() {
+        boolean now = wanted && !paused;
+        if (now == active) {
+            return;
+        }
+        active = now;
+        if (now) {
             view.onResume();
             scheduleNext(0);
         } else {
