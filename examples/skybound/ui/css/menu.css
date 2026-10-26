@@ -54,7 +54,7 @@
   grid-area: main;
   display: grid;
   gap: 10px;
-  width: min(420px, 100%);
+  width: min(460px, 100%);
   animation: rise-in 0.5s var(--ease) 0.1s both;
 }
 
@@ -199,4 +199,15 @@
     justify-self: start;
     text-align: left;
   }
+}
+
+#menu-main .row {
+  flex-wrap: wrap;
+}
+
+#menu-main .ghost {
+  min-width: 0;
+  padding: 8px 10px;
+  font-size: 13px;
+  white-space: nowrap;
 }

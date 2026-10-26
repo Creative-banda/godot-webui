@@ -1,7 +1,7 @@
 // Screens: which layer is up (Godot says which), the settings panel, the record card, the results reveal and the
 // Android Back button. Godot owns every value shown here; the page only asks for changes and shows the answer.
 (() => {
-  const { $, emit, fmt, fmtShort } = SB;
+  const { $, emit, fmt, fmtShort, restart } = SB;
 
   // ---------- which screen
   function applyScreen(s) {
@@ -10,6 +10,7 @@
     document.body.dataset.screen = s.name;
     $('menu').hidden = s.name !== 'menu';
     $('hud').hidden = !(s.name === 'play' || s.name === 'pause');
+    if (s.name === 'play' && was !== 'play' && was !== 'pause') restart($('keys-hint'), 'show');
     $('look-zone').hidden = s.name !== 'play';
     $('pause').hidden = s.name !== 'pause';
     $('results').hidden = s.name !== 'results';
@@ -56,6 +57,8 @@
   const on = (id, fn) => $(id).addEventListener('click', fn);
   on('btn-play', () => emit('start_run'));
   on('btn-howto', () => openPanel('howto'));
+  on('btn-about', () => openPanel('about'));
+  on('btn-about-back', closePanel);
   on('btn-settings', () => openPanel('settings'));
   on('btn-quit', () => emit('quit'));
   on('btn-pause', () => emit('pause'));
@@ -74,7 +77,8 @@
     sensitivity: { el: $('set-sensitivity'), out: $('out-sensitivity'), text: (v) => `${Number(v).toFixed(1)}x` },
     fov: { el: $('set-fov'), out: $('out-fov'), text: (v) => String(Math.round(v)) },
   };
-  const toggles = ['invert_y', 'auto_sprint', 'head_bob', 'speed_lines', 'show_fps'];
+  const toggles = ['effects', 'invert_y', 'auto_sprint', 'head_bob', 'speed_lines', 'show_fps'];
+  const quality = $('seg-render_scale');
   let dragging = '';
 
   for (const [key, s] of Object.entries(sliders)) {
@@ -91,8 +95,18 @@
     });
   }
 
+  quality.addEventListener('click', (e) => {
+    const button = e.target.closest('button');
+    if (button) emit('settings_changed', { render_scale: Number(button.dataset.value) });
+  });
+
   Godot.onState('settings', (s) => {
     SB.settings = s;
+    for (const button of quality.querySelectorAll('button')) {
+      const on = Number(button.dataset.value) === s.render_scale;
+      button.classList.toggle('on', on);
+      if (on) $('out-render_scale').textContent = button.dataset.name;
+    }
     for (const [key, slider] of Object.entries(sliders)) {
       if (dragging !== key) slider.el.value = s[key];
       slider.out.textContent = slider.text(s[key]);
@@ -122,8 +136,17 @@
       : 'No finish yet. Reach the beacon.';
   });
 
-  // Development switch (Godot argument --sb-touch): show the touch controls in the desktop preview.
-  Godot.onState('dev', (d) => document.body.classList.toggle('touch', !!d.touch));
+  // Development argument (--sb-about): open a panel without clicking, for screenshots.
+  Godot.onEvent('dev_open', (e) => openPanel(e.panel));
+
+  // Touch controls or keyboard hints: Godot knows the real platform.
+  Godot.onState('platform', (p) => SB.setTouch(p.touch));
+
+  // About: where it runs.
+  Godot.onState('info', (i) => {
+    $('ab-engine').textContent = `Godot ${i.engine.split(' ')[0]} on ${i.os}`;
+    $('ab-renderer').textContent = i.renderer;
+  });
 
   // ---------- results
   let results = null;

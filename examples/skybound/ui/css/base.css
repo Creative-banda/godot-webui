@@ -1,3 +1,22 @@
+/* The interface font ships inside the UI folder (fonts/), so every device draws the same letters: an Android phone
+   has neither Segoe UI nor Inter. Inter is licensed under the SIL OFL (fonts/inter-LICENSE.txt). Weights 800 and
+   900 use the 700 face. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("../fonts/inter-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+  src: url("../fonts/inter-700.woff2") format("woff2");
+}
+
 /* Skybound: design tokens, resets and the shared building blocks (glass panels, buttons, toggles, ranges).
    Everything that moves animates transform or opacity only; panels use gradients, never blur. */
 
@@ -23,7 +42,10 @@
   --safe-bottom: max(var(--gap), env(safe-area-inset-bottom));
   --safe-left: max(var(--gap), env(safe-area-inset-left));
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --font: "Segoe UI", system-ui, -apple-system, "Roboto", sans-serif;
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", "Roboto", sans-serif;
+  /* Where the thumbs rest in a two-thumb landscape grip: in from the side and up from the bottom, never in the corner. */
+  --thumb-x: clamp(24px, 7vw, 96px);
+  --thumb-y: clamp(24px, 16vh, 96px);
 }
 
 * {

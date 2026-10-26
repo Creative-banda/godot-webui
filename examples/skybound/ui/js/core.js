@@ -9,8 +9,9 @@
     profile: {},
     screen: 'menu',
     panel: '',
-    // Touch controls on phones; keyboard and mouse hints in the desktop preview (unless it has a touch screen).
-    touch: !Godot.preview || navigator.maxTouchPoints > 0,
+    // Touch controls or keyboard hints. Godot decides from the real platform and sends it as the `platform` state;
+    // until that arrives, anything that is not the desktop preview is treated as a phone.
+    touch: !Godot.preview,
 
     emit(name, payload) { Godot.emit(name, payload); },
 
@@ -36,7 +37,11 @@
     },
   };
 
-  document.body.classList.toggle('touch', SB.touch);
+  SB.setTouch = (value) => {
+    SB.touch = !!value;
+    document.body.classList.toggle('touch', SB.touch);
+  };
+  SB.setTouch(SB.touch);
   window.SB = SB;
 
   // Only elements marked data-webui-touch take touches; every other touch reaches Godot.

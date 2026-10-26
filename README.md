@@ -240,7 +240,7 @@ A page that forgets `touchRegions()` therefore works (modal) instead of being de
 
 ## Example project
 
-The repository root is a Godot project whose main scene is the demo (`examples/playable_character/main.tscn`).
+The repository root is a Godot project whose main scene is the first-person parkour showcase `examples/skybound/main.tscn` (Skybound). The 2D demo (`examples/playable_character/main.tscn`, Lumen Hollow) is still there and runs from its own scene.
 
 1. Open the project in Godot 4.7.1.
 2. Confirm the plugin is enabled, the Android build template is installed and *Use Gradle Build* is on (see [Installation](#installation)). The editor can rewrite `export_presets.cfg` while it is open, so change settings in *Project → Export*.

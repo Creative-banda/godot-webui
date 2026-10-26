@@ -26,7 +26,8 @@
       <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8.5M6.9 6.6a7.5 7.5 0 1 0 10.2 0" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
       <symbol id="i-retry" viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.2-5.1M5 4.5v4.2h4.2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
       <symbol id="i-wing" viewBox="0 0 24 24"><path d="M3 15c3.5 1 6.2-.2 8-3.5L12 9l1 2.5c1.8 3.3 4.5 4.5 8 3.5-2.8-1-4-3.2-4.4-6.1C14.600 8.600 13.300 7.600 12 5.500 10.700 7.600 9.400 8.600 7.400 8.900 7 11.800 5.800 14 3 15z" fill="currentColor"/></symbol>
-      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M12 4 5 17h14z" fill="currentColor"/></symbol>
+      <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 8 6 5 6-5M6 14l6 5 6-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor"/><path d="M12 11v5.5" stroke="#0b1226" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="7.8" r="1.4" fill="#0b1226"/></symbol>
     </defs>
   </svg>
 
@@ -43,18 +44,19 @@
       </svg>
       <div>
         <h1 id="title">SKYBOUND</h1>
-        <p id="tagline">Parkour above the clouds</p>
+        <p id="tagline">First-person parkour above the clouds</p>
       </div>
     </header>
 
     <div id="menu-main">
       <button id="btn-play" class="cta">
         <svg><use href="#i-play"/></svg>
-        <span class="cta-text"><b>Start run</b><small id="best-line">No finish yet. Reach the beacon.</small></span>
+        <span class="cta-text"><b>Play</b><small id="best-line">Reach the beacon. Collect the shards.</small></span>
       </button>
       <div class="row">
         <button id="btn-howto" class="ghost"><svg><use href="#i-flag"/></svg>How to play</button>
         <button id="btn-settings" class="ghost"><svg><use href="#i-gear"/></svg>Settings</button>
+        <button id="btn-about" class="ghost"><svg><use href="#i-info"/></svg>About</button>
         <button id="btn-quit" class="ghost"><svg><use href="#i-power"/></svg>Quit</button>
       </div>
     </div>
@@ -87,32 +89,25 @@
     </div>
 
     <div id="hud-stats">
-      <div class="chip glass" id="chip-shards"><svg><use href="#i-shard"/></svg><b id="shard-count">0</b><small id="shard-total">/ 25</small></div>
-      <div class="chip glass" id="chip-deaths"><svg><use href="#i-skull"/></svg><b id="death-count">0</b></div>
-      <div class="chip glass hidden-until-wings" id="chip-wings" hidden><svg><use href="#i-wing"/></svg><small>Double jump</small></div>
+      <div class="chip glass" id="chip-shards" aria-label="Shards"><svg><use href="#i-shard"/></svg><b id="shard-count">0</b><small id="shard-total">/ 25</small></div>
+      <div class="chip glass" id="chip-wings" aria-label="Double jump" hidden><svg><use href="#i-wing"/></svg></div>
+      <div class="chip glass quiet" id="chip-deaths" aria-label="Falls"><svg><use href="#i-skull"/></svg><b id="death-count">0</b></div>
       <button id="btn-pause" class="round-btn glass" data-webui-touch aria-label="Pause"><svg><use href="#i-pause"/></svg></button>
     </div>
 
     <div id="crosshair"><i></i><i></i><i></i><i></i></div>
     <div id="markers"></div>
 
-    <div id="speedo" class="glass">
-      <svg viewBox="0 0 100 60" aria-hidden="true">
-        <path class="arc-bg" d="M10 54a40 40 0 0 1 80 0"/>
-        <path class="arc-fill" id="arc" d="M10 54a40 40 0 0 1 80 0"/>
-      </svg>
-      <b id="speed-num">0</b><small>km/h</small>
-      <em id="sprint-tag">SPRINT</em>
-    </div>
+    <div id="sprint-ind" aria-hidden="true"><svg><use href="#i-chev"/></svg></div>
 
     <div id="banner"><small id="banner-kicker">SECTION 1 OF 5</small><b id="banner-name">LAUNCH PAD</b></div>
     <div id="toasts"></div>
     <div id="countdown" hidden><b id="count-num">3</b></div>
-    <p id="keys-hint">WASD move &middot; SHIFT sprint &middot; SPACE jump &middot; drag to look &middot; ESC pause &middot; R checkpoint</p>
+    <p id="keys-hint">WASD move &middot; SHIFT sprint &middot; SPACE jump &middot; drag to look &middot; ESC pause</p>
     <div id="fps-chip" class="chip glass" hidden><small>FPS</small><b id="fps-num">60</b></div>
 
     <div id="stick-zone" data-webui-touch><div id="stick"><div id="knob"></div></div></div>
-    <button id="btn-jump" class="jump-btn" data-webui-touch aria-label="Jump"><svg><use href="#i-jump"/></svg><span>JUMP</span></button>
+    <button id="btn-jump" class="jump-btn" data-webui-touch aria-label="Jump"><svg><use href="#i-jump"/></svg><span>JUMP</span><i class="wing-badge"><svg><use href="#i-wing"/></svg></i></button>
   </section>
 
   <!-- ============================== PAUSE ============================== -->
@@ -154,27 +149,60 @@
 
   <!-- ============================== SETTINGS ============================== -->
   <section id="settings" class="layer scrim" hidden data-webui-touch>
-    <div class="card glass">
+    <div class="card glass wide">
       <header class="card-head">
         <button id="btn-settings-back" class="round-btn glass" aria-label="Back"><svg><use href="#i-back"/></svg></button>
         <h2>Settings</h2>
       </header>
-      <div class="setting">
-        <label for="set-sensitivity">Look sensitivity <b id="out-sensitivity">1.0x</b></label>
-        <input id="set-sensitivity" type="range" min="0.2" max="3" step="0.1" value="1">
-      </div>
-      <div class="setting">
-        <label for="set-fov">Field of view <b id="out-fov">78</b></label>
-        <input id="set-fov" type="range" min="65" max="100" step="1" value="78">
+      <div class="setting-grid">
+        <div class="setting">
+          <label for="set-sensitivity">Look sensitivity <b id="out-sensitivity">1.0x</b></label>
+          <input id="set-sensitivity" type="range" min="0.2" max="3" step="0.1" value="1">
+        </div>
+        <div class="setting">
+          <label for="set-fov">Field of view <b id="out-fov">78</b></label>
+          <input id="set-fov" type="range" min="65" max="100" step="1" value="78">
+        </div>
+        <div class="setting wide-row">
+          <label>3D resolution <b id="out-render_scale">Balanced</b></label>
+          <div class="seg" id="seg-render_scale" role="group" aria-label="3D resolution">
+            <button data-value="1" data-name="Sharp">Sharp 100%</button>
+            <button data-value="0.75" data-name="Balanced">Balanced 75%</button>
+            <button data-value="0.6" data-name="Fast">Fast 60%</button>
+          </div>
+        </div>
       </div>
       <ul class="toggles">
+        <li><span>Glow and color grade</span><button id="tg-effects" class="toggle" aria-pressed="true">On</button></li>
         <li><span>Invert look Y</span><button id="tg-invert_y" class="toggle" aria-pressed="false">Off</button></li>
-        <li><span>Auto sprint</span><button id="tg-auto_sprint" class="toggle" aria-pressed="true">On</button></li>
+        <li><span>Sprint on full stick push</span><button id="tg-auto_sprint" class="toggle" aria-pressed="true">On</button></li>
         <li><span>Head bob</span><button id="tg-head_bob" class="toggle" aria-pressed="true">On</button></li>
         <li><span>Speed lines</span><button id="tg-speed_lines" class="toggle" aria-pressed="true">On</button></li>
         <li><span>Show FPS</span><button id="tg-show_fps" class="toggle" aria-pressed="false">Off</button></li>
       </ul>
-      <p class="hint">Godot owns these values: the page asks, validates nothing, and shows what Godot confirms.</p>
+      <p class="hint">Godot owns these values. On phones the effects start off and the 3D resolution at Balanced: that is what keeps the frame rate up.</p>
+    </div>
+  </section>
+
+  <!-- ============================== ABOUT ============================== -->
+  <section id="about" class="layer scrim" hidden data-webui-touch>
+    <div class="card glass wide">
+      <header class="card-head">
+        <button id="btn-about-back" class="round-btn glass" aria-label="Back"><svg><use href="#i-back"/></svg></button>
+        <h2>About</h2>
+      </header>
+      <p class="lead">Skybound is a first-person parkour course made to show Godot WebUI. Godot runs the world, the character and every rule of the game. Everything you read and tap on top of it (this menu, the HUD, the markers, the settings) is HTML, CSS and JavaScript.</p>
+      <ul class="tips">
+        <li>The HUD is fed by Godot twenty times a second; the page owns no game logic.</li>
+        <li>The checkpoint and finish markers are projected from 3D positions by Godot, then drawn by the page.</li>
+        <li>Settings and medals are stored by Godot; the page asks for a change and shows the answer.</li>
+        <li>On a phone the stick, the jump button and the look swipe are page elements wired to the same controller as the keyboard.</li>
+      </ul>
+      <dl class="meta">
+        <div><dt>Runs on</dt><dd id="ab-engine">...</dd></div>
+        <div><dt>Interface</dt><dd>HTML, CSS, JavaScript</dd></div>
+        <div><dt>Renderer</dt><dd id="ab-renderer">...</dd></div>
+      </dl>
     </div>
   </section>
 
@@ -191,7 +219,7 @@
           <h3>Keyboard</h3>
           <ul class="keys">
             <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Move</span></li>
-            <li><kbd>Shift</kbd><span>Sprint</span></li>
+            <li><kbd>Shift</kbd><span>Sprint (hold)</span></li>
             <li><kbd>Space</kbd><span>Jump (hold for height)</span></li>
             <li><kbd>Drag</kbd><span>Look around</span></li>
             <li><kbd>R</kbd><span>Back to checkpoint</span></li>
@@ -200,8 +228,8 @@
         <div>
           <h3>Touch</h3>
           <ul class="keys">
-            <li><kbd>Stick</kbd><span>Move; push fully to sprint</span></li>
-            <li><kbd>Jump</kbd><span>Hold for height</span></li>
+            <li><kbd>Stick</kbd><span>Move; push it fully to sprint</span></li>
+            <li><kbd>Jump</kbd><span>Hold for height; tap again in the air after the Wing Orb</span></li>
             <li><kbd>Swipe</kbd><span>Look anywhere else</span></li>
             <li><kbd>Back</kbd><span>Pause</span></li>
           </ul>

@@ -4,13 +4,13 @@
 #pause,
 #results,
 #settings,
-#howto {
+#howto,
+#about {
   z-index: 5;
 }
 
 body[data-screen="pause"] #crosshair,
 body[data-screen="pause"] #markers,
-body[data-screen="pause"] #speedo,
 body[data-screen="pause"] #stick-zone,
 body[data-screen="pause"] #btn-jump,
 body[data-screen="pause"] #keys-hint,
@@ -171,6 +171,45 @@ body[data-screen="pause"] #speedlines {
 }
 
 /* ---------- settings ---------- */
+#settings .card {
+  max-height: 100%;
+  overflow-y: auto;
+  touch-action: pan-y;
+}
+
+.setting-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 22px;
+}
+
+.setting-grid .wide-row {
+  grid-column: 1 / -1;
+}
+
+.seg {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.seg button {
+  flex: 1;
+  min-height: 42px;
+  padding: 0 6px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--edge);
+}
+
+.seg button.on {
+  color: #07122b;
+  background: linear-gradient(115deg, var(--mint), var(--cyan));
+  border-color: transparent;
+}
+
 .setting {
   display: grid;
   gap: 2px;
@@ -190,7 +229,8 @@ body[data-screen="pause"] #speedlines {
 
 .toggles {
   display: grid;
-  gap: 4px;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 22px;
 }
 
 .toggles li {
@@ -201,6 +241,29 @@ body[data-screen="pause"] #speedlines {
   font-size: 14px;
   font-weight: 700;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* ---------- about ---------- */
+.meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.meta dt {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.meta dd {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 /* ---------- how to play ---------- */
@@ -283,12 +346,22 @@ kbd {
   }
 
   .toggles li {
+    min-height: 34px;
+  }
+
+  #settings .hint {
+    display: none;
+  }
+
+  .seg button {
     min-height: 36px;
   }
 }
 
 @media (max-width: 560px) {
-  .cols {
+  .cols,
+  .setting-grid,
+  .toggles {
     grid-template-columns: 1fr;
   }
 }

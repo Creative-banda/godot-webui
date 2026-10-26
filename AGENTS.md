@@ -34,13 +34,13 @@ Godot WebUI shows HTML/CSS/JS as a transparent Android WebView above a Godot gam
 |---|---|
 | `addons/webui/` | The addon: `webui.gd` (API), `webui_bridge.gd` (validation), `webui_backend*.gd` (platform seam: interface, factory, Android, desktop preview, null), `export_plugin.gd`, `web/godot.js`, `bin/*.aar`; visual editor (editor-only): `webui_editor_dock.gd`, `webui_editor_model.gd`, `webui_css_catalog.gd`, `webui_html_patcher.gd`, `webui_edit_link.gd`, `webui_edit_preview.gd/.tscn`, `webui_screen.gd` (the optional `WebUIScreen` node: runtime-inert, must stay free of editor-only classes), `webui_screen_preview.gd`, `webui_screen_inspector.gd`, `webui_preview_capture.gd/.tscn`, `web/capture.js`, `webui_css_patcher.gd`, `web/edit_mode.js` |
 | `native/android/` | Gradle project, Java source of the native plugin (`com.godotwebui`) |
-| `examples/playable_character/` | Demo: `main.tscn` + `app.gd` shell swapping `menu.tscn` / `game.tscn`; HTML in `ui/` |
+| `examples/playable_character/` | The 2D demo (Lumen Hollow): `main.tscn` + `app.gd` shell swapping `menu.tscn` / `game.tscn`; HTML in `ui/`. Not the project's main scene any more; run it from its own scene |
 | `docs/setup.md`, `docs/desktop-preview.md` | Setup script docs; desktop development preview docs |
 | `tools/setup.py`, `tools/dependencies.json` | Setup script and pinned dependency versions/checksums |
 | `skills/godot-webui/` | AI-agent skill (`SKILL.md` + `references/`) |
 | `examples/minimal_hud/` | Smallest end-to-end example |
 | `examples/third_person_3d/` | 3D demo: `main3d.tscn` (arena, generated layout), `player3d.gd`, `camera_rig.gd`, `main3d.gd` (look_drag from the page, settings), HTML is `hud3d.*` in `examples/playable_character/ui/` (opened from the demo menu via `DemoApp.start_3d()`); tested by `tests/demo3d_test.gd` |
-| `examples/skybound/` | First-person parkour showcase (`main.tscn`): `scripts/skybound.gd` flow, `sb_player.gd`, course pieces, `sb_level_builder.gd` (course table), page in `ui/`; see its README; tested by `tests/skybound_test.gd` (slow: runs a jump bot) |
+| `examples/skybound/` | The primary showcase and the project's main scene: first-person parkour (`main.tscn`): `scripts/skybound.gd` flow, `sb_player.gd`, course pieces, `sb_level_builder.gd` (course table), page in `ui/`; see its README; tested by `tests/skybound_test.gd` (slow: runs a jump bot) |
 | `templates/hud/` | Starter page |
 | `tests/headless_test.gd`, `tests/api_test.gd`, `tests/css_patcher_test.gd`, `tests/html_patcher_test.gd`, `tests/css_catalog_test.gd`, `tests/editor_model_test.gd`, `tests/editor_dock_test.gd`, `tests/edit_link_test.gd`, `tests/webui_screen_test.gd` | Headless GDScript tests (bridge, demo flow, desktop backend; API semantics, touch modes, guard, recovery, UI folder detection; in-place CSS patching, visual editor model and dock). `tests/edit_preview_test.gd` needs a window and godot_wry (edit mode, end to end); `tests/webui_screen_capture_test.gd` runs the real capture process and needs godot_wry |
 

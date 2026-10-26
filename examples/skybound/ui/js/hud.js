@@ -3,13 +3,12 @@
 (() => {
   const { $, fmt, restart } = SB;
 
-  const ARC_LENGTH = 126;      // matches stroke-dasharray in hud.css
-  const MAX_KMH = 60;          // the gauge is full here
   const EDGE_MARGIN = 38;      // px kept free around off-screen markers
   const markerEls = new Map();
   let shardsShown = -1;
   let deathsShown = -1;
-  let linesShown = 0;
+  let wingsShown = '';
+  let sprintShown = null;
   let countdownTimer = 0;
 
   SB.lastHud = null;
@@ -62,7 +61,6 @@
     $('section-n').textContent = `${s.section}/5`;
     $('section-name').textContent = s.section_name;
     $('shard-total').textContent = `/ ${s.shard_total}`;
-    $('chip-wings').hidden = !s.wings;
 
     if (s.shards !== shardsShown) {
       $('shard-count').textContent = s.shards;
@@ -75,21 +73,25 @@
       deathsShown = s.deaths;
     }
 
-    // Speed gauge and crosshair.
-    const k = Math.min(1, s.speed / MAX_KMH);
-    $('arc').style.strokeDashoffset = (ARC_LENGTH * (1 - k)).toFixed(1);
-    $('speed-num').textContent = s.speed;
-    $('speedo').classList.toggle('sprinting', s.sprint);
-    $('speedo').classList.toggle('fast', s.speed > 40);
-    $('crosshair').classList.toggle('sprint', s.sprint);
+    // Sprint is the controller's own state, not a guess from speed. It opens the crosshair, shows a small chevron
+    // and brings in light speed lines (opacity only: the layers are static).
+    if (s.sprinting !== sprintShown) {
+      sprintShown = s.sprinting;
+      $('crosshair').classList.toggle('sprint', s.sprinting);
+      $('sprint-ind').classList.toggle('on', s.sprinting);
+      $('speedlines').classList.toggle('on', s.sprinting && SB.settings.speed_lines !== false);
+    }
     $('crosshair').classList.toggle('air', s.air);
 
-    // Speed lines fade in above sprint speed (opacity only, the layer is static).
-    const lines = SB.settings.speed_lines === false ? 0 : Math.max(0, Math.min(1, (s.speed - 34) / 24)) * 0.85;
-    if (Math.abs(lines - linesShown) > 0.03) {
-      $('speedlines').style.opacity = lines.toFixed(2);
-      linesShown = lines;
+    // Double jump: icon after the Wing Orb, bright while the extra jump is available, dim once spent.
+    const wings = !s.wings ? 'locked' : (s.air_jump ? 'ready' : 'spent');
+    if (wings !== wingsShown) {
+      wingsShown = wings;
+      $('chip-wings').hidden = wings === 'locked';
+      $('chip-wings').classList.toggle('ready', wings === 'ready');
+      $('btn-jump').classList.toggle('air-ready', wings === 'ready' && s.air);
     }
+    $('btn-jump').classList.toggle('air-ready', wings === 'ready' && s.air);
 
     $('fps-chip').hidden = !SB.settings.show_fps;
     if (SB.settings.show_fps) $('fps-num').textContent = s.fps;

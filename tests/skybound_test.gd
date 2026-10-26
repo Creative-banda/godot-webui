@@ -64,8 +64,20 @@ func _test_body() -> void:
 	player.move_input = Vector2(0, -1)
 	var z0 := player.global_position.z
 	await _frames(20)
-	check(player.global_position.z < z0 - 2.0, "stick up runs forward (-Z)")
-	check(player.horizontal_speed() > 8.0 and player.is_sprinting(), "a full push sprints")
+	check(player.global_position.z < z0 - 1.2, "stick up runs forward (-Z)")
+	check(not player.is_sprinting() and not player.sprinting and player.horizontal_speed() < 7.0, "a keyboard-style full push only walks (no accidental sprint)")
+	player.sprint_held = true
+	await _frames(20)
+	check(player.sprinting and player.horizontal_speed() > 8.0, "holding sprint sprints, and the controller reports it")
+	player.sprint_held = false
+	player.analog_input = true
+	await _frames(5)
+	check(player.is_sprinting(), "a full push on an analog stick sprints")
+	player.move_input = Vector2(0, -0.5)
+	await _frames(5)
+	check(not player.is_sprinting(), "a half push on the stick does not")
+	player.analog_input = false
+	player.move_input = Vector2(0, -1)
 	player.move_input = Vector2.ZERO
 	await _frames(30)
 	check(player.horizontal_speed() < 0.2, "letting go stops quickly")
@@ -121,12 +133,32 @@ func _test_flow() -> void:
 	check(is_equal_approx(root_node.settings.sensitivity, 3.0) and is_equal_approx(root_node.settings.fov, 65.0), "settings are clamped")
 	check(root_node.settings.invert_y == true and root_node.settings.head_bob == true, "settings: a bad type is ignored")
 	ui._on_raw_message('{"t":"event","name":"settings_changed","payload":{"sensitivity":1.0,"fov":78,"invert_y":false}}')
+	# Performance settings: effects (glow and color grade) and the 3D resolution step.
+	var env: Environment = root_node.world_environment.environment
+	ui._on_raw_message('{"t":"event","name":"settings_changed","payload":{"effects":false,"render_scale":0.7}}')
+	check(not env.glow_enabled and not env.adjustment_enabled, "turning effects off turns glow and the color grade off")
+	check(is_equal_approx(root_node.settings.render_scale, 0.75) and is_equal_approx(root_node.get_viewport().scaling_3d_scale, 0.75), "the 3D resolution snaps to the nearest step and is applied")
+	ui._on_raw_message('{"t":"event","name":"settings_changed","payload":{"effects":"yes","render_scale":"high"}}')
+	check(not env.glow_enabled and is_equal_approx(root_node.settings.render_scale, 0.75), "bad types leave the performance settings alone")
+	ui._on_raw_message('{"t":"event","name":"settings_changed","payload":{"effects":true,"render_scale":1.0}}')
+	check(env.glow_enabled and is_equal_approx(root_node.get_viewport().scaling_3d_scale, 1.0), "effects on and Sharp restore the full look")
 
 	# Run: start, countdown, look, move, pause, back, retry, finish.
 	ui._on_raw_message('{"t":"event","name":"start_run","payload":{}}')
 	check(root_node.mode == Skybound.Mode.COUNTDOWN and player.frozen, "start_run begins the countdown with the player frozen")
 	await create_timer(3.0).timeout
 	check(root_node.mode == Skybound.Mode.PLAYING and not player.frozen, "after 3 seconds the run is live")
+	root_node._push_hud()
+	var hud: Dictionary = JSON.parse_string(ui._state_cache["hud"])
+	check(not hud.has("speed") and not hud.has("sprint"), "the HUD state carries no speed value (the speedometer is gone)")
+	check(hud.has("sprinting") and hud.sprinting == false and hud.has("air_jump") and hud.air_jump == false, "the HUD reports the controller's sprint and double-jump state")
+	check(not root_node.touch_controls(), "the desktop keeps keyboard and mouse (no touch controls)")
+	root_node.player.can_double_jump = true
+	await _frames(3)
+	root_node._push_hud()
+	hud = JSON.parse_string(ui._state_cache["hud"])
+	check(hud.air_jump == true, "with the Wing Orb the HUD shows the double jump as available")
+	root_node.player.can_double_jump = false
 	var yaw := player.yaw
 	ui._on_raw_message('{"t":"event","name":"look_drag","payload":{"dx":0.25,"dy":0.0}}')
 	check(is_equal_approx(player.yaw, wrapf(yaw - PI / 4.0, -PI, PI)), "a quarter-height swipe turns the view 45 degrees")
@@ -263,6 +295,7 @@ func _run_bot(from_box: AABB, to_box: AABB, double: bool, style: String, pad: Va
 		if at.x > to_box.position.x and at.x < to_box.end.x and at.z > to_box.position.z and at.z < to_box.end.z:
 			aim_back = 1.9  # land before a spring pad, not on it
 	var magnitude := 0.8 if style == "walk" else 1.0
+	player.sprint_held = style != "walk"  # sprint is Shift on a keyboard; the bot is not an analog stick
 	player.move_input = Vector2(0, -magnitude)
 	var jumped_at := -1
 	var second := false

@@ -24,16 +24,22 @@ const KILL_DEPTH := 26.0  ## metres below the last checkpoint
 ## Medal times in seconds: gold, silver, bronze.
 const MEDAL_TIMES := [150.0, 210.0, 300.0]
 const MEDAL_NAMES := ["gold", "silver", "bronze"]
+## 3D resolution steps (Sharp, Balanced, Fast). Measured on a Mali-G57 phone at 2408x1080: glow and the color grade
+## cost about 6 ms of GPU time per frame and rendering at 75 % about 2.5 ms more, while draw calls and primitives
+## barely matter here, so phones start with effects off and Balanced.
+const RENDER_SCALES := [1.0, 0.75, 0.6]
 
 @onready var player: SBPlayer = $Player
 @onready var menu_rig: Node3D = $MenuRig
 @onready var menu_camera: Camera3D = $MenuRig/Camera
+@onready var world_environment: WorldEnvironment = $WorldEnvironment
 
 var ui: GodotWebUI
 var mode := Mode.MENU
 var settings := {
 	"sensitivity": 1.0, "fov": 78.0, "invert_y": false, "auto_sprint": true,
 	"head_bob": true, "speed_lines": true, "show_fps": false,
+	"effects": true, "render_scale": 1.0,
 }
 var profile := {"best_time": -1.0, "best_shards": 0, "best_deaths": -1, "plays": 0, "finishes": 0}
 
@@ -55,6 +61,9 @@ var _results := {}
 
 
 func _ready() -> void:
+	if OS.has_feature("mobile"):
+		settings.effects = false
+		settings.render_scale = 0.75
 	_load_save()
 	ui = GodotWebUI.new()
 	ui.process_mode = Node.PROCESS_MODE_ALWAYS  # keep serving the page while the game is paused
@@ -116,17 +125,21 @@ func _wire_level() -> void:
 
 ## Optional arguments after `--` (godot ... -- --sb-autostart): used for screenshots and smoke tests.
 ##   --sb-touch      show the touch controls (stick, jump) in the desktop preview
+##   --sb-sprint     run forward with sprint held;  --sb-about  open the About panel
 ##   --sb-autostart  start a run by itself;  --sb-run  also run forward and jump;  --sb-pause / --sb-results  end there
 func _dev_arguments() -> void:
 	var args := OS.get_cmdline_user_args()
-	if "--sb-touch" in args:
-		ui.set_state("dev", {"touch": true})
-	if not ("--sb-autostart" in args or "--sb-run" in args or "--sb-pause" in args or "--sb-results" in args):
+	if not ("--sb-autostart" in args or "--sb-run" in args or "--sb-sprint" in args or "--sb-about" in args 			or "--sb-pause" in args or "--sb-results" in args):
 		return
 	await get_tree().create_timer(2.0).timeout
+	if "--sb-about" in args:
+		ui.emit_event("dev_open", {"panel": "about"})
+		return
 	start_run()
 	await get_tree().create_timer(3.6).timeout
-	if "--sb-run" in args:
+	if "--sb-sprint" in args:
+		player.sprint_held = true
+	if "--sb-run" in args or "--sb-sprint" in args:
 		_page_keys = Vector2(0, -1)
 		await get_tree().create_timer(1.1).timeout
 		player.request_jump()
@@ -333,6 +346,7 @@ static func medal_for(seconds: float) -> String:
 func _physics_process(delta: float) -> void:
 	if mode == Mode.PLAYING:
 		run_time += delta
+		player.analog_input = _stick != Vector2.ZERO
 		player.move_input = _stick if _stick != Vector2.ZERO else _page_keys
 		var floor_y := _checkpoints[current_cp].global_position.y if not _checkpoints.is_empty() else 0.0
 		if player.global_position.y < floor_y - KILL_DEPTH:
@@ -402,6 +416,11 @@ func _on_settings_changed(payload: Dictionary) -> void:
 
 
 func _apply_settings() -> void:
+	var env := world_environment.environment
+	if env:
+		env.glow_enabled = settings.effects
+		env.adjustment_enabled = settings.effects
+	get_viewport().scaling_3d_scale = settings.render_scale
 	player.base_fov = settings.fov
 	player.auto_sprint = settings.auto_sprint
 	player.head_bob = settings.head_bob
@@ -409,7 +428,20 @@ func _apply_settings() -> void:
 
 # ---------------------------------------------------------------- page output
 
+## Whether the page shows the stick and the jump button. Decided here from the real platform, not guessed by the
+## page: Android and iOS builds have touch controls, desktop (and the editor preview) keeps keyboard and mouse.
+## `--sb-touch` forces them on for testing the layout on a desktop.
+func touch_controls() -> bool:
+	return OS.has_feature("mobile") or "--sb-touch" in OS.get_cmdline_user_args()
+
+
 func _push_all() -> void:
+	ui.set_state("platform", {"touch": touch_controls()})
+	ui.set_state("info", {
+		"engine": Engine.get_version_info().string,
+		"os": OS.get_name(),
+		"renderer": str(ProjectSettings.get_setting("rendering/renderer/rendering_method")),
+	})
 	ui.set_state("settings", settings)
 	_push_profile()
 	_push_screen()
@@ -450,9 +482,9 @@ func _push_hud() -> void:
 			markers.append(_marker(cam, "goal", _goal.global_position + Vector3(0, 5.0, 0), "FINISH"))
 	ui.set_state("hud", {
 		"time": snappedf(run_time, 0.01),
-		"speed": roundi(player.horizontal_speed() * 3.6),
-		"sprint": player.is_sprinting() and player.horizontal_speed() > 6.0,
+		"sprinting": player.sprinting,
 		"air": not player.is_on_floor(),
+		"air_jump": player.air_jump_ready(),
 		"shards": run_shards,
 		"shard_total": shard_total,
 		"deaths": run_deaths,
@@ -500,9 +532,20 @@ func _merge_settings(payload: Dictionary) -> void:
 	for key in ["sensitivity", "fov"]:
 		if typeof(payload.get(key)) in [TYPE_FLOAT, TYPE_INT]:
 			settings[key] = clampf(payload[key], 0.2 if key == "sensitivity" else 65.0, 3.0 if key == "sensitivity" else 100.0)
-	for key in ["invert_y", "auto_sprint", "head_bob", "speed_lines", "show_fps"]:
+	for key in ["invert_y", "auto_sprint", "head_bob", "speed_lines", "show_fps", "effects"]:
 		if typeof(payload.get(key)) == TYPE_BOOL:
 			settings[key] = payload[key]
+	if typeof(payload.get("render_scale")) in [TYPE_FLOAT, TYPE_INT]:
+		settings.render_scale = _nearest_render_scale(float(payload.render_scale))
+
+
+## The offered resolution step closest to `value`.
+static func _nearest_render_scale(value: float) -> float:
+	var best: float = RENDER_SCALES[0]
+	for step: float in RENDER_SCALES:
+		if absf(step - value) < absf(best - value):
+			best = step
+	return best
 
 
 func _save() -> void:

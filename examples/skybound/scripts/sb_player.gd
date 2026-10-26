@@ -38,8 +38,13 @@ const STEP_LENGTH := 2.6
 ## When true the body ignores input and does not fall (menu, countdown, results).
 var frozen := true
 var can_double_jump := false
+## Pushing the stick fully sprints (touch). On a keyboard a direction key is always a full push, so there
+## sprint is the Shift key: auto sprint only listens to an analog stick.
 var auto_sprint := true
+var analog_input := false
 var sprint_held := false
+## The controller's own sprint state: sprint input is active and the player is actually moving.
+var sprinting := false
 var head_bob := true
 var base_fov := 78.0
 var move_input := Vector2.ZERO  ## x right, y down: pushing the stick up is y = -1
@@ -111,7 +116,9 @@ func teleport(at: Vector3, new_yaw: float) -> void:
 
 func clear_input() -> void:
 	move_input = Vector2.ZERO
+	analog_input = false
 	sprint_held = false
+	sprinting = false
 	_jump_held = false
 	_jump_buffer = 0.0
 
@@ -120,16 +127,22 @@ func horizontal_speed() -> float:
 	return Vector2(velocity.x, velocity.z).length()
 
 
+## True while the double jump is unlocked and not yet spent in this jump.
+func air_jump_ready() -> bool:
+	return can_double_jump and _air_jumps > 0
+
+
 func is_sprinting() -> bool:
 	if move_input.length() < 0.1:
 		return false
 	var forward := -move_input.y
-	return sprint_held or (auto_sprint and move_input.length() > 0.85 and forward > -0.2)
+	return sprint_held or (auto_sprint and analog_input and move_input.length() > 0.85 and forward > -0.2)
 
 
 func _physics_process(delta: float) -> void:
 	if frozen:
 		velocity = Vector3.ZERO
+		sprinting = false
 		return
 	var grounded := is_on_floor()
 	_jump_buffer = maxf(_jump_buffer - delta, 0.0)
@@ -190,6 +203,7 @@ func _physics_process(delta: float) -> void:
 		_fall_speed = 0.0
 		_can_cut = false
 	_was_grounded = grounded
+	sprinting = is_sprinting() and horizontal_speed() > 1.0
 
 
 func _near_ground() -> bool:
