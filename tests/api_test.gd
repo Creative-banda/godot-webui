@@ -19,6 +19,34 @@ class FakeBackend extends WebUIBackend:
 	var touch_modes: Array = []
 	var loaded: Array = []
 	var destroyed := false
+	var surfaces_ok := true
+	var surface_log: Array = []   # [kind, ...]
+	var frame_bytes := PackedByteArray()
+
+	func supports_surfaces() -> bool:
+		return surfaces_ok
+
+	func create_surface(surface_id: String, page: String, size: Vector2i, fps: int) -> bool:
+		surface_log.append(["create", surface_id, page, size, fps])
+		return true
+
+	func destroy_surface(surface_id: String) -> void:
+		surface_log.append(["destroy", surface_id])
+
+	func surface_send(surface_id: String, event_name: String, json_payload: String) -> void:
+		surface_log.append(["send", surface_id, event_name, json_payload])
+
+	func surface_tap(surface_id: String, x: float, y: float) -> void:
+		surface_log.append(["tap", surface_id, x, y])
+
+	func surface_set_active(surface_id: String, active: bool) -> void:
+		surface_log.append(["active", surface_id, active])
+
+	func surface_read_frame(_surface_id: String) -> PackedByteArray:
+		return frame_bytes
+
+	func surface_stats(_surface_id: String) -> String:
+		return '{"mode":"fake","frames":3}'
 
 	func get_backend_name() -> String:
 		return "fake"
@@ -45,6 +73,7 @@ class FakeBackend extends WebUIBackend:
 func _initialize() -> void:
 	await _test_state_and_events()
 	await _test_touch_modes()
+	_test_surfaces()
 	await _test_guard_and_recovery()
 	await _test_back_button()
 	_test_ui_scale()
@@ -61,6 +90,8 @@ func _fake_ui() -> Array:
 	ui._started = true
 	backend.message.connect(ui._on_raw_message)
 	backend.error.connect(ui._on_backend_error)
+	backend.surface_message.connect(ui._on_surface_message)
+	backend.surface_frame.connect(ui._on_surface_frame)
 	return [ui, backend]
 
 
@@ -106,6 +137,44 @@ func _test_state_and_events() -> void:
 	check("bad_name" in errors, "reserved webui.* names cannot be registered")
 	ui.shutdown()
 	ui.queue_free()
+
+
+func _test_surfaces() -> void:
+	var made := _fake_ui()
+	var ui: GodotWebUI = made[0]
+	var fake: FakeBackend = made[1]
+	var surface := ui.create_surface("terminal.html", Vector2i(64, 40), 12)
+	check(surface.available and fake.surface_log[0] == ["create", surface.id, "terminal.html", Vector2i(64, 40), 12], "create_surface reaches the backend")
+	surface.set_state("run", {"t": 1})
+	check(fake.surface_log.size() == 1, "surface state is held until the page is ready")
+	var got := []
+	surface.on("terminal_action", func(p: Dictionary) -> void: got.append(p))
+	ui._on_surface_message(surface.id, '{"t":"ready"}')
+	check(fake.surface_log.back() == ["send", surface.id, "run", '{"t":1}'], "ready delivers held surface state")
+	ui._on_surface_message(surface.id, '{"t":"event","name":"terminal_action","payload":{"action":"retry"}}')
+	check(got == [{"action": "retry"}], "page events reach surface handlers")
+	ui._on_surface_message("unknown", '{"t":"ready"}')
+	surface.tap(Vector2(1000, -5))
+	check(fake.surface_log.back() == ["tap", surface.id, 63.0, 0.0], "taps are clamped to the page")
+	surface.tap_uv(Vector2(0.5, 0.5))
+	check(fake.surface_log.back() == ["tap", surface.id, 32.0, 20.0], "tap_uv maps to page pixels")
+	surface.set_active(false)
+	check(fake.surface_log.back() == ["active", surface.id, false], "set_active is forwarded")
+	fake.frame_bytes = PackedByteArray()
+	fake.frame_bytes.resize(64 * 40 * 4)
+	fake.frame_bytes.fill(255)
+	ui._on_surface_frame(surface.id, 1)
+	check(surface.frames == 1 and surface.stats().get("mode") == "fake", "frames update the texture, stats are parsed")
+	fake.frame_bytes = PackedByteArray([1, 2, 3])
+	ui._on_surface_frame(surface.id, 2)
+	check(surface.frames == 1, "a wrong-sized frame is ignored")
+	fake.surfaces_ok = false
+	var plain := ui.create_surface("x.html")
+	plain.set_state("a", {})
+	plain.tap(Vector2.ZERO)
+	check(not plain.available and plain.stats().is_empty(), "without backend support a surface is an inert placeholder")
+	ui.shutdown()
+	check(not surface.available and fake.destroyed, "shutdown retires surfaces with the overlay")
 
 
 func _test_touch_modes() -> void:

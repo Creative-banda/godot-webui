@@ -46,6 +46,7 @@ Everything on screen except the 3D world is one HTML page (`ui/index.html`, styl
 | Course pieces | `scripts/sb_platform.gd`, `sb_moving_platform.gd`, `sb_crumble_platform.gd`, `sb_checkpoint.gd`, `sb_shard.gd`, `sb_wings.gd`, `sb_goal.gd`, `sb_bounce_pad.gd` |
 | The course layout | `scripts/sb_level_builder.gd` (a table; tick `rebuild` on the `Level` node to regenerate the saved nodes) |
 | Platform look (neon edges, grid) | `platform.gdshader` |
+| In-world run terminal: a second page (`ui/terminal.html`) drawn onto a 3D screen with `create_surface` (Android; a label elsewhere). Aim at it and press E / USE | `scripts/sb_terminal.gd`, `scenes/terminal.tscn`; see `docs/world-space.md` |
 
 The scene was assembled with the Godot AI MCP. The course pieces build their meshes at run time, so a platform
 is a tiny scene and `size` is the only thing to change in the Inspector.

@@ -55,6 +55,8 @@
     }
   }
 
+  Godot.onState('aim', (a) => { $('btn-use').hidden = !a.terminal; });
+
   Godot.onState('hud', (s) => {
     SB.lastHud = s;
     $('timer').textContent = fmt(s.time);

@@ -78,6 +78,9 @@
   }
   Godot.guard(releaseJump);
 
+  // ---------- use: shown by hud.js only while the crosshair is on the in-world terminal (state "aim")
+  $('btn-use').addEventListener('click', () => emit('use'));
+
   // ---------- look: swipe anywhere on the look zone. It lives in the page so it keeps working while another
   // finger holds the stick (on Android a second finger goes to the WebView, not to Godot). Deltas are sent as
   // fractions of the screen height, so the feel is the same on every screen.
@@ -160,6 +163,8 @@
       emit('sprint', { held: true });
     } else if (e.code === 'Escape') {
       SB.escape();
+    } else if (e.code === 'KeyE' && SB.screen === 'play') {
+      emit('use');
     } else if (e.code === 'KeyR' && SB.screen === 'play') {
       emit('retry_checkpoint');
     }

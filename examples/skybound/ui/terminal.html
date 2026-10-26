@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=640, initial-scale=1">
+  <title>Skybound terminal</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/terminal.css">
+</head>
+<body>
+  <!-- A world-space page: Godot draws this onto the terminal in the 3D scene (GodotWebUI.create_surface). It is laid out
+       at 640 x 400 CSS pixels. Same Godot bridge as the HUD; Godot.surface is the surface id. -->
+  <div id="screen">
+    <header id="bar">
+      <i id="led"></i>
+      <b id="title">SKYBOUND // RUN TERMINAL</b>
+      <span id="clock">--:--</span>
+    </header>
+
+    <main id="body">
+      <section id="run">
+        <small class="cap">RUN TIME</small>
+        <b id="time">0:00.00</b>
+        <div id="section"><i id="section-n">1/5</i><span id="section-name">LAUNCH PAD</span></div>
+        <div id="shards-row">
+          <small class="cap">SHARDS</small>
+          <b id="shards">0 / 25</b>
+        </div>
+        <div id="meter"><i id="meter-fill"></i></div>
+        <div id="stats">
+          <div><small class="cap">FALLS</small><b id="falls">0</b></div>
+          <div><small class="cap">BEST</small><b id="best">--</b></div>
+          <div><small class="cap">DOUBLE JUMP</small><b id="wings">locked</b></div>
+        </div>
+      </section>
+
+      <section id="route">
+        <small class="cap">ROUTE</small>
+        <ol id="sections">
+          <li data-n="1"><i></i><span>Launch Pad</span></li>
+          <li data-n="2"><i></i><span>Floating Isles</span></li>
+          <li data-n="3"><i></i><span>Cargo Run</span></li>
+          <li data-n="4"><i></i><span>Skyline Towers</span></li>
+          <li data-n="5"><i></i><span>The Spire</span></li>
+        </ol>
+      </section>
+    </main>
+
+    <footer id="actions">
+      <button id="btn-retry" class="action">Back to checkpoint</button>
+      <button id="btn-restart" class="action quiet">Restart run</button>
+      <span id="hint">aim and press E (or USE)<em id="caret">_</em></span>
+    </footer>
+
+    <div id="scan"></div>
+    <i id="cursor" hidden></i>
+  </div>
+
+  <script src="js/terminal.js"></script>
+</body>
+</html>

@@ -19,6 +19,7 @@ enum Mode { MENU, COUNTDOWN, PLAYING, PAUSED, RESULTS }
 const UI_DIR := "res://examples/skybound/ui"
 const SAVE_PATH := "user://skybound.cfg"
 const HUD_INTERVAL := 0.05
+const TERMINAL_INTERVAL := 0.1
 const RADIANS_PER_SCREEN_HEIGHT := PI
 const KILL_DEPTH := 26.0  ## metres below the last checkpoint
 ## Medal times in seconds: gold, silver, bronze.
@@ -33,6 +34,7 @@ const RENDER_SCALES := [1.0, 0.75, 0.6]
 @onready var menu_rig: Node3D = $MenuRig
 @onready var menu_camera: Camera3D = $MenuRig/Camera
 @onready var world_environment: WorldEnvironment = $WorldEnvironment
+@onready var terminal: SBTerminal = $Terminal
 
 var ui: GodotWebUI
 var mode := Mode.MENU
@@ -57,6 +59,8 @@ var _goal: SBGoal
 var _stick := Vector2.ZERO
 var _page_keys := Vector2.ZERO
 var _hud_timer := 0.0
+var _terminal_timer := 0.0
+var _aim_sent := false
 var _results := {}
 
 
@@ -79,6 +83,9 @@ func _ready() -> void:
 	_apply_settings()
 	_enter_menu()
 	ui.start(UI_DIR, "index.html")
+	# A second page, drawn onto the terminal in the world (Android; elsewhere the terminal shows a plain label).
+	terminal.attach(ui)
+	terminal.action_requested.connect(_on_terminal_action)
 	_dev_arguments.call_deferred()
 
 
@@ -97,6 +104,7 @@ func _register_handlers() -> void:
 	ui.on("to_menu", func(_p: Dictionary) -> void: to_menu())
 	ui.on("quit", func(_p: Dictionary) -> void: get_tree().quit())
 	ui.on("settings_changed", _on_settings_changed)
+	ui.on("use", func(_p: Dictionary) -> void: _use())
 
 
 ## Finds the course pieces the level builder placed and listens to them.
@@ -364,6 +372,46 @@ func _process(delta: float) -> void:
 		if _hud_timer >= HUD_INTERVAL:
 			_hud_timer = 0.0
 			_push_hud()
+	_terminal_timer += delta
+	if _terminal_timer >= TERMINAL_INTERVAL:
+		_terminal_timer = 0.0
+		_update_terminal()
+
+
+## The terminal page is redrawn about 10 times a second at most, so its figures and the aim cursor are refreshed at 10 Hz.
+func _update_terminal() -> void:
+	var cam := get_viewport().get_camera_3d()
+	terminal.update_aim(cam)
+	var aimed := terminal.aimed and mode == Mode.PLAYING
+	if aimed != _aim_sent:
+		_aim_sent = aimed
+		ui.set_state("aim", {"terminal": aimed})
+	var best: float = profile.best_time
+	terminal.show_run({
+		"time": snappedf(run_time, 0.01),
+		"section": current_cp + 1,
+		"section_name": SBBuild.SECTION_NAMES[clampi(current_cp, 0, SBBuild.SECTION_NAMES.size() - 1)],
+		"shards": run_shards,
+		"shard_total": shard_total,
+		"deaths": run_deaths,
+		"best_time": snappedf(best, 0.01) if best >= 0.0 else -1.0,
+		"wings": has_wings,
+	})
+
+
+## Use (E, or the USE button): taps the terminal where the crosshair is.
+func _use() -> void:
+	if mode == Mode.PLAYING:
+		terminal.use(player.camera)
+
+
+func _on_terminal_action(action: String) -> void:
+	if mode != Mode.PLAYING:
+		return
+	if action == "retry":
+		retry_checkpoint()
+	elif action == "restart":
+		start_run()
 
 
 # ---------------------------------------------------------------- page input

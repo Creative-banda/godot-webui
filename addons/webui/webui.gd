@@ -75,6 +75,10 @@ const RECOVERY_WINDOW_MSEC := 60000
 		if _started and _backend:
 			_backend.set_ui_scale_reference(ui_reference_size)
 
+## How world-space pages (create_surface) are drawn on Android: 1 = hardware canvas through an ImageReader, 0 = software
+## Bitmap. Measured on a device; see docs/world-space.md.
+@export_enum("Software:0", "Hardware:1") var surface_capture_mode := 1
+
 var is_ready := false  ## true once the page's handshake arrived; stays true across reloads (each reload sends a new handshake and page_ready)
 
 ## Only one overlay can exist at a time (the native plugin owns a single WebView).
@@ -100,6 +104,8 @@ var _back_overridden := false
 var _back_previous_quit := true
 var _back_pending := false
 var _back_serial := 0
+var _surfaces := {}          # surface id -> GodotWebUISurface
+var _surface_serial := 0
 
 
 ## Loads `page` from `ui_dir` (a res:// folder). Returns false if the overlay could not be created
@@ -120,9 +126,12 @@ func start(ui_dir: String, page: String = "index.html") -> bool:
 		"devtools": desktop_preview_devtools,
 		"inject_scripts": desktop_preview_inject_scripts,
 		"ui_reference": ui_reference_size,
+		"surface_mode": surface_capture_mode,
 	}
 	_backend.message.connect(_on_raw_message)
 	_backend.error.connect(_on_backend_error)
+	_backend.surface_message.connect(_on_surface_message)
+	_backend.surface_frame.connect(_on_surface_frame)
 	_backend.console.connect(func(level: String, text: String) -> void:
 		console_message.emit(level, text)
 		print("[WebUI:js:%s] %s" % [level, text]))
@@ -242,8 +251,31 @@ func set_touch_mode(mode: TouchMode) -> void:
 		_backend.set_touch_mode(_native_touch_mode())
 
 
+## A page drawn onto a surface in the 3D world (a terminal, a wall screen) instead of over the screen: see
+## GodotWebUISurface. `page` is a file of the same UI folder as the overlay; `size` is its layout size in CSS pixels
+## (and the texture size); `fps` is how often it is redrawn (1-30). Needs start() first. On platforms without world-space
+## pages (everything but Android) the returned surface has `available == false` and does nothing.
+func create_surface(page: String, size: Vector2i = Vector2i(640, 400), fps := 10) -> GodotWebUISurface:
+	_surface_serial += 1
+	var surface_id := "surface%d" % _surface_serial
+	var ok := false
+	if _started and _backend and _backend.supports_surfaces():
+		ok = _backend.create_surface(surface_id, page, size, fps)
+	elif not _started:
+		_report("surface_no_overlay", "create_surface() needs start() first: world-space pages share the overlay's UI folder.")
+	else:
+		_report("surface_unsupported", "World-space pages are only available in Android builds with the current plugin binary (backend '%s')." % get_backend_name())
+	var surface := GodotWebUISurface.new(surface_id, size, _backend, ok)
+	_surfaces[surface_id] = surface
+	return surface
+
+
 ## Removes the overlay and frees native resources. Safe to call repeatedly.
 func shutdown() -> void:
+	for surface: GodotWebUISurface in _surfaces.values():
+		surface.available = false
+		surface.is_ready = false
+	_surfaces.clear()
 	if _backend:
 		_backend.destroy()
 		_backend = null
@@ -317,6 +349,18 @@ func _native_touch_mode() -> String:
 		TouchMode.REGIONS:
 			return "regions"
 	return "regions" if _regions_opted_in else "modal"
+
+
+func _on_surface_message(surface_id: String, raw: String) -> void:
+	var surface: GodotWebUISurface = _surfaces.get(surface_id)
+	if surface:
+		surface._on_message(raw)
+
+
+func _on_surface_frame(surface_id: String, frame: int) -> void:
+	var surface: GodotWebUISurface = _surfaces.get(surface_id)
+	if surface:
+		surface._on_frame(frame)
 
 
 func _on_raw_message(raw: String) -> void:

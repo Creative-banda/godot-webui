@@ -48,6 +48,14 @@ Payload rules for `set_state` / `emit_event`: a `Dictionary` that `JSON.stringif
 | `back_requested` | Android Back was pressed and the page did not use it (only with `handle_back_button`). Decide what Back does: pause, previous scene, `get_tree().quit()`. |
 | `recovered` | The overlay was re-created after the WebView renderer died (best effort). State from `set_state` is restored; events are not. |
 
+### World-space pages (experimental, Android only)
+
+`create_surface(page, size := Vector2i(640, 400), fps := 10) -> GodotWebUISurface` draws a page of the same UI folder onto a
+texture (put `surface.texture` on a material). Call it after `start()`. The surface has `on`, `off`, `set_state`,
+`emit_event`, `tap(pixel)`, `tap_uv(uv)`, `set_active(bool)`, `stats()`, `destroy()`, signals `page_ready`, `event_received`,
+`frame_updated`, and `available` (false off Android: everything is a no-op). Input is taps only (use a raycast, map the hit
+to page pixels). Redraw rate is low (10 Hz default). Details, measurements and limits: `docs/world-space.md`.
+
 ## JavaScript: `window.Godot`
 
 Injected before any page script. Do not include `godot.js` yourself.

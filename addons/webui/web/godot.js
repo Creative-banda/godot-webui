@@ -15,6 +15,7 @@
  *                                     fn() returns true if the page used it (closed a panel, went to the previous
  *                                     screen); otherwise Godot gets GodotWebUI.back_requested. The newest handler
  *                                     is asked first. Returns an unregister function.
+ *   Godot.surface                     '' in the full-screen overlay; the surface id when the page is drawn on a 3D surface.
  *   Godot.uiScale                     UI scale factor (>= 1) the host applied: the layout viewport is the screen divided by it,
  *                                     so CSS px, vw and media queries already include it. Also the CSS variable --ui-scale.
  *   Godot.pixelRatio                  physical pixels per CSS px (size canvases with it). 'uiscalechange' fires on window.
@@ -151,6 +152,9 @@
         if (i >= 0) guards.splice(i, 1);
       };
     },
+
+    /** Id of the world-space surface this page is drawn on (GodotWebUI.create_surface), or '' for the full-screen overlay. */
+    get surface() { return typeof window.__godotSurface === 'string' ? window.__godotSurface : ''; },
 
     /** Scale the host applied to the layout viewport (1 on phones; larger on big screens). */
     get uiScale() { return uiScale; },

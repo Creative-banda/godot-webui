@@ -27,6 +27,9 @@ func create(ui_dir: String, bridge_script: String, _host: Node = null) -> bool:
 	_plugin.connect("error", func(code: String, text: String) -> void: error.emit(code, text), CONNECT_DEFERRED)
 	_plugin.connect("page_loaded", func(url: String) -> void: page_loaded.emit(url), CONNECT_DEFERRED)
 	_plugin.connect("console", func(level: String, text: String) -> void: console.emit(level, text), CONNECT_DEFERRED)
+	if _plugin.has_signal("surface_message"):  # an older plugin binary has no world-space pages
+		_plugin.connect("surface_message", func(surface_id: String, raw: String) -> void: surface_message.emit(surface_id, raw), CONNECT_DEFERRED)
+		_plugin.connect("surface_frame", func(surface_id: String, frame: int) -> void: surface_frame.emit(surface_id, frame), CONNECT_DEFERRED)
 	set_ui_scale_reference(float(options.get("ui_reference", 720.0)))
 	_plugin.create(ProjectSettings.globalize_path(STAGE_DIR), bridge_script)
 	return true
@@ -53,14 +56,59 @@ func set_touch_mode(mode: String) -> void:
 
 
 func set_ui_scale_reference(css_pixels: float) -> void:
-	if _plugin and _plugin.has_method("setUiReference"):  # an older plugin binary has no UI scale: pages stay at 1x
+	if _plugin and _plugin.has_java_method("setUiReference"):  # an older plugin binary has no UI scale: pages stay at 1x
 		_plugin.setUiReference(css_pixels)
+
+
+func supports_surfaces() -> bool:
+	return _plugin != null and _plugin.has_java_method("createSurface")
+
+
+## Drawing mode of world-space pages: 1 = hardware canvas through an ImageReader, 0 = software Bitmap (see WorldSurface.java).
+func create_surface(surface_id: String, page: String, size: Vector2i, fps: int) -> bool:
+	if not supports_surfaces():
+		return false
+	_plugin.createSurface(surface_id, page, size.x, size.y, fps, int(options.get("surface_mode", 1)))
+	return true
+
+
+func destroy_surface(surface_id: String) -> void:
+	if _plugin:
+		_plugin.destroySurface(surface_id)
+
+
+func surface_send(surface_id: String, event_name: String, json_payload: String) -> void:
+	if _plugin:
+		_plugin.surfaceSend(surface_id, event_name, json_payload)
+
+
+func surface_tap(surface_id: String, x: float, y: float) -> void:
+	if _plugin:
+		_plugin.surfaceTap(surface_id, x, y)
+
+
+func surface_set_active(surface_id: String, active: bool) -> void:
+	if _plugin:
+		_plugin.surfaceSetActive(surface_id, active)
+
+
+func surface_read_frame(surface_id: String) -> PackedByteArray:
+	if _plugin == null:
+		return PackedByteArray()
+	var bytes: Variant = _plugin.readSurfaceFrame(surface_id)
+	return bytes if typeof(bytes) == TYPE_PACKED_BYTE_ARRAY else PackedByteArray()
+
+
+func surface_stats(surface_id: String) -> String:
+	return str(_plugin.getSurfaceStats(surface_id)) if _plugin else "{}"
 
 
 func destroy() -> void:
 	if _plugin:
 		_plugin.destroy()
-		for sig in ["message", "error", "page_loaded", "console"]:
+		for sig in ["message", "error", "page_loaded", "console", "surface_message", "surface_frame"]:
+			if not _plugin.has_signal(sig):
+				continue
 			for c in _plugin.get_signal_connection_list(sig):
 				_plugin.disconnect(sig, c.callable)
 		_plugin = null

@@ -21,6 +21,8 @@
 [ext_resource type="Script" uid="uid://sbd46xupb4y7" path="res://examples/skybound/scripts/sb_goal.gd" id="18_tc5gl"]
 [ext_resource type="Script" uid="uid://dy0p2t46use1i" path="res://addons/webui/webui_screen.gd" id="20_eqgdr"]
 
+[ext_resource type="PackedScene" path="res://examples/skybound/scenes/terminal.tscn" id="21_term"]
+
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_lu32p"]
 sky_top_color = Color(0.0627451, 0.101960786, 0.32156864, 1)
 sky_horizon_color = Color(1, 0.58431375, 0.4, 1)
@@ -496,6 +498,9 @@ script = ExtResource("8_c25b7")
 
 [node name="Player" parent="." unique_id=108630479 instance=ExtResource("3_peh4o")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+
+[node name="Terminal" parent="." instance=ExtResource("21_term")]
+transform = Transform3D(0.6, 0, -0.8, 0, 1, 0, 0.8, 0, 0.6, 4, 0, -3)
 
 [node name="MenuRig" type="Node3D" parent="." unique_id=2068103501]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -24)

@@ -612,6 +612,30 @@ body:not(.touch) #btn-jump {
   height: 30px;
 }
 
+/* Appears while the crosshair is on the in-world terminal (state "aim"), beside the jump button. */
+.use-btn {
+  position: absolute;
+  right: calc(max(var(--safe-right), var(--thumb-x)) + clamp(84px, 22vmin, 120px) + 14px);
+  bottom: max(var(--safe-bottom), var(--thumb-y));
+  display: grid;
+  place-items: center;
+  width: clamp(64px, 17vmin, 92px);
+  height: clamp(64px, 17vmin, 92px);
+  border-radius: 50%;
+  color: #07122b;
+  background: linear-gradient(135deg, var(--gold), var(--cyan));
+}
+
+.use-btn[hidden] {
+  display: none;
+}
+
+.use-btn small {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
 .jump-btn.down {
   transform: scale(0.92);
 }

@@ -1,0 +1,286 @@
+/* The in-world terminal page, 640 x 400 CSS pixels. Opaque (it is a texture), animated with transform and opacity only. */
+
+html,
+body {
+  width: 640px;
+  height: 400px;
+  background: #061024;
+  overflow: hidden;
+}
+
+#screen {
+  position: relative;
+  display: grid;
+  grid-template-rows: 44px 1fr 64px;
+  width: 640px;
+  height: 400px;
+  color: #d8f3ff;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(56, 182, 255, 0.18), rgba(6, 16, 36, 0) 60%),
+    linear-gradient(180deg, #08142e, #050c1e);
+}
+
+#bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  background: rgba(123, 224, 255, 0.08);
+  border-bottom: 1px solid rgba(123, 224, 255, 0.28);
+}
+
+#led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mint);
+  animation: blink 1.6s ease-in-out infinite;
+}
+
+#title {
+  flex: 1;
+  font-size: 15px;
+  letter-spacing: 0.2em;
+}
+
+#clock {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+#body {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 18px;
+  padding: 16px 18px 6px;
+}
+
+.cap {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: rgba(216, 243, 255, 0.55);
+}
+
+#run {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+
+#time {
+  font-size: 58px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 18px rgba(123, 224, 255, 0.45);
+}
+
+#section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+#section i {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-style: normal;
+  color: #04122a;
+  background: linear-gradient(115deg, var(--mint), var(--cyan));
+}
+
+#shards-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+#shards {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+#meter {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+#meter-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--cyan), var(--violet));
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.5s var(--ease);
+}
+
+#stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+#stats b {
+  display: block;
+  margin-top: 2px;
+  font-size: 15px;
+}
+
+#wings.ready {
+  color: var(--gold);
+}
+
+#route {
+  padding-left: 16px;
+  border-left: 1px solid rgba(123, 224, 255, 0.18);
+}
+
+#sections {
+  display: grid;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+#sections li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(216, 243, 255, 0.4);
+}
+
+#sections i {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+#sections li.done {
+  color: var(--mint);
+}
+
+#sections li.done i {
+  background: currentColor;
+}
+
+#sections li.now {
+  color: #ffffff;
+}
+
+#sections li.now i {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+#actions {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px 8px;
+}
+
+.action {
+  position: relative;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #04122a;
+  background: linear-gradient(115deg, var(--cyan), var(--blue));
+  box-shadow: 0 3px 0 #1d6fa8;
+}
+
+.action.quiet {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(123, 224, 255, 0.35);
+  box-shadow: none;
+}
+
+.action.hover {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.action.pressed {
+  transform: translateY(2px) scale(0.97);
+}
+
+#hint {
+  justify-self: end;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(216, 243, 255, 0.55);
+}
+
+#caret {
+  font-style: normal;
+  color: var(--cyan);
+  animation: blink 1s steps(2, start) infinite;
+}
+
+/* A thin scan line sweeping down, and the aim cursor Godot places on the page. */
+#scan {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(123, 224, 255, 0), rgba(123, 224, 255, 0.35), rgba(123, 224, 255, 0));
+  animation: sweep 4s linear infinite;
+  pointer-events: none;
+}
+
+#cursor {
+  position: absolute;
+  left: -9px;
+  top: -9px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 10px var(--gold);
+  pointer-events: none;
+  will-change: transform;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    transform: rotate(45deg) scale(1.35);
+  }
+}
+
+@keyframes sweep {
+  from {
+    transform: translateY(-4px);
+  }
+  to {
+    transform: translateY(404px);
+  }
+}

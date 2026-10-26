@@ -37,6 +37,8 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -61,6 +63,9 @@ public class WebUIPlugin extends GodotPlugin {
     private static final float MAX_UI_SCALE = 4f;
 
     private OverlayWebView webView;
+    private String uiRootDir = "";
+    /** World-space pages (see WorldSurface), by id. */
+    private final Map<String, WorldSurface> surfaces = Collections.synchronizedMap(new HashMap<>());
     private String bridgeScript = "";
     private ScriptHandler startScript;
     private volatile float uiReference = 720f;
@@ -86,6 +91,9 @@ public class WebUIPlugin extends GodotPlugin {
         signals.add(new SignalInfo("error", String.class, String.class));
         signals.add(new SignalInfo("page_loaded", String.class));
         signals.add(new SignalInfo("console", String.class, String.class));
+        signals.add(new SignalInfo("surface_message", String.class, String.class));
+        signals.add(new SignalInfo("surface_frame", String.class, Integer.class));
+        signals.add(new SignalInfo("surface_loaded", String.class, String.class));
         return signals;
     }
 
@@ -160,6 +168,71 @@ public class WebUIPlugin extends GodotPlugin {
         });
     }
 
+    // ---------------------------------------------------------------- world-space surfaces (Godot-facing)
+
+    /**
+     * Creates a world-space page: `page` (relative to the overlay's UI folder) laid out at width x height CSS pixels in an
+     * off-screen WebView and drawn into frames for Godot at about `fps`. Needs the overlay to exist (it supplies the UI
+     * folder and the bridge script). `mode`: 1 = hardware canvas through an ImageReader, 0 = software Bitmap.
+     */
+    @UsedByGodot
+    public void createSurface(String id, String page, int width, int height, int fps, int mode) {
+        runOnUiThread(() -> createSurfaceOnUi(id, page, width, height, fps, mode));
+    }
+
+    @UsedByGodot
+    public void destroySurface(String id) {
+        runOnUiThread(() -> {
+            WorldSurface surface = surfaces.remove(id);
+            if (surface != null) {
+                surface.destroy();
+            }
+        });
+    }
+
+    @UsedByGodot
+    public void surfaceSend(String id, String name, String jsonPayload) {
+        runOnUiThread(() -> {
+            WorldSurface surface = surfaces.get(id);
+            if (surface != null) {
+                surface.send(name, jsonPayload);
+            }
+        });
+    }
+
+    @UsedByGodot
+    public void surfaceTap(String id, float x, float y) {
+        runOnUiThread(() -> {
+            WorldSurface surface = surfaces.get(id);
+            if (surface != null) {
+                surface.tap(x, y);
+            }
+        });
+    }
+
+    @UsedByGodot
+    public void surfaceSetActive(String id, boolean active) {
+        runOnUiThread(() -> {
+            WorldSurface surface = surfaces.get(id);
+            if (surface != null) {
+                surface.setActive(active);
+            }
+        });
+    }
+
+    /** The latest frame as RGBA bytes (width * height * 4), or an empty array. Safe to call from any thread. */
+    @UsedByGodot
+    public byte[] readSurfaceFrame(String id) {
+        WorldSurface surface = surfaces.get(id);
+        return surface == null ? new byte[0] : surface.readFrame();
+    }
+
+    @UsedByGodot
+    public String getSurfaceStats(String id) {
+        WorldSurface surface = surfaces.get(id);
+        return surface == null ? "{}" : surface.stats();
+    }
+
     @UsedByGodot
     public void destroy() {
         runOnUiThread(this::destroyOnUi);
@@ -169,6 +242,9 @@ public class WebUIPlugin extends GodotPlugin {
 
     @Override
     public void onMainPause() {
+        for (WorldSurface surface : new java.util.ArrayList<>(surfaces.values())) {
+            surface.setActive(false);
+        }
         OverlayWebView view = webView;
         if (view != null) {
             view.evaluateJavascript("window.Godot&&window.Godot.__lifecycle('pause')", null);
@@ -178,6 +254,9 @@ public class WebUIPlugin extends GodotPlugin {
 
     @Override
     public void onMainResume() {
+        for (WorldSurface surface : new java.util.ArrayList<>(surfaces.values())) {
+            surface.setActive(true);
+        }
         OverlayWebView view = webView;
         if (view != null) {
             view.onResume();
@@ -307,6 +386,7 @@ public class WebUIPlugin extends GodotPlugin {
 
         Set<String> origins = Collections.singleton(ORIGIN);
         bridgeScript = script;
+        uiRootDir = rootDir;
         webView = view;
         view.setOnSizeChange(this::updateUiScale);
         updateUiScale();  // before the first page loads: sets the initial scale and the start script
@@ -371,6 +451,67 @@ public class WebUIPlugin extends GodotPlugin {
         }
     }
 
+    private void createSurfaceOnUi(String id, String page, int width, int height, int fps, int mode) {
+        Activity activity = getActivity();
+        if (webView == null || uiRootDir.isEmpty() || activity == null) {
+            fail("surface_no_overlay", "createSurface() needs the overlay to be started first.");
+            return;
+        }
+        if (id == null || !id.matches("[A-Za-z][A-Za-z0-9_.:-]{0,63}") || surfaces.containsKey(id)) {
+            fail("surface_bad_id", "Invalid or duplicate surface id: " + id);
+            return;
+        }
+        if (page == null || page.isEmpty() || page.startsWith("/") || page.contains("..") || page.contains(":")) {
+            fail("bad_path", "Invalid UI path: " + page);
+            return;
+        }
+        if (width < 64 || height < 64 || width > 2048 || height > 2048) {
+            fail("surface_bad_size", "Surface size must be 64..2048 pixels, got " + width + "x" + height);
+            return;
+        }
+        try {
+            surfaces.put(id, new WorldSurface(activity, surfaceHost, id, new File(uiRootDir), page, bridgeScript,
+                    ORIGIN, HOST, UI_PREFIX, width, height, Math.max(1, Math.min(fps, 30)), mode));
+        } catch (IOException | RuntimeException e) {
+            fail("surface_create_failed", String.valueOf(e.getMessage()));
+        }
+    }
+
+    private final WorldSurface.Host surfaceHost = new WorldSurface.Host() {
+        @Override
+        public void onMessage(String id, WebMessageCompat message) {
+            String data = message.getType() == WebMessageCompat.TYPE_STRING ? message.getData() : null;
+            if (data == null || data.length() > MAX_MESSAGE_CHARS) {
+                fail("bad_message", "Ignored a non-string or oversized message from surface " + id + ".");
+                return;
+            }
+            if (data.startsWith("{\"t\":\"regions\"")) {
+                return;  // touch regions belong to the overlay
+            }
+            emitSignal("surface_message", id, data);
+        }
+
+        @Override
+        public void onFrame(String id, int frame) {
+            emitSignal("surface_frame", id, frame);
+        }
+
+        @Override
+        public void onLoaded(String id, String url) {
+            emitSignal("surface_loaded", id, url);
+        }
+
+        @Override
+        public void onError(String code, String text) {
+            fail(code, text);
+        }
+
+        @Override
+        public void onConsole(String level, String text) {
+            emitSignal("console", level, text);
+        }
+    };
+
     private void onPageMessage(OverlayWebView v, WebMessageCompat message) {
         String data = message.getType() == WebMessageCompat.TYPE_STRING ? message.getData() : null;
         if (data == null) {
@@ -406,6 +547,11 @@ public class WebUIPlugin extends GodotPlugin {
         }
         webView = null;
         startScript = null;
+        uiRootDir = "";
+        for (WorldSurface surface : new java.util.ArrayList<>(surfaces.values())) {
+            surface.destroy();
+        }
+        surfaces.clear();
         ViewGroup parent = (ViewGroup) view.getParent();
         if (parent != null) {
             parent.removeView(view);
